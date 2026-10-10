@@ -1,4 +1,6 @@
-# Arayüz sözleşmesi (taslak v0.3, 2026-10-10)
+# Arayüz sözleşmesi (taslak v0.4, 2026-10-10)
+
+**v0.4 değişiklikleri** (Emre kararı: **hibrit**): builder = deterministik `build.py` + Claude Agent SDK ajanı (kit örneği gibi) + ajanın çağırdığı kod araçları (`builder.cli`). §0 baştan yazıldı (katmanlar, adım tablosu, skill'ler, süre, yedek yol). §2: `compile_workflow` → `cli compile` (girdi `params.json` + ajanın yazdığı `prompts.json`); C→B yama önerisi kalktı, **ajan düzeltir**. §3: test kod araçlarıyla, ajan okur. §4: trace = SDK akışı + `cli event`. RuleTable şeması (§1) ve derleyici kuralları değişmedi.
 
 **v0.3 değişiklikleri** (§5 kit docs'undan kapandı, Latif'in ajanının #3 raporu; iddialar `docs/workflow-format.md` (WF), `docs/tools-and-code.md` (TC), `docs/api.md`, `freya.py`, `tools/run_cases.py` üzerinde tek tek doğrulandı, **canlıda denenmedi**): §2'ye "Derleyici kuralları (kit)" bölümü, §3'e pratik banka oturumu kısıtı, §5 kapandı. Açık karar: `close_call` nereden çağrılır (§2).
 
@@ -10,32 +12,54 @@
 
 Amaç: üç parçayı ayrı kişiler/ajanlar bağımsız yazabilsin. Parçalar arasındaki tek temas noktası bu dosyadaki üç arayüz.
 
-## 0. Hat ve ortak kurallar
+## 0. Mimari (v0.4: hibrit) ve ortak kurallar
 
 ```
 python3 builder/build.py <brief_path> <tool_api_path>      # tek komut, elle müdahale yok
 ```
 
-| Aşama | İmza | Sahip (öneri) |
-|---|---|---|
-| 1. brief okuma | `read_brief(brief_path, tool_api, trace, budget) -> RuleTable` | A |
-| 2. parametre türetme | `derive_params(rules, tool_api) -> BackboneParams` (saf, LLM yok) | B |
-| 3. derleme | `compile_workflow(params, rules, tool_api, trace, budget, overrides=None) -> WorkflowDoc` | B |
-| 4. yükleme | `deploy(doc, trace) -> Deployed` (`freya.py` sarmalayıcı) | B |
-| 5. kendi testi | `self_test(deployed, rules, params, trace, budget) -> TestReport` | C |
-| 6. kapanış | `export_workflow`, trace'i yaz, özet | C |
+**Üç katman** (Emre kararı 2026-10-10: hibrit):
 
-Önerilen dizin: `builder/{build.py, rules.py, reader/, compiler/, deploy.py, selftest/, trace.py, budget.py}`, `tests/`, `traces/`, `submission/`.
+1. **`builder/build.py` (deterministik orkestra).** Süreyi tutar, Claude Agent SDK ajanını başlatır, ajan bitince ya da süre dolunca **kendisi** son geçerli workflow'u doğrular, kaydeder, export eder ve trace'i kapatır. Ajan çökse ya da takılsa bile teslim edilebilir bir çıktı bırakır.
+2. **Ajan (Claude Agent SDK, kit örneğindeki gibi).** Brief'i okur, kural tablosunu ve düğüm prompt'larını yazar, araçları çağırır, testleri okur, düzeltir. Bilgisi **skill**'lerden gelir. Model `BUILDER_MODEL` (varsayılan `claude-opus-5-5`, kit örneğiyle aynı).
+3. **Kod araçları (`python3 -m builder.cli <komut>`).** Hata yapılmaması gereken her şey: OpenAPI'den araç tanımı, parametre türetme, `check` kodu, omurga derleme, lint, dryRun + kaydetme, vaka çalıştırma, trace olayı. Ajan bunları Bash ile çağırır; girdi/çıktı her zaman dosya (JSON), stdout'a kısa özet.
+
+| Adım | Kim | Komut / çıktı |
+|---|---|---|
+| 1. brief'i oku, kural tablosu yaz | ajan | `out/<slot>/rules.json` (§1 şeması) |
+| 2. tabloyu doğrula | kod | `cli rules-validate` → uyarı listesi |
+| 3. araç tanımları | kod | `cli tools <tool_api>` → `out/<slot>/tools.json` |
+| 4. parametreler | kod | `cli params` → `out/<slot>/params.json` (§2 `BackboneParams`) |
+| 5. düğüm prompt'ları | ajan | `out/<slot>/prompts.json` (§2) |
+| 6. derle | kod | `cli compile` → `out/<slot>/workflow.json` (omurga şablonu + 3 + 4 + 5) |
+| 7. (gerekirse) brief'e özgü düzenleme | ajan | `workflow.json`'u elle düzenler; sonra 8 **zorunlu** |
+| 8. lint + dryRun + kaydet | kod | `cli deploy` → `out/<slot>/deployed.json` (`workflow_id`, `agent_id`) |
+| 9. test | kod çalıştırır, ajan okur | `cli check-test` (yerel), `cli cases-run` (Freya) → `out/<slot>/test-*.json` |
+| 10. düzelt | ajan | 5 ya da 7'ye döner; bütçe izin verdikçe |
+| 11. kapanış | `build.py` | lint + kaydet + `export_workflow` → `submission/<slot>.workflow.json`, trace → `traces/<slot>.log` |
+
+**Sahiplik (öneri, insanlar netleştirir):** S = skill'ler (brief okuma, omurga bilgisi, Freya kuralları, süreç), K = kod araçları (`builder/cli`, şablonlar, testleri), O = orkestra + test + trace + paketleme (`build.py`, `cases-run`, trace, export, sızıntı testi).
+
+**Skill'ler** (`.claude/skills/`, kit örneğindeki gibi `setting_sources=["project"]`):
+- `build-phone-agent`: süreç (yukarıdaki tablo), bütçe kuralları, ne zaman durulur.
+- `read-collections-brief`: §1 şeması, kaynak sıralama, memo'nun ezmesi, alıntı zorunluluğu, belirsiz kuralda güvenli değer.
+- `collections-backbone`: omurga ve global düğümler, her düğümün işi, sayı kuralları ve zorunlu cümlelerin prompt'a yazılışı.
+- `freya-workflow-rules`: §2 "Derleyici kuralları (kit)" özeti; ajanın `workflow.json`'u elle düzenlerken uyacağı kurallar.
+Skill'lerde **hiçbir brief değeri yok** (sızıntı testi skill'leri de tarar).
+
+**Süre (30 dk/brief):** `build.py` başlarken `BUILD_DEADLINE` (epoch) ortam değişkenini koyar. Öneri: ajana 25 dk, son 5 dk `build.py`'nin kapanışı. `cli cases-run`, kalan süre bir koşuya yetmiyorsa (`< 12 dk`) **koşmayı reddeder** ve bunu söyler. Süre dolunca `build.py` ajanı durdurur ve son geçerli `workflow.json`'la kapanır; geçerli yoksa `cli compile`'ı mevcut `params.json` + varsayılan prompt'larla koşturup onu teslim eder (**yedek yol**).
+
+Önerilen dizin: `builder/{build.py, cli/, templates/, trace.py}`, `.claude/skills/<ad>/SKILL.md`, `tests/`, `out/`, `traces/`, `submission/`.
 
 Ortak kurallar:
-- **Sızıntı yok:** kodda ve prompt şablonlarında pratik ya da gizli brief'e özgü değer yok (tatil günleri, sonuç adları, tutar/limit sabitleri). `tests/test_no_leak.py` bunu denetler. Değerler yalnızca çalışma zamanında üretilen tablolardan gelir.
-- **Her model çağrısı** `trace.llm(...)` içinden geçer.
-- **Her aşama `budget` alır.** 30 dk toplam sınır, öneri dağılımı: okuma 8, derleme 5, yükleme 2, kendi testi 12, tampon 3. `budget.remaining()` saniye döner; biterse aşama elindeki en iyi sonucu döndürür.
-- **Ara çıktılar diske:** `out/<brief_id>/rules.json`, `params.json`, `workflow.json`. Her aşama tek başına yeniden koşturulur.
-- **Anahtarlar** yalnızca ortam değişkeni. Repoya, trace'e, logda yok.
-- Belirsiz kuralda varsayılan, Policy açısından güvenli değer; her seferinde `trace.event("uncertain_default", ...)`.
+- **Sızıntı yok:** kodda, şablonlarda ve skill'lerde pratik ya da gizli brief'e özgü değer yok (tatil günleri, sonuç adları, tutar/limit sabitleri). `tests/test_no_leak.py` denetler. Değerler yalnızca çalışma zamanında üretilen dosyalardan gelir.
+- **Trace:** ajanın her mesajı ve araç çağrısı SDK akışından, kod araçlarının olayları aynı dosyaya (§4).
+- **Ara çıktılar diske** (`out/<slot>/...`). Her kod aracı tek başına yeniden koşturulur ve yerelde test edilir.
+- **Anahtarlar** yalnızca ortam değişkeni (`env.sh`, gitignore'da). Repoya, skill'e, trace'e, log'a girmez.
+- Belirsiz kuralda Policy açısından güvenli değer; her seferinde `cli event uncertain_default ...`.
+- Ajan Freya'da elle hiçbir şey değiştirmez; her değişiklik dosyada, `cli deploy` ile.
 
-## 1. RuleTable (A → B)
+## 1. RuleTable (ajan yazar → `cli rules-validate`, `cli params` okur)
 
 Dosya: `out/<brief_id>/rules.json`
 
@@ -88,14 +112,14 @@ Rule:
 - `id` benzersiz; `supersedes` var olan bir id'ye gider, döngü yok. **Ezilen kural silinmez**; geçerli kurallar = ezilmeyenler.
 - `source.quote`, atıf yapılan kaynakta (boşluk normalleştirilerek) **gerçekten geçiyor**; geçmiyorsa `confidence` zorla `uncertain`.
 - `identity_fields.fields[].name` ve `outcome_codes.codes[].code`, tool API'nin enum'larıyla uyuşuyor; uyuşmazlık uyarı olarak trace'e.
-- Çakışan geçerli kurallar (aynı `type` ve örtüşen `applies_to`): **runtime'da hata değil uyarı.** En yeni `source_date`'li kural seçilir; tarih eşit/yoksa Policy açısından güvenli (daha kısıtlayıcı) olan seçilir. Ötekisi `uncertain` sayılır ve `trace.event("uncertain_default", ...)` ile yazılır. Gizli brief'te 30 dk elle müdahalesiz koşulduğu için sert hata çökme, çökme sıfır puan demektir.
+- Çakışan geçerli kurallar (aynı `type` ve örtüşen `applies_to`): **runtime'da hata değil uyarı.** En yeni `source_date`'li kural seçilir; tarih eşit/yoksa Policy açısından güvenli (daha kısıtlayıcı) olan seçilir. Ötekisi `uncertain` sayılır ve `cli event uncertain_default` ile yazılır. Gizli brief'te 30 dk elle müdahalesiz koşulduğu için sert hata çökme, çökme sıfır puan demektir.
 - **İki mod:** `validate(..., strict=False)` runtime (build.py), `strict=True` testler ve yerel koşular. Çakışma, kırık `supersedes` ve eksik alıntı strict'te hata. **Runtime'da (strict=False) hata yalnızca okunamayan veya boş tablo içindir**, geri kalan her şey uyarı + trace olayıdır.
 
-Okuma stratejisi (A'nın iç işi, arayüzü etkilemez): iki bağımsız okuyucu + uyuşmazlıkta ham metinden alıntı getiren üçüncü çağrı; alıntı yoksa `uncertain`.
+Okuma stratejisi (ajanın işi, skill `read-collections-brief` anlatır; arayüzü etkilemez): iki bağımsız okuyucu + uyuşmazlıkta ham metinden alıntı getiren üçüncü çağrı; alıntı yoksa `uncertain`.
 
-## 2. Derleyici girdisi ve çıktısı (B)
+## 2. Parametreler, prompt'lar ve derleme (kod araçları)
 
-`derive_params(rules, tool_api) -> BackboneParams`, saf ve deterministik, yerelde sınırsız test edilir.
+`cli params out/<slot>/rules.json <tool_api> -o out/<slot>/params.json` (içeride `derive_params(rules, tool_api) -> BackboneParams`), saf ve deterministik, yerelde sınırsız test edilir.
 
 ```json
 {
@@ -120,16 +144,24 @@ Okuma stratejisi (A'nın iç işi, arayüzü etkilemez): iki bağımsız okuyucu
 - `outcomes`: **her rota** (omurga ve global düğümler: `dispute`, `hardship`, `wrong_person`, `callback`, `human_request`) → `close_call` için **sabit** `outcome`/`reason` değeri. Değerler tool API enum'larından, model doldurmaz. `tools` ek araç çağrılarını listeler (örn. itirazda `add_note`, geri aramada `schedule_callback`, devirde `transfer_to_agent`) ve `args` içinde sabit değerler taşır. Brief'in sonuç tablosunda bir rotaya karşılık gelen kod yoksa en yakın kod seçilir ve `uncertain_default` yazılır.
 - `text_rules`: omurgaya sığmayan kurallar, kural id listesi olarak düğüme atanır. Yeni rota açılmaz.
 
-`compile_workflow(...) -> WorkflowDoc` (Freya workflow JSON'u, `freya.py`'nin kabul ettiği biçimde):
+**`prompts.json`** (ajan yazar): düğüm adı → prompt metni. Anahtarlar omurganın düğüm adları; eksik düğüm için şablondaki varsayılan prompt kullanılır.
+
+```json
+{"identity": {"task_message": "", "on_enter_text": null, "routing_prompt": null},
+ "negotiate": {"task_message": "", "on_enter_text": null, "routing_prompt": null},
+ "global:dispute": {"task_message": "", "on_enter_text": null, "routing_prompt": null}}
+```
+
+`cli compile out/<slot> -o out/<slot>/workflow.json` → Freya workflow JSON'u (`freya.py`'nin kabul ettiği biçimde), içeride `compile_workflow(params, prompts, tools) -> WorkflowDoc`:
 - Araç tanımları **koddan**, `tool_api`'den (URL, gövde alanları, enum'lar, `required`). LLM yok.
-- Düğüm prompt'ları LLM ile; her düğüm yalnızca kendi `text_rules` kurallarını ve sabit çerçeveyi görür.
+- Düğüm prompt'ları **ajandan** (`prompts.json`); skill, her düğüme yalnızca o düğümün `text_rules` kurallarını yazmasını söyler. Rota kuralları prompt'a değil `routing_prompt`/geçişlere (routing modeli `task_message`'ı görmez).
 - `check` kodu bir şablondan; parametreler (tatil, pencere, tutar) `params.json`'dan gömülür, şablonda sabit yok.
 - Omurga: `identity → disclose(get_account) → negotiate → check(KOD) → record(create_promise) → close_*`; global düğümler: `dispute`, `hardship`, `already_paid`, `restructuring`, `wrong_person`, `callback`, `human_request`.
 - **Araç hatası:** `record` başarısızsa önce `tool_retry` kadar **yeniden dener** (sonuç: tam bir söz kaydı), "kaydettim" yalnızca başarılı cevaptan sonra söylenir. Yeniden denemeler de tükenirse `close_tool_fail` (dürüst cümle). Geçiş koşulu araç cevap değişkeninden (`create_promise_response...`), modelden değil.
 - **Çok ürün:** `disclose` bütün ürünleri sormadan önce söyler; `negotiate` ürün başına bandın sınırını uygular; tek geri okuma, tek onay; `record` ürün başına bir `create_promise`; reddedilen ürüne `refusal_per_product` (örn. `add_note`, reason `refused`).
 - Sayı kuralları (`attempts`) ve zorunlu cümleler (`statements`) ilgili düğümün prompt'una **sayı olarak** yazılır ("en fazla 1 kez"); mümkünse sayaç değişkeniyle rota (kit'te doğrulanacak).
-- `overrides`: C'nin yama önerisi (`[{"node": "negotiate", "reason": "", "new_text": ""}]`). Yalnızca **düğüm prompt metinleri** değişir; omurga ve parametreler değişmez.
-- `validate_workflow(doc) -> [hata]`: bütün `target_node`'lar var, `initial_node` var, kullanılan her araç tanımlı, boş prompt yok. Yükleme öncesi zorunlu.
+- **Düzeltme:** ajan önce `prompts.json`'u değiştirip yeniden derler. Omurgaya sığmayan bir şey gerekiyorsa `workflow.json`'u doğrudan düzenleyebilir; bu durumda `cli deploy` öncesi lint zorunlu ve değişiklik trace'e (`cli event manual_edit ...`) yazılır. `rules.json` değişirse `cli params` + `cli compile` baştan.
+- **`cli lint out/<slot>/workflow.json`** (yerel, saniyeler): bütün `target_node`'lar ve `initial_node` var · kullanılan her araç tanımlı · boş prompt yok · kod düğümlerinde `{{`/`}}` yok, `initial_node` kod düğümü değil · `agent_config` yok · `const` yok · her extraction alanında `min_confidence` · `close_call` workflow düzeyinde `end_of_call`, `outcome`/`reason` `default: "{{final_outcome}}"`/`"{{final_reason}}"` ve `final_outcome` kimlikten önce yazılıyor · yazan araçlarda `maxRetries: 0` · her `api_call` aracında `post_process_code` (`what_to_do_next`). Hata listesi JSON.
 
 ### Derleyici kuralları (kit'ten, v0.3)
 
@@ -149,7 +181,7 @@ Okuma stratejisi (A'nın iç işi, arayüzü etkilemez): iki bağımsız okuyucu
 - (b) Kapanış düğümünden önce passthrough düğümde `pre_actions` ile (Latif'in ajanının önerisi). Değer yine rotadan; ama arama o düğüme ulaşmadan biterse (müşteri kapatır, `max_node_turns`) `close_call` **hiç çalışmaz** → Outcome kaybı.
 - **Öneri: (a)**, şartıyla: `final_outcome`/`final_reason` her yolda erken yazılsın (kimlik düğümü başında güvenli bir başlangıç değeri, sonra her rota günceller) ve dryRun ile doğrulansın. (a) ile (b) birlikte kullanılmaz (iki `close_call` = "bir kez" ihlali riski). Kit örneği (`examples/agent_builder.py`) hangisini kullanıyor, bakılacak.
 
-`deploy(doc, trace) -> Deployed`:
+`cli deploy out/<slot>` = `cli lint` + `freya.validate_workflow` (dryRun) + `freya.save_workflow(slot, wf)` → `out/<slot>/deployed.json`:
 
 ```json
 {"workflow_id": "", "agent_id": "", "steps": 0, "tools": ["verify_identity"]}
@@ -157,36 +189,30 @@ Okuma stratejisi (A'nın iç işi, arayüzü etkilemez): iki bağımsız okuyucu
 
 Çalışma alanı başına en fazla 10 workflow vardır: ad `brief_id`'den türer, mevcutsa güncellenir, yenisi yaratılmaz.
 
-## 3. Kendi testi (C)
+## 3. Kendi testi (`cli check-test`, `cli cases-run`; ajan okur ve düzeltir)
 
-`self_test(...) -> TestReport`:
+İki kod aracı, ikisi de `out/<slot>/test-<zaman>.json` yazar:
+- `cli check-test out/<slot>` (yerel, Freya'ya gitmez): `rules-validate --strict` özeti, `check` kodunun sınır vakaları (pencerenin son günü, tatil, minimumun 1 altı, `now`'un farklı günleri), `lint`.
+- `cli cases-run out/<slot> [--cases <dosya>] [--only ID,...] [--reps N]`: `tools/run_cases.py` sarmalayıcısı; süre kontrolü (§0), sonuçları JSON'a çevirir.
 
 ```json
-{"cases": [{"id": "", "family": "", "result": "pass|fail|error", "reasons": [], "tool_calls": []}], "pass_rate": 0.0, "rounds": 0, "patch_proposals": [{"node": "", "reason": "", "new_text": ""}]}
+{"cases": [{"id": "", "family": "", "result": "pass|fail|error", "reasons": [], "tool_calls": []}], "pass_rate": 0.0, "reps": 1, "duration_s": 0, "slowest_turn_s": 0}
 ```
 
-- `persona_from_rules(rules, params) -> [Case]`: elle yazılmış tohum davranış türü + kural tablosundaki değerler. Biçim kit'in `public-test-set.json`'una uyacak (kit gelince doğrulanır).
-- Yerel testler (Freya'ya gitmez, maliyet sıfır): `rules.validate`, `derive_params`, `check` kodunun sınır vakaları (pencerenin son günü, tatil, minimumun 1 altı), `validate_workflow`, sızıntı testi.
+- **Kendi vakaları:** ajan yazar (skill'deki tohum davranış türleri + kural tablosundaki değerler), `cli cases-check <dosya>` biçimi doğrular. `checks` kural tablosu satırlarından.
+- Yerel testler (maliyet sıfır, sınırsız): `cli check-test` + kod araçlarının kendi birim testleri (`tests/`) + sızıntı testi. Freya koşusu yalnızca bunlar temizken.
 - **Vaka biçimi** kit'in kökteki `public-test-set.json`'u ile aynı: `id, brief, family, level, title, variables{first_name,last_name,title,now}, identity{...doğru güvenlik cevapları}, products[{type, card_last4?, past_due, days_late, minimum_payment|instalment_amount}], script, expected{outcome, reason, promises[{product_id,amount,date}], notes[{product_id,reason}], callbacks[{date,time}], transfers[{queue}]}, checks[str], faults?[{tool, fail_first_n}]`. Builder'ın ürettiği personalar bu biçimde yazılır; `checks` alanı kural tablosundaki satırlardan üretilir (hakem bunlara göre okuyor).
 - **Pratik banka kısıtı (kit):** `tools/run_cases.py --cases <dosya>` aynı biçimde herhangi bir JSON'u alır, ama her vaka için banka oturumu `POST /v1/practice/sessions {"case": <id>}` ile açılır; **hesap verisi yalnızca bankanın tanıdığı vaka id'lerinden** gelir. Kendi personalarımız = 13 vakanın hesapları + değiştirilmiş `script`/`checks`. Gizli brief koşusunda (araç alanları değişmiş olacak) kendi testi için banka oturumu olup olmayacağı **belli değil → organizatöre sorulacak**. Yoksa kendi testi = yerel testler + `/chat/message` ile kuru konuşma.
 - Freya turları: 1. tur ~8 vaka (kimlik başarısız, sınır tarih, memo'nun değiştirdiği kural, araç hatası, itiraz, zor durum, numarayı iki parçada veren, yazıyla rakam söyleyen), 2. tur yalnızca kalanlar + yama. Tek simülasyon aynı anda çalışır.
-- C yamayı **önerir**, B `overrides` ile uygular. C workflow'u doğrudan düzenlemez.
+- Ajan test sonucunu okur, düzeltir (§2 "Düzeltme"), yeniden `cli deploy` + test. Pratikte (A/B) en fazla 3 tur; gizli brief'te süre izin verdiği kadar.
 
-## 4. Trace (hepsi)
+## 4. Trace (`build.py` + `cli event`)
 
-```python
-class Trace:
-    def __init__(self, brief_id: str, path: str): ...
-    def llm(self, purpose: str, model: str, call: Callable[[], R], *, in_tokens=None, out_tokens=None) -> R
-    def event(self, kind: str, **fields) -> None            # uncertain_default, validate_warning, ...
-    def created(self, what: str, id: str, steps: int | None = None, tools: list[str] | None = None) -> None   # what: workflow|agent
-    def test(self, name: str, result: str, detail: str = "") -> None                                         # pass|fail|error
-    def finish(self) -> None                                 # bitiş zamanı, JSONL -> düz metin
-```
-
-- Çıktı: `traces/<brief_id>.jsonl` ve okunur düz metin `traces/<brief_id>.log`.
-- İçerik sayfanın istediğiyle birebir: başlangıç/bitiş zamanı · her model çağrısı (hangi model, **tek satır amaç**) · Freya'da yaratılan workflow/agent id, adım ve araç sayısı · builder'ın kendi yaptığı test ve sonucu.
-- `purpose` ≤ 100 karakter. Anahtar değerleri çıktıdan maskelenir (ortamdaki bilinen sır değerleri).
+- `build.py` trace dosyasını açar (`traces/<slot>.jsonl`) ve yolunu `TRACE_PATH` ortam değişkeniyle ajana ve araçlara verir. **Ajanın her mesajı ve araç çağrısı** SDK akışından buraya yazılır (kit örneğindeki gibi); model ve maliyet `ResultMessage`'dan.
+- Kod araçları her koşuda bir satır ekler: `{"t": iso, "tool": "cli <komut>", "in": [...], "out": "...", "summary": "..."}`. Ajan ayrıca karar notu düşebilir: `cli event <tür> --msg "..."` (`uncertain_default`, `manual_edit`, `budget_stop`…).
+- `cli deploy` her kayıtta `created` olayı yazar (workflow id, agent id, adım ve araç sayısı). `cli cases-run` / `check-test` `test` olayı yazar.
+- Kapanışta `build.py`, JSONL'den sayfanın istediği düz metni üretir: `traces/<slot>.log` = başlangıç/bitiş zamanı · her model çağrısı (model + **tek satır amaç**) · Freya'da yaratılan workflow/agent id, adım ve araç sayısı · kendi testleri ve sonucu.
+- Anahtar değerleri her iki dosyada maskelenir (ortamdaki bilinen sır değerleri). Teslim edilen `.log` ve `.jsonl` commit edilmeden önce `cli trace-scan` ile taranır.
 
 ## 5. Kit'e bağlı noktalar (v0.3: kapandı, ayrıntı §2 "Derleyici kuralları")
 
