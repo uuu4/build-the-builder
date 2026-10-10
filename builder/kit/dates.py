@@ -48,6 +48,9 @@ params (everything optional except `bands`):
                           starts one minute after the current time. null: callback_check is always 'none'
     calendar_days         the calendar in date_facts covers today and this many days after it, default 21
 
+    order_by              null (the order the account returned, default) or {"field": "past_due" | "days_late",
+                          "descending": true}: the order products are discussed in. Slots, the joined lines and
+                          s<k>_* follow it; each slot still carries its own product id (s<k>_pid)
     slots                 0 (default) or the largest number of products a customer can have. With slots the
                           snippet also writes, for k = 1 .. slots, in the order the account returned the products
                           (empty strings past the last product): s<k>_pid, s<k>_type, s<k>_label, s<k>_due,
@@ -245,6 +248,9 @@ def normalize_params(params):
         p["callback"] = cb
     _need(_is_int(p["calendar_days"]) and 1 <= p["calendar_days"] <= 120, "calendar_days must be an int from 1 to 120")
 
+    ob = p.get("order_by")
+    p["order_by"] = None if not ob else {"field": ob.get("field"), "descending": bool(ob.get("descending", True))}
+    _need(p["order_by"] is None or p["order_by"]["field"] in ("past_due", "days_late"), "order_by.field must be past_due or days_late")
     p.setdefault("slots", 0)
     p["lines"] = dict(p.get("lines") or {})
     p["joined_lines"] = dict(p.get("joined_lines") or {})
@@ -553,6 +559,9 @@ def all_facts(today):
             f['key'] = f['key'] + '_' + str(i + 1)
         used.add(f['key'])
         res.append(f)
+    ob = P.get('order_by')
+    if ob:
+        res = sorted(res, key=lambda f: -(f[ob['field']] or 0) if ob['descending'] else (f[ob['field']] or 0))
     return res
 
 def named_date(nd, today):
