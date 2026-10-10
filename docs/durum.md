@@ -52,7 +52,7 @@ python3 -m unittest builder.tests.test_kit
 1. **Çok ürün:** ürün başına ikna merdiveni (PUB-12: deneme sayısı ürün başına tutulmuyor) ve müşterinin tek tarihinin her ürünün son tarihine göre **kodla** düzeltilmesi (PUB-13).
 2. **Teklif tekrarı (PUB-06):** aynı tutarın yalnızca tarihi değişiyorsa sadece tarih sorulmalı; skill'e yazıldı, ölçülmedi.
 3. Brief R'nin temiz şartname versiyonuyla ikinci genelleme testi; farklı alanlı bir `openapi` ile lint/kurulum denemesi.
-4. `docs/interfaces.md` güncellenmeli: sözleşmedeki `rules.json -> compile` yerine ajan kit'i kullanan `out/<slot>/gen.py` yazıyor; S+K (skill, kit) Emre'nin alanı, bu iş Latif'in isteğiyle yapıldı.
+4. ~~`docs/interfaces.md` güncellenmeli~~ yapıldı: v1.0 gerçek mimariyi anlatıyor (`docs/interfaces.md`), eskisi `docs/archive/`'da; teslim: `docs/teslim.md`, ön kontrol: `tools/preflight.py`.
 
 ## Bilinen platform tuzakları
 
