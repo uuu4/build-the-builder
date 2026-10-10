@@ -19,7 +19,7 @@ Work from the kit folder. Use only what the brief and the tool API file say. Do 
    - Leave `agent_config` out.
 5. Save it: `python3 -c "import freya,json,sys; print(json.dumps(freya.save_workflow(sys.argv[1], json.load(open(sys.argv[2])))))" <slot> out/<slot>.workflow.json`
    It prints `workflow_id` and `agent_id`. The same slot updates the same workflow.
-6. Test it: `python3 tools/run_cases.py <agent_id> --brief A` (use `--brief B` when you were given Brief B). A run takes 3 to 11 minutes.
+6. Test it: `python3 tools/run_cases.py <agent_id> --brief A` (use `--brief B` when you were given Brief B). A run takes 3 to 11 minutes. Run it in the foreground and wait for it to finish. Never start it in the background and never end your turn while a test is running: the builder stops when you stop.
 7. Read each FAIL line and its reason. Change the workflow file, save it again, test again. Do this at most three times.
 8. Finish with one line: the `workflow_id`, the `agent_id` and how many customers passed in the last run.
 

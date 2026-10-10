@@ -26,6 +26,9 @@ async def main(briefs):
         allowed_tools=["Read", "Write", "Edit", "Glob", "Grep", "Bash"],
         permission_mode="dontAsk",             # anything not listed above is refused
         max_turns=150,
+        # A test run takes up to 11 minutes. Let a command run that long, and keep it in the foreground:
+        # the builder stops when Claude ends its turn, so a test left in the background is never read.
+        env={"BASH_DEFAULT_TIMEOUT_MS": "900000", "BASH_MAX_TIMEOUT_MS": "1200000", "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS": "1"},
     )
     prompt = "Use the build-phone-agent skill to build a phone agent for: " + " ".join(briefs)
     with trace.open("w") as out:

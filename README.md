@@ -1,7 +1,8 @@
 # Build the Builder
 
-**Kit version 2** (10 October 2026). The file `VERSION` holds the number. When we update the kit, the number goes up and the changes are listed here.
+**Kit version 3** (10 October 2026). The file `VERSION` holds the number. When we update the kit, the number goes up and the changes are listed here.
 
+- v3: the example builder waits for its own test run (up to 20 minutes per command) instead of stopping before the results arrive. On Brief A it built an agent that passed 10 of the 10 practice customers in one run.
 - v2: `examples/base-agent.json` (an example phone agent) and `examples/agent_builder.py` with the skill `.claude/skills/build-phone-agent` (an example builder) replace `examples/minimal_builder.py`.
 - v1: first release.
 
