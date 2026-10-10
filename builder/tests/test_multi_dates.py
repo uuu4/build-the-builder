@@ -105,11 +105,42 @@ class Flow(unittest.TestCase):
         self.assertEqual(run(self.nodes, "all_yes", v), "m_readback")
         self.assertEqual((v["date_1"], v["adj_1"], v["date_2"], v["adj_2"]), ("2026-10-30", "", "2026-10-23", "1"))
 
-    def test_a_vague_time_for_everything_asks_per_product(self):
-        v = self.start([CARD, LOAN])
-        v.update(m_today_turn="proposes", m_today_scope="all", agreed_date="next week")
-        self.assertEqual(run(self.nodes, "all_yes", v), "p1_attempt1_full")
+    def test_a_vague_time_is_asked_once_then_the_deadline_is_proposed(self):     # PUB-07
+        v = self.start([dict(LOAN, days_late=5, past_due=540.0, instalment_amount=180.0)])
+        v.update(m_today_turn="proposes", agreed_date="the week after next")
+        self.assertEqual(run(self.nodes, "all_yes", v), "m_today")                 # the model asks for the exact day
         self.assertEqual(v.get("st_1", ""), "")
+        v.update(m_today_turn="proposes", agreed_date="26 October")              # a holiday in Brief B's calendar
+        self.assertEqual(run(self.nodes, "all_yes", v), "m_readback")
+        self.assertEqual((v["date_1"], v["mov_1"]), ("2026-10-27", "1"))
+        v = self.start([CARD, LOAN])
+        for _ in range(2):
+            v.update(m_today_turn="proposes", m_today_scope="all", agreed_date="")
+            r = run(self.nodes, "all_yes", v)
+        self.assertEqual(r, "m_readback")                                         # second vague answer: the latest dates
+        self.assertEqual((v["date_1"], v["adj_1"], v["date_2"], v["adj_2"]), (v["s1_deadline"], "1", v["s2_deadline"], "1"))
+
+    def test_no_to_today_goes_to_the_ladders(self):
+        v = self.start([CARD, LOAN])
+        v.update(m_today_turn="accepts", m_today_scope="all", agreed_date="")
+        v["m_today_turn"] = "refuses"
+        self.assertEqual(route(self.nodes["m_today"], v), "enter_1")
+
+    def test_a_date_named_for_one_product_at_the_start_is_kept(self):            # PUB-12, second live run
+        prods = [dict(CARD, days_late=16, past_due=510.0, minimum_payment=153.0), dict(LOAN, days_late=16, past_due=1320.0), dict(CAR, days_late=7, past_due=140.0)]
+        v = self.start(prods)
+        v.update(m_today_turn="proposes", m_today_scope="some", m_today_when_1="tomorrow")
+        self.assertEqual(route(self.nodes["m_today"], v), "enter_1")
+        self.assertEqual(run(self.nodes, "enter_1", v), "p2_attempt1_full")       # card agreed on its own date, loan asked
+        self.assertEqual((v["st_1"], v["date_1"], v["amt_1"]), ("agreed", "2026-10-15", "510"))
+        self.assertEqual(v["m_today_when_1"], "")
+        v.update(m_today_when_2="tomorrow", m_today_amount_2="100")              # below the loan's floor: asked, not agreed
+        self.assertEqual(run(self.nodes, "enter_2", v), "p2_attempt1_full")
+        self.assertEqual(v.get("st_2", ""), "")
+
+    def test_read_back_and_fix_carry_the_rules_of_the_call(self):
+        self.assertIn("robot", self.nodes["m_readback"]["task_message"])
+        self.assertIn("RULES OF THE CALL", self.nodes["m_fix"]["task_message"])
 
     def test_weekend_day_moves_to_the_next_business_day_and_says_so(self):
         v = self.start([CARD, LOAN])
@@ -119,7 +150,7 @@ class Flow(unittest.TestCase):
         self.assertEqual((v["date_1"], v["mov_1"], v["adj_1"]), ("2026-10-19", "1", ""))
         v.update(st_2="noted", reason_2="refused")
         run(self.nodes, "finish", v)
-        self.assertIn("Monday 19 October 2026 (the next business day)", v["readback"])
+        self.assertIn("Monday 19 October 2026 (the day you named is not a business day", v["readback"])
 
     def test_holiday_moves_too(self):
         v = self.start([CARD])

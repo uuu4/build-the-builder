@@ -40,7 +40,7 @@ Spec (JSON, every value from the brief; the ladder template is a ladder.py spec 
              too much; a step may carry "offer": {"amount_var": "s{k}_due", "date_var": "end_of_week_iso"}, the
              variables holding the amount and date it proposed, used when the customer just says yes},
   "readback": {"intro": "Let me read back what we agreed. ", "item": "<label>: <amount> on <date>",
-               "adjusted": " (the latest date I can record for it)", "moved": " (the next business day)", "sep": "; ",
+               "adjusted": " (the latest date I can record for it)", "moved": " (the day you named is not a business day, ...)", "sep": "; ",
                "ask": " Do you confirm?"},
   "next_weekday": "following_week" | "nearest",     optional: what "next Friday" means in the brief (default following_week)
   "max_fixes": 3,        optional: changes to the read-back before the call ends without a promise
@@ -242,8 +242,19 @@ try:
     n = int(num(vars.get('product_count')))
     vars['cur_slot'] = str(k)
     cd = str(vars.get('carry_date') or '')
+    pw = str(vars.get('m_today_when_%d' % k) or '')
+    pa = num(vars.get('m_today_amount_%d' % k), 0.0)
+    vars['m_today_when_%d' % k] = ''
+    vars['m_today_amount_%d' % k] = ''
+    due = num(vars.get('s%d_due' % k), 0.0)
+    if pa <= 0 or pa > due:
+        pa = due
     if k > n:
         vars[P['rv']] = 'done'
+    elif pw != '' and pa >= num(vars.get('s%d_floor' % k), 0.0) and settle(k, resolve_when(pw)) != '':
+        vars['st_%d' % k] = 'agreed'                 # named for this product in the first answer ("the card tomorrow")
+        vars['amt_%d' % k] = money(pa)
+        vars[P['rv']] = 'auto'
     elif cd != '' and settle(k, resolve_when(cd)) != '':
         vars['st_%d' % k] = 'agreed'
         vars['amt_%d' % k] = money(vars.get('s%d_due' % k))
@@ -302,7 +313,20 @@ try:
         d0 = day_today()                     # yes to "can you pay all of this today?"
     vars['agreed_date'] = ''
     vars['agreed_amount'] = ''
-    if d0 is None or d0 < day_today():
+    proposed = str(vars.get(P['turn_var']) or '') == 'proposes'
+    if (d0 is None or d0 < day_today()) and proposed:
+        vc = int(num(vars.get('vague_count'), 0.0)) + 1
+        vars['vague_count'] = str(vc)
+        if vc <= 1:
+            vars[P['rv']] = 'ask'                # back to the first step: the model asks once for the exact day
+        else:
+            for k in range(1, n + 1):            # still no day: propose each product's latest date, read back for a yes
+                settle(k, datetime.date.fromisoformat(str(vars.get('s%d_deadline' % k))))
+                vars['adj_%d' % k] = '1'
+                vars['st_%d' % k] = 'agreed'
+                vars['amt_%d' % k] = money(vars.get('s%d_due' % k))
+            vars[P['rv']] = 'ok'
+    elif d0 is None or d0 < day_today():
         vars[P['rv']] = 'unclear'            # no day yet: the product ladders ask
     else:
         for k in range(1, n + 1):
@@ -344,7 +368,7 @@ try:
         if str(vars.get('adj_%d' % k) or '') == '1':
             item = item + R['adjusted'].replace('<label>', str(vars.get('s%d_label' % k)))
         elif str(vars.get('mov_%d' % k) or '') == '1':
-            item = item + R.get('moved', ' (the next business day)')
+            item = item + R.get('moved', ' (the day you named is not a business day, so this is the next business day)')
         parts.append(item)
     if parts:
         vars['readback'] = R['intro'] + R['sep'].join(parts) + '.' + R['ask']
@@ -491,7 +515,18 @@ def build(api, spec, ladder_tpl=None):
         g.and_eq("all_yes", [[(turn, kd), (sc, sv)] for kd in ("accepts", "proposes") for sc, sv in (("m_today_scope", "all"), ("product_count", "1"))],
                  "agrees or proposes for every product"),
         g.any_eq("enter_1", turn, ["accepts", "proposes"], "talks about some products: one product at a time")]
-    nodes["all_yes"] = _code("all_yes", _WHEN + _ALL_YES, "close_error", _eqs("all_route", [("ok", "finish"), ("unclear", "enter_1")]),
+    if K > 1:      # a date (and amount) the first answer gives for one product; enter_<k> agrees that product on it
+        for k in range(1, K + 1):
+            nth = ["first", "second", "third", "fourth", "fifth"][k - 1] if k <= 5 else f"number {k}"
+            mt["extraction_schema"] += [
+                {"name": f"m_today_when_{k}", "type": "string", "min_confidence": 0.6, "description":
+                 f"The payment date the customer named for the {nth} product read out in the statement, in their own words "
+                 "(for example 'tomorrow', 'Friday', 'the 30th'). Empty if they named no date for that product, or if their "
+                 "date is for every product."},
+                {"name": f"m_today_amount_{k}", "type": "float", "min_confidence": 0.6, "description":
+                 f"The amount the customer said they will pay for the {nth} product read out, if they named one for it."}]
+    nodes["all_yes"] = _code("all_yes", _WHEN + _ALL_YES, "close_error",
+                             _eqs("all_route", [("ok", "finish"), ("unclear", "enter_1"), ("ask", "m_today")]),
                              turn_var=turn, next_weekday=nw)
     nodes["floor_mark"] = _code("floor_mark", _FLOOR_MARK, "close_error", _eqs("floor_route", [("ok", "enter_1")]))
 
@@ -535,12 +570,14 @@ def build(api, spec, ladder_tpl=None):
     nodes["finish"] = _code("finish", _FINISH, "close_error",
                             _eqs("finish_route", [("readback", "m_readback"), ("record", "rg_1")]), readback=spec["readback"])
     rb_kinds = ["confirms", "changes", "other"]
+    rb_rules = ("\n\nRULES OF THE CALL:\n" + "\n".join("- " + r for r in base_rules)) if base_rules else ""
     nodes["m_readback"] = g.conversation(
         "m_readback",
         "You have read back every agreed promise in one message and asked for one confirmation. The customer's identity is verified.\n"
         "- A clear yes is a confirmation. Do not call any tool; the system records the promises.\n"
         "- If they want to change a date or an amount, or drop a product, say nothing about recording: the system asks what to change.\n"
-        "- Never say anything is recorded or booked.",
+        "- If they ask a question (for example whether you are a robot), answer it in one sentence, then ask again whether they confirm.\n"
+        "- Never say anything is recorded or booked." + rb_rules,
         [g.eq("rg_1", "rb_turn", "confirms", "confirmed"), g.eq("m_fix", "rb_turn", "changes", "wants a change")],
         extract=[g.enum_field("rb_turn", rb_kinds,
                               "Classify ONLY the customer's last message. confirms: a clear yes to the read-back. changes: they want a different date or amount, "
@@ -550,7 +587,7 @@ def build(api, spec, ladder_tpl=None):
         "m_fix",
         "The customer wants to change something in what you read back. The customer's identity is verified.\n"
         "Find out which product and what: a new date, a new amount, or dropping it. Do not compute dates yourself; just collect what they say. "
-        "Product numbers follow the order of the read-back (1 is the first product read).",
+        "Product numbers follow the order of the read-back (1 is the first product read)." + rb_rules,
         [g.any_eq("apply_fix", "fix_kind", ["change", "drop"], "a change was named"), g.eq("finish", "fix_kind", "none", "no change after all")],
         extract=[g.enum_field("fix_kind", ["change", "drop", "none", "unknown"],
                               "change: they name a new date or amount. drop: they no longer want to promise a product. none: they changed their mind and the read-back is fine. unknown: not yet clear.", 0.7),
