@@ -1,4 +1,6 @@
-# Arayüz sözleşmesi (taslak v0.4, 2026-10-10)
+# Arayüz sözleşmesi (taslak v0.4.1, 2026-10-10)
+
+**v0.4.1** (Latif'in ajanı, #3): ajanın `workflow.json`'a elle müdahalesi **yalnızca `lint` hatasını gidermek için** (yeniden koşturma doğrulamasında koşudan koşuya fark prompt metnine insin) · iki gizli brief **sırayla** koşar, `build.py` çalışan simülasyon varsa `cases-run`'ı atlar. Sahiplik: O katmanı Latif'in tarafında.
 
 **v0.4 değişiklikleri** (Emre kararı: **hibrit**): builder = deterministik `build.py` + Claude Agent SDK ajanı (kit örneği gibi) + ajanın çağırdığı kod araçları (`builder.cli`). §0 baştan yazıldı (katmanlar, adım tablosu, skill'ler, süre, yedek yol). §2: `compile_workflow` → `cli compile` (girdi `params.json` + ajanın yazdığı `prompts.json`); C→B yama önerisi kalktı, **ajan düzeltir**. §3: test kod araçlarıyla, ajan okur. §4: trace = SDK akışı + `cli event`. RuleTable şeması (§1) ve derleyici kuralları değişmedi.
 
@@ -32,7 +34,7 @@ python3 builder/build.py <brief_path> <tool_api_path>      # tek komut, elle mü
 | 4. parametreler | kod | `cli params` → `out/<slot>/params.json` (§2 `BackboneParams`) |
 | 5. düğüm prompt'ları | ajan | `out/<slot>/prompts.json` (§2) |
 | 6. derle | kod | `cli compile` → `out/<slot>/workflow.json` (omurga şablonu + 3 + 4 + 5) |
-| 7. (gerekirse) brief'e özgü düzenleme | ajan | `workflow.json`'u elle düzenler; sonra 8 **zorunlu** |
+| 7. (yalnızca lint hatası varsa) elle düzeltme | ajan | `workflow.json`'da yalnızca lint'in gösterdiği yer; sonra 8 **zorunlu**, sayısı trace'te |
 | 8. lint + dryRun + kaydet | kod | `cli deploy` → `out/<slot>/deployed.json` (`workflow_id`, `agent_id`) |
 | 9. test | kod çalıştırır, ajan okur | `cli check-test` (yerel), `cli cases-run` (Freya) → `out/<slot>/test-*.json` |
 | 10. düzelt | ajan | 5 ya da 7'ye döner; bütçe izin verdikçe |
@@ -47,7 +49,7 @@ python3 builder/build.py <brief_path> <tool_api_path>      # tek komut, elle mü
 - `freya-workflow-rules`: §2 "Derleyici kuralları (kit)" özeti; ajanın `workflow.json`'u elle düzenlerken uyacağı kurallar.
 Skill'lerde **hiçbir brief değeri yok** (sızıntı testi skill'leri de tarar).
 
-**Süre (30 dk/brief):** `build.py` başlarken `BUILD_DEADLINE` (epoch) ortam değişkenini koyar. Öneri: ajana 25 dk, son 5 dk `build.py`'nin kapanışı. `cli cases-run`, kalan süre bir koşuya yetmiyorsa (`< 12 dk`) **koşmayı reddeder** ve bunu söyler. Süre dolunca `build.py` ajanı durdurur ve son geçerli `workflow.json`'la kapanır; geçerli yoksa `cli compile`'ı mevcut `params.json` + varsayılan prompt'larla koşturup onu teslim eder (**yedek yol**).
+**Süre (30 dk/brief):** `build.py` başlarken `BUILD_DEADLINE` (epoch) ortam değişkenini koyar. Öneri: ajana 25 dk, son 5 dk `build.py`'nin kapanışı. `cli cases-run`, kalan süre bir koşuya yetmiyorsa (`< 12 dk`) **koşmayı reddeder** ve bunu söyler. **İki gizli brief sırayla koşar** (çalışma alanı başına aynı anda 1 simülasyon; paralel koşan ikincinin `cases-run`'ı kuyrukta 30 dk'yı yer). `build.py` başlarken çalışan bir simülasyon varsa beklemez, o koşuda `cases-run`'ı devre dışı bırakır ve `budget_stop` olayı yazar. Toplam 2 × 30 dk, 3 saatlik pencerenin içinde. Süre dolunca `build.py` ajanı durdurur ve son geçerli `workflow.json`'la kapanır; geçerli yoksa `cli compile`'ı mevcut `params.json` + varsayılan prompt'larla koşturup onu teslim eder (**yedek yol**).
 
 Önerilen dizin: `builder/{build.py, cli/, templates/, trace.py}`, `.claude/skills/<ad>/SKILL.md`, `tests/`, `out/`, `traces/`, `submission/`.
 
@@ -160,7 +162,7 @@ Okuma stratejisi (ajanın işi, skill `read-collections-brief` anlatır; arayüz
 - **Araç hatası:** `record` başarısızsa önce `tool_retry` kadar **yeniden dener** (sonuç: tam bir söz kaydı), "kaydettim" yalnızca başarılı cevaptan sonra söylenir. Yeniden denemeler de tükenirse `close_tool_fail` (dürüst cümle). Geçiş koşulu araç cevap değişkeninden (`create_promise_response...`), modelden değil.
 - **Çok ürün:** `disclose` bütün ürünleri sormadan önce söyler; `negotiate` ürün başına bandın sınırını uygular; tek geri okuma, tek onay; `record` ürün başına bir `create_promise`; reddedilen ürüne `refusal_per_product` (örn. `add_note`, reason `refused`).
 - Sayı kuralları (`attempts`) ve zorunlu cümleler (`statements`) ilgili düğümün prompt'una **sayı olarak** yazılır ("en fazla 1 kez"); mümkünse sayaç değişkeniyle rota (kit'te doğrulanacak).
-- **Düzeltme:** ajan önce `prompts.json`'u değiştirip yeniden derler. Omurgaya sığmayan bir şey gerekiyorsa `workflow.json`'u doğrudan düzenleyebilir; bu durumda `cli deploy` öncesi lint zorunlu ve değişiklik trace'e (`cli event manual_edit ...`) yazılır. `rules.json` değişirse `cli params` + `cli compile` baştan.
+- **Düzeltme:** ajan yalnızca `rules.json` ve `prompts.json`'u değiştirir, sonra `cli params` / `cli compile` ile yeniden derler. Omurga ve kod düğümleri her koşuda aynı çıkar; koşular arası fark prompt metnine iner (yeniden koşturma doğrulaması: ilk 10'un builder'ını organizatör koşturur, "clearly below" ise giriş silinir). `workflow.json`'a elle müdahale **yalnızca `cli lint` hatasını gidermek için**; her biri `cli event manual_edit ...` ile trace'e. Omurgaya sığmayan kural yeni rota açmaz, ilgili düğümün prompt'una metin olarak girer.
 - **`cli lint out/<slot>/workflow.json`** (yerel, saniyeler): bütün `target_node`'lar ve `initial_node` var · kullanılan her araç tanımlı · boş prompt yok · kod düğümlerinde `{{`/`}}` yok, `initial_node` kod düğümü değil · `agent_config` yok · `const` yok · her extraction alanında `min_confidence` · `close_call` workflow düzeyinde `end_of_call`, `outcome`/`reason` `default: "{{final_outcome}}"`/`"{{final_reason}}"` ve `final_outcome` kimlikten önce yazılıyor · yazan araçlarda `maxRetries: 0` · her `api_call` aracında `post_process_code` (`what_to_do_next`). Hata listesi JSON.
 
 ### Derleyici kuralları (kit'ten, v0.3)
