@@ -38,3 +38,19 @@ R2 canlı ölçülemiyor: pratik banka R2 vaka numaralarını tanımıyor (`unkn
 4. `m_readback` tts'siz girişte okuma satırını yeniden söylesin.
 
 Bu düzeltmeler gelene kadar tek ürünlü brief'te ladder.py yolu daha iyi (A: 9/10 ve 7/10).
+
+## Düzeltmeden sonra (2026-10-10, 23:00 TSİ)
+
+Latif'in isteğiyle düzeltmeyi biz yaptık (`multi.py`, `dates.py`, `ladder.py`, `freya.py`; dal `claude/cool-cori-xe7git`). Yeni ajanlar: `fix-multi-a` 988d3926, `fix-multi-b` f15bb0cb.
+
+| Sürüm | A (3 tekrar) | B (3 tekrar) | Ne değişti |
+|---|---|---|---|
+| ilk kit | 7/10 | 1/3 | |
+| düzeltme 1 (`dd18bf6`) | 8/10 | 2/3 | tarih metin olarak çıkarılıp kodda `now`'a göre çözülüyor; tek ürünlü cevap "hepsi bugün" adımından ürün merdivenlerine gidiyor; okuma her girişte söyleniyor; düzeltme döngüsü 3'te kesiliyor |
+| düzeltme 2 (`443400f`) | takıldı | **3/3** | ilk cevapta ürüne özel tarih/tutar korunuyor; belirsiz zamanda bir kez kesin gün soruluyor, sonra son tarih öneriliyor |
+| düzeltme 3 (`8c0c5e6`) | 9/10 | 2/3 | "Monday the 26th" ayın 26'sı; okuma aynı mesajdaki soruyu önce cevaplıyor |
+| düzeltme 4 (`2bdeceb`) | **10/10** | **3/3** | cevap türü eşiği 0,3 (PUB-12'de "refuses" 0,56 güvenle atılmış, model kendi teklif uydurmuştu); okuma birebir kopyalanıyor |
+
+Platform notları:
+- A simülasyonu iki kez bütün kararlar geldikten sonra bir saat "running" kaldı ve çalışma alanını kilitledi (bir arama "initiating" durumunda kalıyor). `freya.run_simulation` artık son karardan 2 dk sonra simülasyonu iptal edip sonuçları okuyor (`60c2c67`, `POST /api/v2/simulations/{id}/cancel`).
+- Son ölçümde A'nın iki koşusu model yavaş olduğu için atıldı (kural gereği). Atılan koşularda bir PUB-03 araması dört `verify` sonrası söz kaydetti; yavaş model altında kimlik kapısı ayrıca incelenmeli.
