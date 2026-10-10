@@ -27,3 +27,25 @@ Anahtarsız, dokümandan derlendi (docs.freyavoice.ai, 2026-10-08). **Canlıda d
 - Hackathon bu API'yi mi, özel bir harness/SDK'yı mı kullanıyor?
 - Rate limit, kredi maliyeti, simülasyon süresi/koşu hakkı.
 - `handler` biçimi; `assertions` UUID'lerinin neyi gösterdiği; puanın hesaplanması.
+
+## Duman testi sonuçları (2026-10-10, kit v3, Latif'in çalışma alanı)
+
+Takımın tek çalışma alanı ve tek anahtarı Latif'inki (issue #3). Hepsi `examples/base-agent.json` ile.
+
+| Adım | Sonuç | Süre |
+|---|---|---|
+| `GET /api/v2/workspaces` | tek çalışma alanı döndü, `freya.workspace_id()` onu seçiyor | — |
+| `validate_workflow` (dryRun) | `{"valid": true, "dryRun": true}`. Hatalı workflow'da ne döndüğü henüz denenmedi | 0,4 sn |
+| `save_workflow` ilk çağrı | yarattı, `{workflow_id, agent_id}` döndü | 0,5 sn |
+| `save_workflow` ikinci çağrı | güncelledi + modeli `experimental-5`'e çekti + yayınladı (sürüm 1) | 1,3 sn |
+| `/chat/message` 2 tur | çalışıyor: "Am I speaking with the account holder?" → borcu söylemeden doğum tarihini sordu | 1,5–2,2 sn/tur |
+| `run_cases.py --brief A --only PUB-01` | simülasyon `completed`, **32 sn**, en yavaş ajan turu 3 sn | 32 sn |
+
+PUB-01 sonucu **FAIL**. Bu beklenen bir sonuç, README'ye göre örnek ajan 13 vakanın 2'sini geçiyor. Bilgi verici olan kısım:
+- Banka kaydı doğruydu: `verify > verify > get_account > promise > close_call`.
+- Kalan konuşma kontrolü: söz kaydedildikten sonra "SMS ile onay gönderilecek" cümlesi söylenmedi.
+- Demek ki **Outcome geçip Policy/Honesty'de kalmak** gerçek bir risk. Brief'teki zorunlu cümleler (`statement` türü) önemli.
+
+Notlar:
+- `create_workflow` modeli ayarlamıyor. İlk kayıttan sonra bir kez daha `save_workflow` (güncelle + yayınla) gerekiyor, yoksa sohbet başlamayabilir (`freya.py` yorumu).
+- `.freya-agents.json`, `.personas.json`, `results/` çalışma alanına özgü, `.gitignore`'a eklendi.
