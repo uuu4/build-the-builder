@@ -46,6 +46,7 @@ Spec (JSON, every value from the brief; the ladder template is a ladder.py spec 
              "new_plan": {"outcome": "...", "reason": "...", "farewell": "..."}, "hardship": {...}, "human": {...},
              "error": {"outcome": "...", "reason": "...", "farewell": "..."}},
   "situations": {"paid": "sentence spoken when the customer says a product is paid", "dispute": "..."},   optional
+  "notes": true,         optional. false when the brief takes no notes (a product without a promise is only closed on)
   "tools": {"promise": "create_promise", "note": "add_note", "transfer": "transfer_to_agent"}   optional
 }
 `build` returns the nodes; enter at `m_today`. Targets it uses that you provide: nothing (every node is built here).
@@ -268,7 +269,7 @@ k = P['k']
 st = str(vars.get('st_%d' % k) or '')
 if st == 'agreed':
     vars[P['rv']] = 'promise'
-elif st == 'noted' and str(vars.get('reason_%d' % k) or '') != '':
+elif st == 'noted' and P['notes'] and str(vars.get('reason_%d' % k) or '') != '':
     vars[P['rv']] = 'note'
 else:
     vars[P['rv']] = 'skip'
@@ -413,13 +414,18 @@ def build(api, spec, ladder_tpl=None):
     for k in range(1, K + 1):
         nxt = f"rg_{k + 1}" if k < K else "final"
         nodes[f"rg_{k}"] = _code(f"rg_{k}", _GATE, "close_error",
-                                  _eqs("gate_route", [("promise", f"rec_{k}"), ("note", f"note_{k}"), ("skip", nxt)]), k=k)
+                                  _eqs("gate_route", [("promise", f"rec_{k}"), ("note", f"note_{k}"), ("skip", nxt)]), k=k,
+                                  notes=bool(spec.get("notes", True)))
+        body = {"product_id": "{{s%d_pid}}" % k, "amount": "{{amt_%d}}" % k, "date": "{{date_%d}}" % k}
+        # two explicit tries: a failure answered with ok false is not an HTTP error, so a retry setting on the call would not fire
         nodes[f"rec_{k}"] = g.api_request(
-            f"rec_{k}",
-            api.pre_action(pt, {"product_id": "{{s%d_pid}}" % k, "amount": "{{amt_%d}}" % k, "date": "{{date_%d}}" % k}, retries=1),
-            f"recfail_{k}", transitions=[g.is_true(f"recok_{k}", f"rec_{k}_response.data.ok", "recorded")])
+            f"rec_{k}", api.pre_action(pt, body, retries=0), f"rec2_{k}",
+            transitions=[g.is_true(f"recok_{k}", f"rec_{k}_response.data.ok", "recorded")])
+        nodes[f"rec2_{k}"] = g.api_request(
+            f"rec2_{k}", api.pre_action(pt, body, retries=0), f"recfail_{k}",
+            transitions=[g.is_true(f"recok_{k}", f"rec2_{k}_response.data.ok", "recorded on the second try")])
         nodes[f"recok_{k}"] = _code(f"recok_{k}", _REC_OK, "close_error", _eqs("rec_route", [("ok", nxt)]), k=k)
-        nodes[f"recfail_{k}"] = _code(f"recfail_{k}", _REC_FAIL, "close_error", _eqs("rec_route", [("failed", f"note_{k}")]), k=k, reasons=reasons)
+        nodes[f"recfail_{k}"] = _code(f"recfail_{k}", _REC_FAIL, "close_error", _eqs("rec_route", [("failed", f"note_{k}" if spec.get("notes", True) else nxt)]), k=k, reasons=reasons)
         nodes[f"note_{k}"] = g.api_request(
             f"note_{k}", api.pre_action(nt, {"product_id": "{{s%d_pid}}" % k, "reason": "{{reason_%d}}" % k}, retries=2), nxt)
     nodes["final"] = _code("final", _FINAL, "close_error",

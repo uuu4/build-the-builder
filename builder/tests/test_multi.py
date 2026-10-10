@@ -38,11 +38,13 @@ def holds(cond, vars_):
     return all(results) if cond.get("logic") == "and" else any(results)
 
 
-def run(nodes, name, vars_, limit=60, down=()):
+def run(nodes, name, vars_, limit=60, down=(), path=None):
     """Follow code nodes from `name` until a node that is not code. Returns the name of that node.
     `down`: names of code nodes the sandbox does not run (the platform skips the code and goes on to the transitions)."""
     for _ in range(limit):
         n = nodes[name]
+        if path is not None:
+            path.append(name)
         if n["node_type"] != "code":
             return name
         src = n["pre_actions"][0]["function"]["parameters"]["properties"]["code"]["default"]
