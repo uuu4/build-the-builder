@@ -1,23 +1,30 @@
 """Checks before the hidden-run submission. Nothing here changes a file.
 
-    python3 tools/preflight.py                                  tests, secret scan, git state
+    python3 tools/preflight.py                                  this machine, tests, secret scan, git state
+    python3 tools/preflight.py --skip-env                       the same without the machine checks (a machine that only reviews)
     python3 tools/preflight.py hidden-1=ours-hidden-1 hidden-2=ours-hidden-2
                                                                  also the submitted workflows and traces; prints the form
 
 `name=slot`: `name` is the key in the submission form (hidden-1), `slot` the slot build.py used (its default is
-ours-<brief file name>). Exit code 0 when every check passes.
+ours-<brief file name>). Exit code 0 when every check passes; WARN lines (the practice bank cannot be reached) do not
+fail it but matter: the builder's own tests will be unavailable.
 """
 import glob
+import importlib
 import json
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SKIP_DIRS = {".git", "__pycache__", "results", ".claude/jobs"}
 KEY_RE = re.compile(r"fak_[A-Za-z0-9]{16,}")
+BANK_HOST = os.environ.get("FREYA_BANK_HOST", "https://freya-bank-mock.freyavoice.workers.dev")
 problems, notes = [], []
 
 
@@ -32,6 +39,68 @@ def ok(msg):
 def bad(msg):
     problems.append(msg)
     print("  FAIL " + msg)
+
+
+def warn(msg):
+    notes.append(msg)
+    print("  WARN " + msg)
+
+
+def check_python(version=None):
+    v = version or sys.version_info[:2]
+    (ok if tuple(v) >= (3, 10) else bad)(f"Python {v[0]}.{v[1]} (3.10 or newer)")
+
+
+def check_sdk(import_fn=importlib.import_module):
+    """The builder's agent runs on the Claude Agent SDK. Without it build.py ends in a second with 'no workflow to submit'."""
+    try:
+        import_fn("claude_agent_sdk")
+        ok("claude_agent_sdk is installed")
+    except ImportError:
+        bad("claude_agent_sdk is not installed: pip install claude-agent-sdk (build.py would end at once with 'no workflow to submit')")
+
+
+def check_keys(env=os.environ, which=shutil.which):
+    for name in ("FREYA_API_KEY", "FREYA_BANK_TEAM_KEY"):
+        (ok if env.get(name) else bad)(f"{name} is set" if env.get(name) else f"{name} is not set (source env.sh)")
+    if env.get("ANTHROPIC_API_KEY"):
+        ok("ANTHROPIC_API_KEY is set")
+    elif which("claude"):
+        ok("claude CLI found (the SDK uses its login; make sure you are logged in)")
+    else:
+        bad("no ANTHROPIC_API_KEY and no claude CLI: the builder's agent cannot call a model")
+
+
+def reachable(url, headers=None, timeout=12):
+    """True when the host answers (any HTTP status), False when the connection fails or is reset."""
+    req = urllib.request.Request(url, headers=headers or {"User-Agent": "Mozilla/5.0 (build-the-builder preflight)"})
+    try:
+        urllib.request.urlopen(req, timeout=timeout)
+        return True, ""
+    except urllib.error.HTTPError:
+        return True, ""
+    except Exception as e:                                          # URLError, reset, timeout
+        return False, f"{type(e).__name__}: {e}"
+
+
+def check_network(env=os.environ, probe=reachable):
+    url = env.get("FREYA_API_URL", "https://staging-app.freyavoice.ai")
+    up, why = probe(url)
+    (ok if up else bad)(f"Freya platform reachable ({url})" if up else f"Freya platform not reachable ({why})")
+    up, why = probe(BANK_HOST)
+    if up:
+        ok(f"practice bank reachable ({BANK_HOST})")
+    else:
+        warn(f"practice bank NOT reachable ({why}). The builder still runs, but its own tests end as TEST_UNAVAILABLE. "
+             "Some networks cut *.workers.dev: use a VPN or another machine.")
+
+
+def environment():
+    print("0. this machine (where the builder will run)")
+    check_python()
+    check_sdk()
+    check_keys()
+    check_network()
 
 
 def tests():
@@ -109,8 +178,10 @@ def submission(name, slot):
 
 
 def main(argv):
-    pairs = [a.split("=", 1) for a in argv if "=" in a]
+    pairs = [a.split("=", 1) for a in argv if "=" in a and not a.startswith("--")]
     print("preflight (changes nothing)")
+    if "--skip-env" not in argv:
+        environment()
     tests()
     secrets()
     head = git_state()

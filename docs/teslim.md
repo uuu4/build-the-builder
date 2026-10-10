@@ -4,7 +4,7 @@ Saatler TSİ. Gizli brief'ler **20:00** (17:00 UTC), teslim **23:00** (20:00 UTC
 
 ## 0. Pazar öğlene kadar (hazırlık)
 
-- [ ] `main` güncel, `python3 tools/preflight.py` temiz (testler, anahtar taraması, git).
+- [ ] `main` güncel, **koşacak makinede** `python3 tools/preflight.py` temiz: Python ≥ 3.10, `claude_agent_sdk` kurulu, Freya ve Claude anahtarları, Freya platformu erişilebilir, testler (sızıntı dahil), dosyalarda anahtar yok, git itildi. Banka erişilemezse `WARN` basar (hata değil): builder çalışır ama kendi testi `TEST_UNAVAILABLE` olur.
 - [ ] **Koşacak makine bankaya erişebiliyor.** Bu, çalıştırmadan önce denenir: `curl -s -m 15 -o /dev/null -w "%{http_code}\n" https://freya-bank-mock.freyavoice.workers.dev/` → `000` ise koşma (bazı Türkiye ağlarında `*.workers.dev` kesiliyor; VPN ya da erişimi olan makine). Banka olmadan builder yine çalışır ama kendi testi `TEST_UNAVAILABLE` olur.
 - [ ] Makinede: `env.sh` (kendi anahtarlarımız), `pip install claude-agent-sdk`, Claude girişi ya da `ANTHROPIC_API_KEY`.
 - [ ] Freya çalışma alanında koşan simülasyon yok (aynı anda tek). Eski slotlar çalışma alanında yer tutuyor (200 sınırı) ama sorun değil; slotlar güncellenir.
