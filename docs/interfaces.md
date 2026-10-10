@@ -1,4 +1,6 @@
-# Arayüz sözleşmesi (taslak v0.1, 2026-10-10)
+# Arayüz sözleşmesi (taslak v0.2, 2026-10-10)
+
+**v0.2 değişiklikleri** (13 pratik vaka okundu, `data/public-test-set.json`): yeni türler `band`, `attempts`, `statement`, `callback` · `identity_fields`'e alan başına yeniden sorma · `amount_min.floor_field` · rotalara `already_paid` ve `restructuring` · **araç hatasında önce yeniden dene** (PUB-10 tekrar deneyip sözü kaydetmeyi bekliyor; v0.1'deki "hata → doğrudan kapat" bu vakayı kaybettirirdi) · sonuç değerleri sabit bir listeden değil tool API'den.
 
 **v0.1 değişiklikleri** (Latif'in ajanının incelemesi, #3): `installments` türü eklendi · `date_window.from` içine `now` · `rules.validate` runtime'da çakışmada **uyarı** verir (sert hata yalnızca test modunda) · `outcomes` global rotaları da kapsar.
 
@@ -48,7 +50,7 @@ Rule:
 ```json
 {
   "id": "R001",
-  "type": "date_window|amount_min|installments|holiday|identity_fields|outcome_codes|disclosure|escalation|call_hours|free",
+  "type": "band|date_window|amount_min|installments|holiday|identity_fields|outcome_codes|disclosure|statement|attempts|callback|escalation|call_hours|free",
   "value": { "...tür başına aşağıda..." },
   "source": {"doc": "S1", "quote": "ham metinden birebir alıntı"},
   "source_date": "YYYY-MM-DD|null",
@@ -59,20 +61,24 @@ Rule:
 }
 ```
 
-`applies_to`: `["all"]` ya da serbest etiketler (`product:<id>`, `customer:multi_product`…).
+`applies_to`: `["all"]` ya da serbest etiketler (`band:<ad>`, `product_type:<tür>`, `customer:multi_product`…). Pratik vakalarda tarih sınırı ve ikna denemesi sayısı gecikme bandına bağlı (aynı müşteride iki ürün iki farklı sınır alabiliyor, PUB-13), bu yüzden `band` + `applies_to` birincil mekanizma.
 
 `value` biçimleri:
 
 | type | value |
 |---|---|
 | `date_window` | `{"earliest": Rel\|null, "latest": Rel\|null, "from": "now\|today\|due_date\|statement_date"}`, `Rel = {"days": int, "unit": "calendar\|business"}`. `now`/`today` ikisi de **arama zamanından** (`now` değişkeninin tarih kısmı, saat dilimi dönüşümü yok) türetilir, sınır günde kayma olmasın. |
-| `amount_min` | `{"min": number\|null, "min_pct_of_due": number\|null, "max": number\|null, "per": "payment\|product"}` |
+| `band` | `{"name": str, "days_late_min": int\|null, "days_late_max": int\|null, "product_types": [str]\|null}` |
+| `amount_min` | `{"min": number\|null, "min_pct_of_due": number\|null, "floor_field": str\|null, "max": number\|null, "per": "payment\|product"}`. `floor_field`: tabanın `get_account` cevabındaki alan adı (pratikte `minimum_payment`/`instalment_amount`), değer kodda değil cevaptan okunur. |
 | `installments` | `{"allowed": bool, "max_count": int\|null, "max_gap_days": int\|null}` |
 | `holiday` | `{"dates": ["YYYY-MM-DD"], "weekends_blocked": bool, "business_day_definition": "text\|null"}` |
-| `identity_fields` | `{"fields": [{"name": str, "format": str, "spoken_example": str\|null}], "required": int, "max_failures": int}` |
+| `identity_fields` | `{"fields": [{"name": str, "format": str, "spoken_example": str\|null}], "required": int, "max_failures": int, "reask_failed_field": int}`. `reask_failed_field`: yalnızca yanlış verilen alan kaç kez yeniden sorulur (PUB-12: telefon bir kez daha, doğum günü sorulmaz). |
 | `outcome_codes` | `{"codes": [{"code": str, "meaning": str, "reasons": [str]\|null}]}` |
-| `disclosure` | `{"forbidden_before_identity": [str], "third_party_allowed": [str], "required_statements": [str]}` |
-| `escalation` | `{"trigger": "dispute\|hardship\|human_request\|abuse\|legal\|wrong_person\|callback\|other", "action": "transfer_to_agent\|add_note\|schedule_callback\|record_dispute\|close", "note": str\|null}` |
+| `disclosure` | `{"forbidden_before_identity": [str], "third_party_allowed": [str], "forbidden_words_before_identity": [str]}` (örn. bir kelimenin kimlikten önce hiç söylenmemesi) |
+| `statement` | `{"when": "after_promise\|identity_failed\|asked_if_bot\|already_paid\|hardship\|minimum_offered\|transfer\|close\|other", "gist": str, "max_times": int\|null}`: belli bir anda söylenmesi gereken cümle |
+| `attempts` | `{"what": "persuasion\|minimum_offer\|support_offer\|exact_day_ask\|sympathy\|other", "max": int, "min": int\|null}`: sayı kuralları; hakem "tam bir kez", "iki deneme" diye sayıyor |
+| `callback` | `{"earliest": Rel\|null, "time": "customer\|HH:MM", "allowed_with_third_party": bool}` |
+| `escalation` | `{"trigger": "dispute\|hardship\|already_paid\|restructuring\|human_request\|abuse\|legal\|wrong_person\|callback\|refusal\|other", "action": "transfer_to_agent\|add_note\|schedule_callback\|record_dispute\|close", "queue": str\|null, "note": str\|null}`. `queue`, `reason` gibi değerler tool API enum'larından. |
 | `call_hours` | `{"earliest_local": "HH:MM", "latest_local": "HH:MM", "timezone": str\|null}` |
 | `free` | `{"text": str}` |
 
@@ -91,12 +97,16 @@ Okuma stratejisi (A'nın iç işi, arayüzü etkilemez): iki bağımsız okuyucu
 
 ```json
 {
-  "identity": {"fields": [{"name": "", "format": ""}], "required": 0, "max_failures": 0},
-  "check":    {"window": {}, "holidays": ["YYYY-MM-DD"], "weekends_blocked": true, "amount": {}, "installments": null, "business_day_definition": null},
+  "identity": {"fields": [{"name": "", "format": ""}], "required": 0, "max_failures": 0, "reask_failed_field": 0},
+  "bands":    [{"name": "", "days_late_min": 0, "days_late_max": null, "product_types": null}],
+  "check":    {"window_by_band": {"<band>": {}}, "holidays": ["YYYY-MM-DD"], "weekends_blocked": true, "amount": {"floor_field": null}, "installments": null, "business_day_definition": null},
+  "attempts": {"<band>": {"persuasion": 0}, "all": {"minimum_offer": 1, "exact_day_ask": 1}},
+  "statements": [{"when": "after_promise", "gist": "", "max_times": 1}],
+  "tool_retry": {"create_promise": 1},
   "outcomes": {
     "promise": {"outcome": "", "reason": null, "tools": []},
     "no_promise": {}, "not_verified": {}, "not_reached": {}, "tool_fail": {},
-    "dispute": {}, "hardship": {}, "wrong_person": {}, "callback": {}, "human_request": {}
+    "dispute": {}, "hardship": {}, "already_paid": {}, "restructuring": {}, "wrong_person": {}, "callback": {}, "human_request": {}, "refusal_per_product": {}
   },
   "globals":  [{"name": "dispute", "trigger": "dispute", "action": "record_dispute", "tool": "add_note"}],
   "text_rules": {"identity": ["R002"], "disclose": [], "negotiate": [], "record": [], "close": [], "global:dispute": []},
@@ -104,6 +114,7 @@ Okuma stratejisi (A'nın iç işi, arayüzü etkilemez): iki bağımsız okuyucu
 }
 ```
 
+- `outcomes` anahtarları sabit bir enum değil, **rota adları**; değerler (`outcome`, `reason`, `queue`) tool API enum'larından. Dikkat: hazır "Collections Base" workflow'undaki `close_call` enum'u (`promise|no_promise|not_verified|not_reached`) pratik vakaların beklediği `paid` ve `transferred`'ı içermiyor; enum mutlaka kit'in `tools/openapi.json`'undan alınmalı.
 - `outcomes`: **her rota** (omurga ve global düğümler: `dispute`, `hardship`, `wrong_person`, `callback`, `human_request`) → `close_call` için **sabit** `outcome`/`reason` değeri. Değerler tool API enum'larından, model doldurmaz. `tools` ek araç çağrılarını listeler (örn. itirazda `add_note`, geri aramada `schedule_callback`, devirde `transfer_to_agent`) ve `args` içinde sabit değerler taşır. Brief'in sonuç tablosunda bir rotaya karşılık gelen kod yoksa en yakın kod seçilir ve `uncertain_default` yazılır.
 - `text_rules`: omurgaya sığmayan kurallar, kural id listesi olarak düğüme atanır. Yeni rota açılmaz.
 
@@ -111,7 +122,10 @@ Okuma stratejisi (A'nın iç işi, arayüzü etkilemez): iki bağımsız okuyucu
 - Araç tanımları **koddan**, `tool_api`'den (URL, gövde alanları, enum'lar, `required`). LLM yok.
 - Düğüm prompt'ları LLM ile; her düğüm yalnızca kendi `text_rules` kurallarını ve sabit çerçeveyi görür.
 - `check` kodu bir şablondan; parametreler (tatil, pencere, tutar) `params.json`'dan gömülür, şablonda sabit yok.
-- Omurga: `identity → disclose(get_account) → negotiate → check(KOD) → record(create_promise) → close_*`; global düğümler: `dispute`, `hardship`, `wrong_person`, `callback`, `human_request`.
+- Omurga: `identity → disclose(get_account) → negotiate → check(KOD) → record(create_promise) → close_*`; global düğümler: `dispute`, `hardship`, `already_paid`, `restructuring`, `wrong_person`, `callback`, `human_request`.
+- **Araç hatası:** `record` başarısızsa önce `tool_retry` kadar **yeniden dener** (sonuç: tam bir söz kaydı), "kaydettim" yalnızca başarılı cevaptan sonra söylenir. Yeniden denemeler de tükenirse `close_tool_fail` (dürüst cümle). Geçiş koşulu araç cevap değişkeninden (`create_promise_response...`), modelden değil.
+- **Çok ürün:** `disclose` bütün ürünleri sormadan önce söyler; `negotiate` ürün başına bandın sınırını uygular; tek geri okuma, tek onay; `record` ürün başına bir `create_promise`; reddedilen ürüne `refusal_per_product` (örn. `add_note`, reason `refused`).
+- Sayı kuralları (`attempts`) ve zorunlu cümleler (`statements`) ilgili düğümün prompt'una **sayı olarak** yazılır ("en fazla 1 kez"); mümkünse sayaç değişkeniyle rota (kit'te doğrulanacak).
 - `overrides`: C'nin yama önerisi (`[{"node": "negotiate", "reason": "", "new_text": ""}]`). Yalnızca **düğüm prompt metinleri** değişir; omurga ve parametreler değişmez.
 - `validate_workflow(doc) -> [hata]`: bütün `target_node`'lar var, `initial_node` var, kullanılan her araç tanımlı, boş prompt yok. Yükleme öncesi zorunlu.
 
@@ -133,6 +147,7 @@ Okuma stratejisi (A'nın iç işi, arayüzü etkilemez): iki bağımsız okuyucu
 
 - `persona_from_rules(rules, params) -> [Case]`: elle yazılmış tohum davranış türü + kural tablosundaki değerler. Biçim kit'in `public-test-set.json`'una uyacak (kit gelince doğrulanır).
 - Yerel testler (Freya'ya gitmez, maliyet sıfır): `rules.validate`, `derive_params`, `check` kodunun sınır vakaları (pencerenin son günü, tatil, minimumun 1 altı), `validate_workflow`, sızıntı testi.
+- **Vaka biçimi** `data/public-test-set.json` ile aynı: `id, brief, family, level, title, variables{first_name,last_name,title,now}, products[{type, card_last4?, past_due, days_late, minimum_payment|instalment_amount}], script, expected{outcome, reason, promises[{product_id,amount,date}], notes[{product_id,reason}], callbacks[{date,time}], transfers[{queue}]}, checks[str], faults?[{tool, fail_first_n}]`. Builder'ın ürettiği personalar bu biçimde yazılır; `checks` alanı kural tablosundaki satırlardan üretilir (hakem bunlara göre okuyor).
 - Freya turları: 1. tur ~8 vaka (kimlik başarısız, sınır tarih, memo'nun değiştirdiği kural, araç hatası, itiraz, zor durum, numarayı iki parçada veren, yazıyla rakam söyleyen), 2. tur yalnızca kalanlar + yama. Tek simülasyon aynı anda çalışır.
 - C yamayı **önerir**, B `overrides` ile uygular. C workflow'u doğrudan düzenlemez.
 
