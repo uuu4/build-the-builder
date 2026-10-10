@@ -90,3 +90,46 @@ class NoLeakTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LadderTest(unittest.TestCase):
+    def setUp(self):
+        from builder.kit import ladder
+        self.ladder = ladder
+        self.spec = json.load(open(ROOT / "builder/tests/fixtures/ladder-brief-a.json"))
+        self.others = ["close_promise", "close_service_error", "close_paid", "close_dispute", "hardship", "xfer_restructuring", "human_check", "close_refused"]
+        self.nodes = ladder.build(API, self.spec, tools=[API.tool("create_promise", "d")])
+
+    def routes(self, step, kind, **vars_):
+        """Which node the first matching transition of `step` goes to, for this reply kind and these variables."""
+        n = self.nodes["neg_" + step]
+        env = {n["name"] + "_turn": kind, **vars_}
+        for tr in n["transitions"]:
+            for c in tr["condition"].get("conditions", []):
+                cs = c.get("conditions", [c])
+                if all(str(env.get(x["variable"])) == str(x["operand"]) for x in cs if x["operator"] == "equals") and \
+                        all(x["operator"] == "equals" for x in cs):
+                    return tr["target_node"]
+        return None
+
+    def test_spec_is_consistent(self):
+        self.assertEqual(self.ladder.check(self.spec, self.others), [])
+
+    def test_counting_is_in_the_graph(self):
+        self.assertEqual(self.routes("ask_today", "refuses"), "neg_attempt1_full")
+        self.assertEqual(self.routes("ask_today", "too_much"), "neg_floor_a")
+        self.assertEqual(self.routes("floor_a", "refuses"), "neg_attempt1_floor")
+        self.assertEqual(self.routes("floor_a", "too_much"), "neg_attempt1_floor")      # falls back to refuses
+        self.assertEqual(self.routes("attempt1_floor", "refuses", attempts="2"), "neg_attempt2")
+        self.assertEqual(self.routes("attempt1_floor", "refuses", attempts="1"), "close_refused")
+        self.assertEqual(self.routes("attempt2", "refuses"), "close_refused")
+        self.assertEqual(self.routes("attempt2", "hardship"), "hardship")
+        self.assertIsNone(self.routes("attempt2", "chat"))                                 # stays
+
+    def test_lint_clean(self):
+        nodes = dict(self.nodes)
+        for o in self.others:
+            nodes[o] = g.close(API, o, "no_promise", "refused", "Bye.") if o.startswith("close") else g.close(API, o, "transferred", "x", "Bye.")
+        nodes["start"] = g.always("neg_ask_today") and g.code("start", "x = 1\n", "neg_ask_today")
+        nodes["end"] = g.end()
+        self.assertEqual([e for e in lint({"initial_node": "start", "nodes": nodes}, API) if "not reachable" not in e], [])
