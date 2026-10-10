@@ -187,6 +187,14 @@ def resolve_when(raw):
         return today + datetime.timedelta(days=1)
     if ' today ' in t or ' tonight ' in t:
         return today
+    mo = re.search(r' (?:the |on )?(\d{1,2})(?:st|nd|rd|th) ', t)      # before weekday names: 'Monday the 26th' is the 26th
+    if mo:
+        n = int(mo.group(1))
+        x = make_day(today.year, today.month, n)
+        if x is None or x < today:
+            y, m = (today.year + 1, 1) if today.month == 12 else (today.year, today.month + 1)
+            x = make_day(y, m, n)
+        return x
     mo = re.search(r' in (\d{1,2}) days? ', t)
     if mo:
         return today + datetime.timedelta(days=int(mo.group(1)))
@@ -203,14 +211,6 @@ def resolve_when(raw):
         x = today + datetime.timedelta(days=(wd - today.weekday()) % 7)
         if q in ('next', 'coming') and x == today:
             x = x + datetime.timedelta(days=7)
-        return x
-    mo = re.search(r' the (\d{1,2})(?:st|nd|rd|th) ', t)
-    if mo:
-        n = int(mo.group(1))
-        x = make_day(today.year, today.month, n)
-        if x is None or x < today:
-            y, m = (today.year + 1, 1) if today.month == 12 else (today.year, today.month + 1)
-            x = make_day(y, m, n)
         return x
     return None
 def settle(k, d):
@@ -582,7 +582,10 @@ def build(api, spec, ladder_tpl=None):
         extract=[g.enum_field("rb_turn", rb_kinds,
                               "Classify ONLY the customer's last message. confirms: a clear yes to the read-back. changes: they want a different date or amount, "
                               "want to drop a product, or say no. other: a question or anything else.")],
-        on_enter={"type": "tts", "text": "{{readback}}"}, first_entry_only=False, max_turns=6, max_turn_target="m_fix")
+        # llm, not tts: the customer often agrees and asks something in one message ("...the 6th. Am I talking to a robot?")
+        on_enter={"type": "llm", "prompt": "If the customer's last message asked a question, first answer it in one sentence, following the rules "
+                  "of the call. Then say this read-back word for word, changing nothing: {{readback}}"},
+        first_entry_only=False, max_turns=6, max_turn_target="m_fix")
     nodes["m_fix"] = g.conversation(
         "m_fix",
         "The customer wants to change something in what you read back. The customer's identity is verified.\n"

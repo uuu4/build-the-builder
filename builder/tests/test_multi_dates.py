@@ -52,6 +52,9 @@ class Resolve(unittest.TestCase):
             self.assertEqual(resolve(said), "2026-10-30", said)
         self.assertEqual(resolve("Thursday 15 October 2026"), "2026-10-15")
         self.assertEqual(resolve("twenty-third of October"), "2026-10-23")
+        self.assertEqual(resolve("Monday the 26th"), "2026-10-26")               # live run: was read as next Monday
+        self.assertEqual(resolve("Monday the twenty sixth"), "2026-10-26")
+        self.assertEqual(resolve("on the 30th, a Friday"), "2026-10-30")
         self.assertEqual(resolve("the 5th"), "2026-11-05")                      # passed this month: next month
         self.assertEqual(resolve("5 January"), "2027-01-05")
 
@@ -181,6 +184,7 @@ class Flow(unittest.TestCase):
 
     def test_read_back_is_spoken_on_every_entry(self):
         self.assertFalse(self.nodes["m_readback"]["on_enter_first_entry_only"])
+        self.assertIn("{{readback}}", self.nodes["m_readback"]["on_enter"]["prompt"])
         self.assertFalse(self.nodes["m_fix"]["on_enter_first_entry_only"])
 
     def test_no_date_extraction_is_left(self):
