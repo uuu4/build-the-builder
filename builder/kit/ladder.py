@@ -14,7 +14,7 @@ Spec (JSON, from the brief):
   "promise_tool": "name of the promise tool (record now only)",
   "on_recorded": "node after a recorded promise", "record_failures": 2, "on_record_failed": "node after that many failed calls",
   "retry_line": "what is said while the engine repeats a failed promise call (optional; silent if empty)",
-  "on_agreed": "node after an agreement (record defer only; agreed_amount / agreed_date are extracted)",
+  "on_agreed": "node after an agreement (record defer only; agreed_amount / agreed_date are extracted; agreed_date as words, resolved by the caller's code)",
   "situations": {"paid": "node", "dispute": "node", "hardship": "node", "new_plan": "node", "human": "node"},
   "start": "first step",
   "steps": {
@@ -98,7 +98,10 @@ def build(api, spec, tools, prefix="neg_", max_turns=12, turn_limit_target=None)
         extract = [g.enum_field(var, list(kinds), "Classify ONLY the customer's last message. " + " ".join(f"{k}: {v}." for k, v in kinds.items()))]
         if not record_now:
             extract += [{"name": "agreed_amount", "type": "float", "description": "The amount the customer agreed to pay, if they agreed", "min_confidence": 0.6},
-                        {"name": "agreed_date", "type": "date", "description": "The date the customer agreed to pay on, if they agreed", "min_confidence": 0.6}]
+                        {"name": "agreed_date", "type": "string", "description": "The date the customer agreed to pay on, if they agreed, in words as "
+                         "said by the customer or as you named it when they said yes (for example 'tomorrow', 'this Friday', 'the 30th', "
+                         "'Thursday 15 October'). Copy the words; do not turn them into a date: code resolves them against the call's date.",
+                         "min_confidence": 0.6}]
         nodes[name] = g.conversation(name, task, trs, tools=tools, extract=extract,
                                      on_enter={"type": "tts", "text": s["say"]} if s.get("say") else {"type": "llm", "prompt": s["task"]},
                                      max_turns=max_turns, max_turn_target=turn_limit_target)
