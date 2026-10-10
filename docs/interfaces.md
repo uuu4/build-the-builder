@@ -40,7 +40,7 @@ python3 builder/build.py <brief_path> <tool_api_path>      # tek komut, elle mü
 | 10. düzelt | ajan | 5 ya da 7'ye döner; bütçe izin verdikçe |
 | 11. kapanış | `build.py` | lint + kaydet + `export_workflow` → `submission/<slot>.workflow.json`, trace → `traces/<slot>.log` |
 
-**Sahiplik (öneri, insanlar netleştirir):** S = skill'ler (brief okuma, omurga bilgisi, Freya kuralları, süreç), K = kod araçları (`builder/cli`, şablonlar, testleri), O = orkestra + test + trace + paketleme (`build.py`, `cases-run`, trace, export, sızıntı testi).
+**Sahiplik (KESİN, 2026-10-10):** **S** = skill'ler (brief okuma, omurga bilgisi, Freya kuralları, süreç) ve **K** = kod araçları (`builder/cli`, şablonlar, testleri): **Emre'nin tarafı**. **O** = orkestra + test + trace + paketleme (`build.py`, `cases-run`, trace, export, sızıntı testi): **Latif'in tarafı**. Ortak temas: `cli event` (K yazar, O'nun trace dosyasına `TRACE_PATH` ile ekler).
 
 **Skill'ler** (`.claude/skills/`, kit örneğindeki gibi `setting_sources=["project"]`):
 - `build-phone-agent`: süreç (yukarıdaki tablo), bütçe kuralları, ne zaman durulur.
