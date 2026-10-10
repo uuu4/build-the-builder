@@ -1,4 +1,6 @@
-# Arayüz sözleşmesi (taslak v0.2, 2026-10-10)
+# Arayüz sözleşmesi (taslak v0.3, 2026-10-10)
+
+**v0.3 değişiklikleri** (§5 kit docs'undan kapandı, Latif'in ajanının #3 raporu; iddialar `docs/workflow-format.md` (WF), `docs/tools-and-code.md` (TC), `docs/api.md`, `freya.py`, `tools/run_cases.py` üzerinde tek tek doğrulandı, **canlıda denenmedi**): §2'ye "Derleyici kuralları (kit)" bölümü, §3'e pratik banka oturumu kısıtı, §5 kapandı. Açık karar: `close_call` nereden çağrılır (§2).
 
 **v0.2 değişiklikleri** (13 pratik vaka okundu, kit'in `public-test-set.json`'u): yeni türler `band`, `attempts`, `statement`, `callback` · `identity_fields`'e alan başına yeniden sorma · `amount_min.floor_field` · rotalara `already_paid` ve `restructuring` · **araç hatasında önce yeniden dene** (PUB-10 tekrar deneyip sözü kaydetmeyi bekliyor; v0.1'deki "hata → doğrudan kapat" bu vakayı kaybettirirdi) · sonuç değerleri sabit bir listeden değil tool API'den.
 
@@ -129,6 +131,24 @@ Okuma stratejisi (A'nın iç işi, arayüzü etkilemez): iki bağımsız okuyucu
 - `overrides`: C'nin yama önerisi (`[{"node": "negotiate", "reason": "", "new_text": ""}]`). Yalnızca **düğüm prompt metinleri** değişir; omurga ve parametreler değişmez.
 - `validate_workflow(doc) -> [hata]`: bütün `target_node`'lar var, `initial_node` var, kullanılan her araç tanımlı, boş prompt yok. Yükleme öncesi zorunlu.
 
+### Derleyici kuralları (kit'ten, v0.3)
+
+- **`agent_config` yazılmaz** (WF). Platform doldurur; `freya.py` modeli `AGENT_LLM = experimental-5`'e sabitler. Sıcaklık konu dışı; tutarlılık yapıdan gelir.
+- **Her turda 3 model çağrısı var:** extraction, routing, dialogue. **Routing modeli `task_message`'ı görmez** (WF "Three model calls per turn"). Rota kuralı prompt'a yazılırsa etkisizdir; `transitions` (`description`, koşullar), `routing_prompt` ve `extraction_schema`'ya gider.
+- **Dallanma:** birden çok `matches_intent` yerine **enum extraction + `equals`** (WF "Fork on an extracted enum"). Deterministik koşullar önce değerlendirilir; biri tutarsa routing modeli çağrılmaz. `equals` string karşılaştırır (`"True"`/`"true"` ikisini de yaz, baz workflow böyle yapıyor).
+- **Extraction:** tarih alanları `type: "date"`; **her alana `min_confidence` açıkça** (varsayılan 0,95 katı, düşen değer iz bırakmaz).
+- **Kod düğümü:** `node_type: "code"`, `pre_actions` içinde `__function__:code_exec`, `passthrough: true` + son geçiş koşulsuz. `vars["x"] = ...` yazar, sonraki düğümler `{{x}}` okur, `vars.get("now")` erişilir. **Kodda `{{` / `}}` geçmez** (literal kalır, snippet çöker) → parametreler `json.loads('...')` stringi olarak gömülür, Python dict literal'i değil. Asla raise etmez, her okumada yedek değer; rota bayrakları **string** (`ok`/`too_late`/`holiday`). Doğrulanmış modüller: `json`, `re`, `datetime`. **Kod düğümü `initial_node` olmaz** (`/chat/message` ilk kod adımını atlayabiliyor, api.md).
+- **Araç parametreleri:** sabit değerler `default` ile (model görmez, `{{var}}` kayıt anında çözülür); **`const` asla** (gönderilmez). Model doldursun istenen alan `default`'suz.
+- **Sayaçlar:** her `api_call` aracı için `<araç>_success_count` / `<araç>_failure_count`, `pre_actions` düğümü için `<düğüm>_…` (TC). PUB-10: `create_promise_failure_count greater_than 0` → "tekrar dene" yolu, `create_promise_success_count` → "kaydedildi" yolu. **Yazan araçlarda `maxRetries: 0`** (çift kayıt riski), yeniden deneme rotayla.
+- **Araç sonrası sessizlik / olumsuz sonucu yok sayma** pratikte görülmüş (TC "Tool results and the next turn"). Her araca `post_process_code`: `result.pop("header")` + `result["data"]["what_to_do_next"]` = sonucun anlamı ve sıradaki adım tek cümle; düğüm prompt'u buna uymayı söyler. Honesty için şablonun parçası.
+- **`deploy` = `freya.validate_workflow` (dryRun) + `freya.save_workflow(slot, wf)`** (ilk seferde yaratır, sonra `.freya-agents.json` ile günceller, `{workflow_id, agent_id}` döner). Kapanış: `freya.export_workflow(workflow_id, path)`. Bozuk yaşam döngüsü aracı çalışma anında **sessizce düşer** → dryRun zorunlu.
+- **API:** anahtar `fak_` ile başlar; tarayıcı benzeri `User-Agent` başlığı şart (yoksa `error code: 1010`). `FREYA_API_URL=https://staging-app.freyavoice.ai`.
+
+**AÇIK KARAR: `close_call` nereden çağrılır?**
+- (a) Yaşam döngüsü aracı (`alwaysRunsAt: ["end_of_call"]`), gövdede `outcome: {"default": "{{final_outcome}}"}`, `reason: {"default": "{{final_reason}}"}`. TC: bütün `{{var}}` çözülmüşse **model çağrılmaz, handler doğrudan çalışır**; çözülmemişse tek model çağrısı doldurur. **Müşteri ortada kapatsa bile her aramada çalışır.** `response_mapping` `end_of_call`'da uygulanmaz (close_call için gerekmiyor).
+- (b) Kapanış düğümünden önce passthrough düğümde `pre_actions` ile (Latif'in ajanının önerisi). Değer yine rotadan; ama arama o düğüme ulaşmadan biterse (müşteri kapatır, `max_node_turns`) `close_call` **hiç çalışmaz** → Outcome kaybı.
+- **Öneri: (a)**, şartıyla: `final_outcome`/`final_reason` her yolda erken yazılsın (kimlik düğümü başında güvenli bir başlangıç değeri, sonra her rota günceller) ve dryRun ile doğrulansın. (a) ile (b) birlikte kullanılmaz (iki `close_call` = "bir kez" ihlali riski). Kit örneği (`examples/agent_builder.py`) hangisini kullanıyor, bakılacak.
+
 `deploy(doc, trace) -> Deployed`:
 
 ```json
@@ -148,6 +168,7 @@ Okuma stratejisi (A'nın iç işi, arayüzü etkilemez): iki bağımsız okuyucu
 - `persona_from_rules(rules, params) -> [Case]`: elle yazılmış tohum davranış türü + kural tablosundaki değerler. Biçim kit'in `public-test-set.json`'una uyacak (kit gelince doğrulanır).
 - Yerel testler (Freya'ya gitmez, maliyet sıfır): `rules.validate`, `derive_params`, `check` kodunun sınır vakaları (pencerenin son günü, tatil, minimumun 1 altı), `validate_workflow`, sızıntı testi.
 - **Vaka biçimi** kit'in kökteki `public-test-set.json`'u ile aynı: `id, brief, family, level, title, variables{first_name,last_name,title,now}, identity{...doğru güvenlik cevapları}, products[{type, card_last4?, past_due, days_late, minimum_payment|instalment_amount}], script, expected{outcome, reason, promises[{product_id,amount,date}], notes[{product_id,reason}], callbacks[{date,time}], transfers[{queue}]}, checks[str], faults?[{tool, fail_first_n}]`. Builder'ın ürettiği personalar bu biçimde yazılır; `checks` alanı kural tablosundaki satırlardan üretilir (hakem bunlara göre okuyor).
+- **Pratik banka kısıtı (kit):** `tools/run_cases.py --cases <dosya>` aynı biçimde herhangi bir JSON'u alır, ama her vaka için banka oturumu `POST /v1/practice/sessions {"case": <id>}` ile açılır; **hesap verisi yalnızca bankanın tanıdığı vaka id'lerinden** gelir. Kendi personalarımız = 13 vakanın hesapları + değiştirilmiş `script`/`checks`. Gizli brief koşusunda (araç alanları değişmiş olacak) kendi testi için banka oturumu olup olmayacağı **belli değil → organizatöre sorulacak**. Yoksa kendi testi = yerel testler + `/chat/message` ile kuru konuşma.
 - Freya turları: 1. tur ~8 vaka (kimlik başarısız, sınır tarih, memo'nun değiştirdiği kural, araç hatası, itiraz, zor durum, numarayı iki parçada veren, yazıyla rakam söyleyen), 2. tur yalnızca kalanlar + yama. Tek simülasyon aynı anda çalışır.
 - C yamayı **önerir**, B `overrides` ile uygular. C workflow'u doğrudan düzenlemez.
 
@@ -167,11 +188,13 @@ class Trace:
 - İçerik sayfanın istediğiyle birebir: başlangıç/bitiş zamanı · her model çağrısı (hangi model, **tek satır amaç**) · Freya'da yaratılan workflow/agent id, adım ve araç sayısı · builder'ın kendi yaptığı test ve sonucu.
 - `purpose` ≤ 100 karakter. Anahtar değerleri çıktıdan maskelenir (ortamdaki bilinen sır değerleri).
 
-## 5. Kit'e bağlı açık noktalar
+## 5. Kit'e bağlı noktalar (v0.3: kapandı, ayrıntı §2 "Derleyici kuralları")
 
-1. Konuşma düğümleri arasında **kod düğümü** çalışıp değişken yazabiliyor mu?
-2. Geçişte `outcome`/`reason` değerini **düğüm bazında sabit atayabiliyor muyuz** (`response_mapping`, `on_enter`…)? Olmazsa `close_call` yine modele kalır.
-3. Kendi personalarımızı kit simülasyonuna verebiliyor muyuz? Yoksa `/chat/message` ile kendi simülatörümüz.
-4. `freya.py` fonksiyon adları ve imzaları (`deploy`, `export_workflow`).
-5. `temperature` serbest mi?
-6. Dizin ve komut kit'in örneğiyle uyumlu mu (`builder/build.py`)?
+1. Kod düğümü değişken yazabiliyor mu → **evet** (`vars[...]`, `{{x}}`).
+2. `outcome`/`reason`'ı rotadan sabitlemek → **evet**, `default: "{{final_outcome}}"`; nereden çağrılacağı açık karar (§2).
+3. Kendi personalarımız → **kısmen**: yalnızca 13 vakanın banka hesaplarıyla; gizli koşuda belirsiz (organizatöre soru).
+4. `freya.py` → `save_workflow`, `validate_workflow`, `update_workflow`, `export_workflow`, `create_personas`, `run_simulation`, `get_iteration`, `get_call`.
+5. `temperature` → konu dışı, `agent_config` yazılmaz.
+6. Dizin/komut → sayfadaki `run_command` ile birebir: `python3 builder/build.py {brief_path} {tool_api_path}`, `submission/hidden-N.workflow.json`, `traces/hidden-N.log`.
+
+**Organizatöre sorulacak:** gizli brief koşusunda kendi testleri için pratik banka oturumu açılabiliyor mu (yeni şemaya uygun)?
