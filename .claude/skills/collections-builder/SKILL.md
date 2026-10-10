@@ -16,9 +16,11 @@ Every value comes from the brief files and the tool API file you were given. Not
 3. **Front spec.** Write `out/<slot>/front.json` in the format `spec-doc` prints. The kit builds the opening, who answered, someone else on the line, the callback and the identity check from it. Field names, enum values and response fields come from the tool API file.
 4. **Generator.** Write `out/<slot>/gen.py`. It builds the front with `front.build(api, spec, after_verify="fetch_account")`, adds the back half (below), lints and writes `out/<slot>/workflow.json`. Run it.
 5. **Deploy.** `python3 -m builder.cli deploy <slot> out/<slot>/workflow.json`.
-6. **Test.** `python3 -m builder.cli test <slot> --brief <letter>` when `public-test-set.json` has practice customers for this brief, otherwise skip. Run it in the foreground and wait. Never end your turn while a test runs. It refuses near the deadline; then stop testing.
+6. **Test.** `python3 -m builder.cli test <slot> --brief <letter>` when `public-test-set.json` has practice customers for this brief, otherwise skip. Run it in the foreground and wait. Never end your turn while a test runs. It refuses near the deadline; then stop testing. If it prints `TEST_UNAVAILABLE` (exit code 3), the platform or the bank cannot be reached: the workflow is not at fault. Do not change it because of that, do not start another test, and end with your one-line report saying the test was unavailable.
 7. **Fix.** Read each FAIL and its reason. Fix `gen.py` or `front.json`, regenerate, deploy, test again. Prefer a fix in code or routing over a sentence in a prompt. Stop when the deadline is near: a deployed, linted workflow matters more than one more round.
 8. End with one line: workflow id, agent id, last test result.
+
+If `deploy` keeps failing with a server error (5xx), leave `out/<slot>/workflow.json` in place and finish: `build.py` deploys it again at the close. A rejection (4xx) is a fault in the workflow: fix the generator.
 
 Never edit the workflow on the platform and never edit `workflow.json` by hand: change the generator and run it.
 

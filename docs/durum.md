@@ -62,3 +62,5 @@ python3 -m unittest builder.tests.test_kit
 - Pratik banka `close_call` sebebini A/B listesine göre denetliyor: kendi brief'lerimizde farklı kodlar reddedilir, puanı `close_call` argümanlarından hesapla.
 - `/api/v2/chat/message` 502 verip aramaları karıştırabiliyor; test için simülasyon kullan.
 - Çalışma alanında aynı anda tek simülasyon; yavaş koşuları `--rerun-if-slow 1` ile at.
+- Banka mock'u `*.workers.dev` üzerinde. Bazı Türkiye ağlarında bu alan adı TLS aşamasında kesiliyor (`Connection reset`), Emre'nin Mac'inde ölçüldü (aynı IP'ye `cloudflare.com` adıyla bağlanılıyor, `workers.dev` adıyla kesiliyor). `run_cases.py` ve `cli test` bankaya yerelden bağlanır: bu ağdan koşma, VPN ya da başka makine kullan. Platform tarafı (staging-app) etkilenmiyor. `cli test` artık bunu `TEST_UNAVAILABLE` (çıkış kodu 3) diye söylüyor ve ajan workflow'u değiştirmeden bitiriyor.
+- Dağıtım (`kit/deploy.py`) 5xx/ağ hatasında 4 kez dener (8, 16, 24 sn); platformdan dışa aktarma da olmazsa gönderilen workflow `submission/` altına yazılır.

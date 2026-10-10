@@ -38,14 +38,16 @@ def holds(cond, vars_):
     return all(results) if cond.get("logic") == "and" else any(results)
 
 
-def run(nodes, name, vars_, limit=60):
-    """Follow code nodes from `name` until a node that is not code. Returns the name of that node."""
+def run(nodes, name, vars_, limit=60, down=()):
+    """Follow code nodes from `name` until a node that is not code. Returns the name of that node.
+    `down`: names of code nodes the sandbox does not run (the platform skips the code and goes on to the transitions)."""
     for _ in range(limit):
         n = nodes[name]
         if n["node_type"] != "code":
             return name
         src = n["pre_actions"][0]["function"]["parameters"]["properties"]["code"]["default"]
-        exec(src, {"vars": vars_})
+        if name not in down:
+            exec(src, {"vars": vars_})
         for tr in n["transitions"]:
             if holds(tr["condition"], vars_):
                 name = tr["target_node"]
@@ -187,6 +189,30 @@ class MultiTest(unittest.TestCase):
         run(self.nodes, "apply_fix", v)
         self.assertEqual(v["st_1"], "noted")
         self.assertEqual(v["readback"].count("For your"), 1)
+
+    def test_sandbox_down_once_is_retried_and_down_twice_closes(self):
+        v = self.start([CARD, LOAN])
+        self.assertEqual(run(self.nodes, "enter_1", v, down={"enter_1"}), "p1_attempt1_full")
+        v = self.start([CARD, LOAN])
+        self.assertEqual(run(self.nodes, "enter_1", v, down={"enter_1", "enter_1_again"}), "close_error")
+
+    def test_a_promise_is_never_skipped_when_the_sandbox_is_down(self):
+        v = self.start([CARD, LOAN])
+        v.update(st_1="agreed", amt_1="300", date_1="2026-10-16", adj_1="")
+        self.assertEqual(run(self.nodes, "rg_1", v, down={"rg_1", "rg_1_again"}), "close_error")
+        v["rec_1_response.data.ok"] = "true"
+        self.assertEqual(run(self.nodes, "recok_1", v, down={"recok_1"}), "close_promise")      # retried, then on through rg_2 (skip) and final
+        self.assertEqual(v["rec_ok_1"], "1")
+
+    def test_a_route_left_by_another_node_cannot_steer_this_one(self):
+        v = self.start([CARD, LOAN])
+        v["r_enter_1"] = "done"                                   # a value some other node left behind
+        v["r_enter_2"] = "ask"
+        self.assertEqual(run(self.nodes, "enter_1", v), "p1_attempt1_full")          # enter_1 computes its own route
+        self.assertEqual(run(self.nodes, "enter_2", v, down={"enter_2"}), "p2_attempt1_full")   # its own stale value is only used if the code did not run
+        v2 = self.start([CARD, LOAN])
+        v2["r_enter_1"] = "ask"
+        self.assertEqual(run(self.nodes, "enter_2", v2, down={"enter_2", "enter_2_again"}), "close_error")
 
     def test_workflow_stays_under_the_node_limit(self):
         self.assertLess(len(self.nodes), 200)

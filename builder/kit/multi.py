@@ -66,7 +66,30 @@ def _sub(obj, k):
 
 
 def _code(name, body, next_node, transitions=(), **params):
-    return g.code(name, with_params(body, params), next_node, list(transitions))
+    """A code node whose route lives in its own variable r_<name>, so a value left by another node can never steer
+    this one. When the sandbox did not run the code (the variable is still unset) the node is tried once more
+    (`<name>_again`, added by `_add_retries`) and then the call closes; the default is never "carry on"."""
+    rv = "r_" + name
+    trs = []
+    for t in transitions:
+        t = copy.deepcopy(t)
+        t["condition"]["conditions"][0]["variable"] = rv
+        t["description"] = t["description"].replace(t["description"].split(" is ")[0], rv, 1)
+        trs.append(t)
+    n = g.code(name, with_params(body, dict(params, rv=rv)), next_node, trs)
+    n["_rv"] = rv
+    return n
+
+
+def _add_retries(nodes):
+    for name, n in list(nodes.items()):
+        rv = n.pop("_rv", None)
+        if not rv:
+            continue
+        twin = copy.deepcopy(n)
+        twin["name"] = name + "_again"
+        nodes[name + "_again"] = twin
+        n["transitions"] = n["transitions"][:-1] + [g.unset(name + "_again", rv, "the code did not run")] + n["transitions"][-1:]
 
 
 # ---------------------------------------------------------------- code node sources
@@ -79,7 +102,7 @@ try:
     vars['cur_slot'] = str(k)
     cd = str(vars.get('carry_date') or '')
     if k > n:
-        vars['enter_route'] = 'done'
+        vars[P['rv']] = 'done'
     elif cd != '':
         dl = str(vars.get('s%d_deadline' % k) or '')
         d = cd
@@ -91,14 +114,14 @@ try:
         vars['amt_%d' % k] = money(vars.get('s%d_due' % k))
         vars['date_%d' % k] = d
         vars['adj_%d' % k] = adj
-        vars['enter_route'] = 'auto'
+        vars[P['rv']] = 'auto'
     elif str(vars.get('floor_first') or '') == '1' and k == 1:
         vars['floor_first'] = ''
-        vars['enter_route'] = 'ask_floor'
+        vars[P['rv']] = 'ask_floor'
     else:
-        vars['enter_route'] = 'ask'
+        vars[P['rv']] = 'ask'
 except Exception:
-    vars['enter_route'] = 'error'
+    vars[P['rv']] = 'error'
 '''
 
 _SAVE = r'''
@@ -126,9 +149,9 @@ try:
         vars['carry_date'] = str(vars.get('agreed_date') or '')[:10] or d
     vars['agreed_date'] = ''
     vars['agreed_amount'] = ''
-    vars['save_route'] = 'ok'
+    vars[P['rv']] = 'ok'
 except Exception:
-    vars['save_route'] = 'error'
+    vars[P['rv']] = 'error'
 '''
 
 _MARK = r'''
@@ -136,9 +159,9 @@ try:
     k = P['k']
     vars['st_%d' % k] = 'noted'
     vars['reason_%d' % k] = P['reasons'][P['why']]
-    vars['mark_route'] = 'ok'
+    vars[P['rv']] = 'ok'
 except Exception:
-    vars['mark_route'] = 'error'
+    vars[P['rv']] = 'error'
 '''
 
 _ALL_YES = r'''
@@ -160,14 +183,14 @@ try:
         vars['adj_%d' % k] = adj
     vars['agreed_date'] = ''
     vars['agreed_amount'] = ''
-    vars['all_route'] = 'ok'
+    vars[P['rv']] = 'ok'
 except Exception:
-    vars['all_route'] = 'error'
+    vars[P['rv']] = 'error'
 '''
 
 _FLOOR_MARK = r'''
 vars['floor_first'] = '1'
-vars['floor_route'] = 'ok'
+vars[P['rv']] = 'ok'
 '''
 
 _HARDSHIP_MARK = r'''
@@ -177,9 +200,9 @@ try:
         if str(vars.get('st_%d' % k) or '') == '':
             vars['st_%d' % k] = 'noted'
             vars['reason_%d' % k] = P['reasons']['hardship']
-    vars['hs_route'] = 'ok'
+    vars[P['rv']] = 'ok'
 except Exception:
-    vars['hs_route'] = 'error'
+    vars[P['rv']] = 'error'
 '''
 
 _FINISH = r'''
@@ -197,12 +220,12 @@ try:
         parts.append(item)
     if parts:
         vars['readback'] = R['intro'] + R['sep'].join(parts) + '.' + R['ask']
-        vars['finish_route'] = 'readback'
+        vars[P['rv']] = 'readback'
     else:
         vars['readback'] = ''
-        vars['finish_route'] = 'record'
+        vars[P['rv']] = 'record'
 except Exception:
-    vars['finish_route'] = 'error'
+    vars[P['rv']] = 'error'
 '''
 
 _APPLY_FIX = r'''
@@ -235,32 +258,32 @@ try:
     vars['fix_slot'] = ''
     vars['fix_date'] = ''
     vars['fix_amount'] = ''
-    vars['fix_route'] = 'ok'
+    vars[P['rv']] = 'ok'
 except Exception:
-    vars['fix_route'] = 'error'
+    vars[P['rv']] = 'error'
 '''
 
 _GATE = r'''
 k = P['k']
 st = str(vars.get('st_%d' % k) or '')
 if st == 'agreed':
-    vars['gate_route'] = 'promise'
+    vars[P['rv']] = 'promise'
 elif st == 'noted' and str(vars.get('reason_%d' % k) or '') != '':
-    vars['gate_route'] = 'note'
+    vars[P['rv']] = 'note'
 else:
-    vars['gate_route'] = 'skip'
+    vars[P['rv']] = 'skip'
 '''
 
 _REC_OK = r'''
 vars['rec_ok_%d' % P['k']] = '1'
-vars['rec_route'] = 'ok'
+vars[P['rv']] = 'ok'
 '''
 
 _REC_FAIL = r'''
 k = P['k']
 vars['st_%d' % k] = 'noted'
 vars['reason_%d' % k] = P['reasons']['service_error']
-vars['rec_route'] = 'failed'
+vars[P['rv']] = 'failed'
 '''
 
 _FINAL = r'''
@@ -277,18 +300,18 @@ try:
     if recorded:
         vars['final_outcome'] = P['outcomes']['promise']
         vars['final_reason'] = ''
-        vars['final_route'] = 'promise'
+        vars[P['rv']] = 'promise'
     elif reasons and all([r == R['paid'] for r in reasons]) and len(reasons) == n:
         vars['final_outcome'] = P['outcomes']['paid']
         vars['final_reason'] = ''
-        vars['final_route'] = 'paid'
+        vars[P['rv']] = 'paid'
     else:
         others = [r for r in reasons if r != R['paid']]
         vars['final_outcome'] = P['outcomes']['other']
         vars['final_reason'] = others[0] if others else R['refused']
-        vars['final_route'] = 'other'
+        vars[P['rv']] = 'other'
 except Exception:
-    vars['final_route'] = 'error'
+    vars[P['rv']] = 'error'
 '''
 
 
@@ -318,7 +341,7 @@ def build(api, spec, ladder_tpl=None):
                                       "on": {"refuses": "enter_1", "too_much": "floor_mark"}}}}
     nodes.update(ladder.build(api, today_spec, [], prefix="m_", max_turns=10, turn_limit_target="enter_1"))
     nodes["all_yes"] = _code("all_yes", _ALL_YES, "close_error", _eqs("all_route", [("ok", "finish")]))
-    nodes["floor_mark"] = _code("floor_mark", _FLOOR_MARK, "enter_1")
+    nodes["floor_mark"] = _code("floor_mark", _FLOOR_MARK, "close_error", _eqs("floor_route", [("ok", "enter_1")]))
 
     # --- one ladder per product
     start, start_floor = tpl["start"], tpl.get("start_floor") or tpl["start"]
@@ -389,13 +412,14 @@ def build(api, spec, ladder_tpl=None):
     pt, nt = tools["promise"], tools["note"]
     for k in range(1, K + 1):
         nxt = f"rg_{k + 1}" if k < K else "final"
-        nodes[f"rg_{k}"] = _code(f"rg_{k}", _GATE, nxt, _eqs("gate_route", [("promise", f"rec_{k}"), ("note", f"note_{k}")]), k=k)
+        nodes[f"rg_{k}"] = _code(f"rg_{k}", _GATE, "close_error",
+                                  _eqs("gate_route", [("promise", f"rec_{k}"), ("note", f"note_{k}"), ("skip", nxt)]), k=k)
         nodes[f"rec_{k}"] = g.api_request(
             f"rec_{k}",
             api.pre_action(pt, {"product_id": "{{s%d_pid}}" % k, "amount": "{{amt_%d}}" % k, "date": "{{date_%d}}" % k}, retries=1),
             f"recfail_{k}", transitions=[g.is_true(f"recok_{k}", f"rec_{k}_response.data.ok", "recorded")])
-        nodes[f"recok_{k}"] = _code(f"recok_{k}", _REC_OK, nxt, k=k)
-        nodes[f"recfail_{k}"] = _code(f"recfail_{k}", _REC_FAIL, f"note_{k}", k=k, reasons=reasons)
+        nodes[f"recok_{k}"] = _code(f"recok_{k}", _REC_OK, "close_error", _eqs("rec_route", [("ok", nxt)]), k=k)
+        nodes[f"recfail_{k}"] = _code(f"recfail_{k}", _REC_FAIL, "close_error", _eqs("rec_route", [("failed", f"note_{k}")]), k=k, reasons=reasons)
         nodes[f"note_{k}"] = g.api_request(
             f"note_{k}", api.pre_action(nt, {"product_id": "{{s%d_pid}}" % k, "reason": "{{reason_%d}}" % k}, retries=2), nxt)
     nodes["final"] = _code("final", _FINAL, "close_error",
@@ -436,6 +460,7 @@ def build(api, spec, ladder_tpl=None):
     nodes["close_other"] = g.close_from_vars(api, "close_other", closes["other"]["farewell"])
     e = closes["error"]
     nodes["close_error"] = g.close(api, "close_error", e["outcome"], e.get("reason", ""), e["farewell"])
+    _add_retries(nodes)
     return nodes
 
 

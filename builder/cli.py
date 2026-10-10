@@ -52,20 +52,50 @@ def cmd_deploy(slot, path):
     return 0
 
 
+INFRA_WORDS = ("URLError", "ConnectionReset", "Connection reset", "timed out", "TimeoutExpired", "Temporary failure", "Name or service not known",
+               "-> 502", "-> 503", "-> 504", "SSLError", "RemoteDisconnected", "Connection refused", "IncompleteRead")
+
+
 def cmd_test(slot, args):
+    """Run the practice customers. If the platform or the bank cannot be reached, say so in words the build agent cannot
+    misread as a failing workflow: exit 3 and TEST_UNAVAILABLE (nothing is wrong with the workflow)."""
     left = minutes_left()
     if left < TEST_MINUTES:
         print(f"not run: {left:.0f} minutes left in the build, a test needs {TEST_MINUTES}"); event("budget_stop", minutes_left=round(left)); return 1
     d = json.load(open(ROOT / "out" / slot / "deployed.json"))
     out = ROOT / "out" / slot / f"test-{time.strftime('%H%M%S')}.json"
     cmd = [sys.executable, str(ROOT / "tools/run_cases.py"), d["agent_id"], "--out", str(out)] + args
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=max(60, (left - 1) * 60))
-    print(r.stdout[-6000:] + r.stderr[-2000:])
+    text, r = "", None
+    for attempt in range(2):
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=max(60, (minutes_left() - 1) * 60))
+            text = r.stdout[-6000:] + r.stderr[-2000:]
+        except subprocess.TimeoutExpired:
+            text = "TimeoutExpired: the test did not finish in the time left"
+        if out.exists():
+            break
+        if attempt == 0 and any(w in text for w in INFRA_WORDS) and minutes_left() > TEST_MINUTES + 2:
+            print("the test could not reach the platform or the bank; trying once more in 30 s")
+            time.sleep(30)
+            continue
+        break
+    if not out.exists():
+        infra = any(w in text for w in INFRA_WORDS)
+        print(text[-1500:])
+        if infra:
+            print("TEST_UNAVAILABLE: the platform or the bank could not be reached. This says nothing about the workflow: do not change it because of this. "
+                  "The deployed workflow stands. Do not start more tests; finish with your one-line report.")
+            event("test_unavailable", slot=slot, args=args, error=text[-300:])
+            return 3
+        print("the test did not produce a result file (a problem in the test command, not in the workflow)")
+        event("test", slot=slot, args=args, error=text[-300:])
+        return 1
+    print(text)
     try:
         res = json.load(open(out)); event("test", slot=slot, args=args, passed=res["passed"], total=res["total"], failed=[f["id"] for f in res["final"] if not f["pass"]])
     except Exception as e:
         event("test", slot=slot, args=args, error=str(e)[:300])
-    return r.returncode
+    return r.returncode if r is not None else 1
 
 
 def main(argv):
