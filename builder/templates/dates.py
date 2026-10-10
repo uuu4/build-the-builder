@@ -560,7 +560,10 @@ def facts_text(today, now_min, fl, nds):
         L.append('There are no bank holidays from today on.')
     L.append('Weeks run Monday to Sunday.')
     L.append('')
-    L.append('Products (%d):' % len(fl))
+    if fl:
+        L.append('Products (%d):' % len(fl))
+    else:
+        L.append('Products: no account has been loaded in this call. Do not state any product, amount or deadline.')
     for f in fl:
         dlabel = F['days_late'].replace('_', ' ').capitalize()
         t = '- %s: %s. Past due %s. %s: %s.' % (f['pid'], f['label'], money(f['past_due']), dlabel, 'not known' if f['days_late'] is None else str(f['days_late']))
@@ -613,8 +616,6 @@ try:
     st['today'] = today
     st['now_min'] = now_min
     fl = all_facts(today)
-    if not fl:
-        raise ValueError('no products found')
     st['keys'] = [f['key'] for f in fl]
     out['today'] = iso(today)
     out['today_text'] = dtext(today)

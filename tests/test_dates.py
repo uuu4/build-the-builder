@@ -586,8 +586,7 @@ class OddInput(unittest.TestCase):
             self.assertIn(v["check_state"], ("ok", "error"))
 
     def test_facts_error_values(self):
-        for odd in ({}, {"accounts": [CARD]}, {"now": "yesterday", "accounts": [CARD]}, {"now": NOW},
-                    {"now": NOW, "accounts": "garbage"}):
+        for odd in ({}, {"accounts": [CARD]}, {"now": "yesterday", "accounts": [CARD]}):
             v = dict(odd)
             run_code(build_facts_code(params()), v)
             self.assertEqual(v["facts_state"], "error", odd)
@@ -612,11 +611,22 @@ class OddInput(unittest.TestCase):
         run_code(build_facts_code(params()), v)
         self.assertEqual((v["today"], v["today_text"], v["now_time"]), ("2026-10-14", "Wednesday 14 October 2026", "11:00"))
 
+    def test_no_products_still_gives_calendar_and_callback_window(self):
+        # the someone-else path runs the facts before any account is loaded
+        for odd in ({"now": NOW}, {"now": NOW, "accounts": "garbage"}, {"now": NOW, "accounts": []}):
+            v = dict(odd)
+            run_code(build_facts_code(params()), v)
+            self.assertEqual(v["facts_state"], "ok", odd)
+            self.assertEqual((v["product_count"], v["product_ids"]), ("0", ""))
+            self.assertIn("no account has been loaded", v["date_facts"])
+            self.assertIn("Callback windows", v["date_facts"])
+            self.assertIn("Calendar", v["date_facts"])
+
     def test_error_after_a_good_run_overwrites_stale_values(self):
         v = {"now": NOW, "accounts": [CARD]}
         run_code(build_facts_code(params()), v)
         self.assertEqual(v["facts_state"], "ok")
-        v["accounts"] = "garbage"
+        v["now"] = "garbage"
         run_code(build_facts_code(params()), v)
         self.assertEqual((v["facts_state"], v["deadline_p1"], v["product_ids"]), ("error", "", ""))
 

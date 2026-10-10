@@ -5,6 +5,10 @@
 Needs FREYA_API_KEY (env.sh). Uses the kit's freya.py, so a slot always updates the same workflow
 (.freya-agents.json) and every save is published. The platform drops fields it does not accept without an
 error, so after saving we read the workflow back and report any node, tool or pre-action that went missing.
+
+The platform also fills in agent_config with its own first message (seen on 10 October: a Turkish greeting,
+spoken first). The plan leaves agent_config out, as the kit asks, so after saving we set only the first message to
+the start step's fixed line, the way the kit's own "Freya Bank Collections Base" does, and publish again.
 """
 import argparse
 import os
@@ -30,6 +34,30 @@ def compare(sent, stored):
         if a.get(k) != b.get(k):
             diffs.append(f"{k}: sent {a.get(k)}, stored {b.get(k)}")
     return diffs
+
+
+def first_line(wf):
+    node = (wf.get("nodes") or {}).get(wf.get("initial_node"), {})
+    oe = node.get("on_enter") or {}
+    return oe.get("text") if oe.get("type") == "tts" and oe.get("text") else None
+
+
+def set_first_message(freya, workflow_id, wf):
+    """Make the platform's first message the start step's fixed line. Returns what changed, or None."""
+    line = first_line(wf)
+    if not line:
+        return None
+    stored = freya.api("GET", f"/api/v2/workflow/{workflow_id}", workspaceId=freya.workspace_id())
+    ac = ((stored.get("workflow") or {}).get("workflow") or {}).get("agent_config") or {}
+    llm = dict(ac.get("llmConfig") or {})
+    want = {"firstMessage": line, "firstMessageMode": "assistant-speaks-first",
+            "disableInterruptionsDuringFirstMessage": True}
+    if all(llm.get(k) == v for k, v in want.items()):
+        return None
+    before = llm.get("firstMessage")
+    llm.update(want)
+    freya.update_workflow(workflow_id, {**wf, "agent_config": {**ac, "llmConfig": llm}})
+    return f"first message was {before!r}, now the start step's line"
 
 
 def _lint(wf):
@@ -77,6 +105,9 @@ def main(argv=None):
         return 0
 
     ids = freya.save_workflow(args.slot, wf)
+    fm = set_first_message(freya, ids["workflow_id"], wf)
+    if fm:
+        print("  " + fm)
     stored = freya.api("GET", f"/api/v2/workflow/{ids['workflow_id']}", workspaceId=freya.workspace_id())
     stored_wf = (stored.get("workflow") or {}).get("workflow") or {}
     diffs = compare(wf, stored_wf)
