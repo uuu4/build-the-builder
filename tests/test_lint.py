@@ -689,6 +689,34 @@ class PromptWarnings(LintCase):
         self.assertWarning(wf, "context_variables", "dropped")
 
 
+class Robustness(LintCase):
+    def test_odd_values_never_raise(self):
+        junk = [None, 0, -3, "", "x", [], {}, [1], {"a": 1}, True, 2.5, ["a"], {"logic": "or"}, [{"x": 1}],
+                {"conditions": [1, None]}, {"operator": "equals", "operand": {}}]
+        spots = [
+            ("initial_node",), ("nodes",), ("tools",), ("test_variables",), ("global_nodes",),
+            ("nodes", "negotiate", "transitions"), ("nodes", "negotiate", "transitions", 0, "condition"),
+            ("nodes", "negotiate", "transitions", 0, "target_node"), ("nodes", "negotiate", "tools"),
+            ("nodes", "negotiate", "tools", 1, "function"), ("nodes", "negotiate", "tools", 1, "config"),
+            ("nodes", "negotiate", "extraction_schema"), ("nodes", "negotiate", "extraction_schema", 0),
+            ("nodes", "negotiate", "max_node_turns"), ("nodes", "negotiate", "task_message"),
+            ("nodes", "finish", "pre_actions"), ("nodes", "finish", "pre_actions", 0, "function"),
+            ("nodes", "goodbye", "terminal"), ("nodes", "goodbye", "transitions"), ("tools", 0, "config"),
+            ("tools", 0, "function", "parameters"),
+        ]
+        for spot in spots:
+            for value in junk:
+                wf = good_workflow()
+                parent = wf
+                for k in spot[:-1]:
+                    parent = parent[k]
+                parent[spot[-1]] = copy.deepcopy(value)
+                for mode in (None, False, True):
+                    report = lint_workflow(wf, lenient=mode)
+                    self.assertEqual(sorted(report), ["errors", "stats", "warnings"])
+                    json.dumps(report)
+
+
 class Cli(unittest.TestCase):
     def run_main(self, argv):
         out, err = io.StringIO(), io.StringIO()
