@@ -1,4 +1,6 @@
-# Arayüz sözleşmesi (taslak v0, 2026-10-10)
+# Arayüz sözleşmesi (taslak v0.1, 2026-10-10)
+
+**v0.1 değişiklikleri** (Latif'in ajanının incelemesi, #3): `installments` türü eklendi · `date_window.from` içine `now` · `rules.validate` runtime'da çakışmada **uyarı** verir (sert hata yalnızca test modunda) · `outcomes` global rotaları da kapsar.
 
 **Durum:** kit (`docs/`, `freya.py`, `minimal_builder.py`, `public-test-set.json`) gelmeden yazıldı, hepsi **tahmin**. Kit ile çelişirse kit geçerli, bu dosya güncellenir. Kırıcı değişiklik olursa sürümü artır ve issue #3'e not düş.
 
@@ -46,7 +48,7 @@ Rule:
 ```json
 {
   "id": "R001",
-  "type": "date_window|amount_min|holiday|identity_fields|outcome_codes|disclosure|escalation|call_hours|free",
+  "type": "date_window|amount_min|installments|holiday|identity_fields|outcome_codes|disclosure|escalation|call_hours|free",
   "value": { "...tür başına aşağıda..." },
   "source": {"doc": "S1", "quote": "ham metinden birebir alıntı"},
   "source_date": "YYYY-MM-DD|null",
@@ -63,8 +65,9 @@ Rule:
 
 | type | value |
 |---|---|
-| `date_window` | `{"earliest": Rel\|null, "latest": Rel\|null, "from": "today\|due_date\|statement_date"}`, `Rel = {"days": int, "unit": "calendar\|business"}` |
+| `date_window` | `{"earliest": Rel\|null, "latest": Rel\|null, "from": "now\|today\|due_date\|statement_date"}`, `Rel = {"days": int, "unit": "calendar\|business"}`. `now`/`today` ikisi de **arama zamanından** (`now` değişkeninin tarih kısmı, saat dilimi dönüşümü yok) türetilir, sınır günde kayma olmasın. |
 | `amount_min` | `{"min": number\|null, "min_pct_of_due": number\|null, "max": number\|null, "per": "payment\|product"}` |
+| `installments` | `{"allowed": bool, "max_count": int\|null, "max_gap_days": int\|null}` |
 | `holiday` | `{"dates": ["YYYY-MM-DD"], "weekends_blocked": bool, "business_day_definition": "text\|null"}` |
 | `identity_fields` | `{"fields": [{"name": str, "format": str, "spoken_example": str\|null}], "required": int, "max_failures": int}` |
 | `outcome_codes` | `{"codes": [{"code": str, "meaning": str, "reasons": [str]\|null}]}` |
@@ -77,7 +80,8 @@ Rule:
 - `id` benzersiz; `supersedes` var olan bir id'ye gider, döngü yok. **Ezilen kural silinmez**; geçerli kurallar = ezilmeyenler.
 - `source.quote`, atıf yapılan kaynakta (boşluk normalleştirilerek) **gerçekten geçiyor**; geçmiyorsa `confidence` zorla `uncertain`.
 - `identity_fields.fields[].name` ve `outcome_codes.codes[].code`, tool API'nin enum'larıyla uyuşuyor; uyuşmazlık uyarı olarak trace'e.
-- Çakışan geçerli kurallar (aynı `type` ve örtüşen `applies_to`) hata verir; çözüm `supersedes` ya da `applies_to` ayrımı.
+- Çakışan geçerli kurallar (aynı `type` ve örtüşen `applies_to`): **runtime'da hata değil uyarı.** En yeni `source_date`'li kural seçilir; tarih eşit/yoksa Policy açısından güvenli (daha kısıtlayıcı) olan seçilir. Ötekisi `uncertain` sayılır ve `trace.event("uncertain_default", ...)` ile yazılır. Gizli brief'te 30 dk elle müdahalesiz koşulduğu için sert hata çökme, çökme sıfır puan demektir.
+- **İki mod:** `validate(..., strict=False)` runtime (build.py), `strict=True` testler ve yerel koşular. Çakışma, kırık `supersedes` ve eksik alıntı strict'te hata. **Hata her iki modda yalnızca okunamayan veya boş tablo içindir.**
 
 Okuma stratejisi (A'nın iç işi, arayüzü etkilemez): iki bağımsız okuyucu + uyuşmazlıkta ham metinden alıntı getiren üçüncü çağrı; alıntı yoksa `uncertain`.
 
@@ -88,15 +92,19 @@ Okuma stratejisi (A'nın iç işi, arayüzü etkilemez): iki bağımsız okuyucu
 ```json
 {
   "identity": {"fields": [{"name": "", "format": ""}], "required": 0, "max_failures": 0},
-  "check":    {"window": {}, "holidays": ["YYYY-MM-DD"], "weekends_blocked": true, "amount": {}, "business_day_definition": null},
-  "outcomes": {"promise": {"outcome": "", "reason": null}, "no_promise": {}, "not_verified": {}, "not_reached": {}, "tool_fail": {}},
+  "check":    {"window": {}, "holidays": ["YYYY-MM-DD"], "weekends_blocked": true, "amount": {}, "installments": null, "business_day_definition": null},
+  "outcomes": {
+    "promise": {"outcome": "", "reason": null, "tools": []},
+    "no_promise": {}, "not_verified": {}, "not_reached": {}, "tool_fail": {},
+    "dispute": {}, "hardship": {}, "wrong_person": {}, "callback": {}, "human_request": {}
+  },
   "globals":  [{"name": "dispute", "trigger": "dispute", "action": "record_dispute", "tool": "add_note"}],
   "text_rules": {"identity": ["R002"], "disclose": [], "negotiate": [], "record": [], "close": [], "global:dispute": []},
   "uncertain_applied": [{"rule": "R012", "chosen": "", "why": ""}]
 }
 ```
 
-- `outcomes`: omurga rotası → `close_call` için **sabit** `outcome`/`reason` değeri; değerler tool API enum'larından (model doldurmaz).
+- `outcomes`: **her rota** (omurga ve global düğümler: `dispute`, `hardship`, `wrong_person`, `callback`, `human_request`) → `close_call` için **sabit** `outcome`/`reason` değeri. Değerler tool API enum'larından, model doldurmaz. `tools` ek araç çağrılarını listeler (örn. itirazda `add_note`, geri aramada `schedule_callback`, devirde `transfer_to_agent`) ve `args` içinde sabit değerler taşır. Brief'in sonuç tablosunda bir rotaya karşılık gelen kod yoksa en yakın kod seçilir ve `uncertain_default` yazılır.
 - `text_rules`: omurgaya sığmayan kurallar, kural id listesi olarak düğüme atanır. Yeni rota açılmaz.
 
 `compile_workflow(...) -> WorkflowDoc` (Freya workflow JSON'u, `freya.py`'nin kabul ettiği biçimde):
