@@ -1,6 +1,7 @@
 """Our builder. One command, brief files in, a Freya phone agent out.
 
     python3 builder/build.py <brief> [<brief> ...] [--tools tools/openapi.json] [--slot NAME] [--minutes 30]
+    python3 builder/build.py <brief> <tool api .json>      the organisers' form: a positional OpenAPI file is the tool API
 
 Three layers:
 1. this file: the clock, the trace, and the close. Whatever the agent does, it ends with a linted, saved and exported workflow.
@@ -16,6 +17,26 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 MODEL = os.environ.get("BUILDER_MODEL", "claude-opus-5-5")
 CLOSE_MINUTES = 4            # kept for the close: lint, save, export, trace
+RETRY_MINUTES = 10           # an agent that crashed or left no workflow is started once more if this much time is left
+FALLBACK = ROOT / "examples" / "base-agent.json"     # the kit's base agent: submitted only when nothing else exists
+
+
+def is_openapi(path):
+    """True for an OpenAPI file (JSON with "openapi" and "paths"). The organisers' form passes the tool API positionally."""
+    try:
+        d = json.load(open(path))
+        return isinstance(d, dict) and "openapi" in d and "paths" in d
+    except Exception:
+        return False
+
+
+def split_inputs(paths, tools_flag):
+    """Brief files and the tool API file from the command line. An explicit --tools wins; otherwise the last positional
+    OpenAPI file is the tool API. Every other positional file is a brief, in order."""
+    briefs = [p for p in paths if not is_openapi(p)]
+    apis = [p for p in paths if is_openapi(p)]
+    tools = tools_flag or (apis[-1] if apis else str(ROOT / "tools/openapi.json"))
+    return briefs, tools
 
 
 def log(trace, entry_type, **data):
@@ -23,22 +44,23 @@ def log(trace, entry_type, **data):
         f.write(json.dumps({"t": time.strftime("%Y-%m-%dT%H:%M:%S"), "type": entry_type, **data}, default=str) + "\n")
 
 
-def prompt_for(briefs, tool_api, slot, deadline):
-    return (f"Use the collections-builder skill to build the phone agent.\n"
+def prompt_for(briefs, tool_api, slot, deadline, again=False):
+    return (("A first build attempt stopped early. Files it left in out/" + slot + "/ may be used if they are complete; "
+             "check them before you rely on them.\n") if again else "") + (f"Use the collections-builder skill to build the phone agent.\n"
             f"Brief files, in order (a later file can change an earlier one): {', '.join(briefs)}\n"
             f"Tool API file: {tool_api}\nSlot: {slot}  (write everything to out/{slot}/)\n"
             f"Hard deadline: {time.strftime('%H:%M:%S', time.localtime(deadline))} local time "
             f"({(deadline - time.time()) / 60:.0f} minutes from now). Have a deployed workflow well before it.")
 
 
-async def run_agent(briefs, tool_api, slot, deadline, trace):
+async def run_agent(briefs, tool_api, slot, deadline, trace, again=False):
     from claude_agent_sdk import AssistantMessage, ClaudeAgentOptions, ResultMessage, TextBlock, ToolUseBlock, query
     options = ClaudeAgentOptions(
         cwd=ROOT, model=MODEL, skills=["collections-builder"], setting_sources=["project"],
         allowed_tools=["Read", "Write", "Edit", "Glob", "Grep", "Bash"], permission_mode="dontAsk", max_turns=200,
         env={"BASH_DEFAULT_TIMEOUT_MS": "900000", "BASH_MAX_TIMEOUT_MS": "1200000", "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS": "1",
              "TRACE_PATH": str(trace), "BUILD_DEADLINE": str(deadline), "TOOL_API": tool_api})
-    async for m in query(prompt=prompt_for(briefs, tool_api, slot, deadline), options=options):
+    async for m in query(prompt=prompt_for(briefs, tool_api, slot, deadline, again), options=options):
         log(trace, type(m).__name__, **dataclasses.asdict(m))
         if isinstance(m, AssistantMessage):
             for b in m.content:
@@ -50,20 +72,33 @@ async def run_agent(briefs, tool_api, slot, deadline, trace):
             print(f"agent done: {m.num_turns} turns, {m.duration_ms / 1000:.0f} s, ${m.total_cost_usd or 0:.2f}", flush=True)
 
 
+def regenerate(slot, trace):
+    """out/<slot>/workflow.json, generated from out/<slot>/gen.py when the agent wrote the generator but did not run it."""
+    wf_path = ROOT / "out" / slot / "workflow.json"
+    gen = ROOT / "out" / slot / "gen.py"
+    if not wf_path.exists() and gen.exists():
+        try:
+            r = subprocess.run([sys.executable, str(gen)], cwd=ROOT, capture_output=True, text=True, timeout=120)
+            log(trace, "event", kind="close_regenerate", rc=r.returncode, err=r.stderr[-500:])
+        except Exception as e:
+            log(trace, "event", kind="close_regenerate", rc=None, err=repr(e)[:500])
+    return wf_path
+
+
 def close(slot, trace):
     """Lint, save and export whatever valid workflow the agent left. Never raises."""
     from builder.kit.lint import lint
     from builder.kit.openapi import Api
     from builder.kit.deploy import deploy
-    wf_path = ROOT / "out" / slot / "workflow.json"
-    if not wf_path.exists():
-        gen = ROOT / "out" / slot / "gen.py"
-        if gen.exists():                     # the agent wrote the generator but did not get to run it
-            r = subprocess.run([sys.executable, str(gen)], cwd=ROOT, capture_output=True, text=True, timeout=120)
-            log(trace, "event", kind="close_regenerate", rc=r.returncode, err=r.stderr[-500:])
-    if not wf_path.exists():
+    wf_path = regenerate(slot, trace)
+    if wf_path.exists():
+        wf = json.load(open(wf_path))
+    elif FALLBACK.exists():          # far below a built agent, but a submission scores more than none
+        wf = json.load(open(FALLBACK))
+        log(trace, "event", kind="close_fallback", msg="no workflow.json: submitting the kit's base agent " + str(FALLBACK.relative_to(ROOT)))
+        print("no workflow from the agent: submitting the fallback base agent")
+    else:
         log(trace, "event", kind="close_failed", msg="no workflow.json"); print("no workflow to submit"); return None
-    wf = json.load(open(wf_path))
     errs = lint(wf, Api(os.environ.get("TOOL_API", str(ROOT / "tools/openapi.json"))))
     if errs:
         log(trace, "event", kind="close_lint", problems=errs[:30]); print("lint problems at close:\n" + "\n".join(errs))
@@ -103,10 +138,13 @@ def summary(trace, out):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("briefs", nargs="+")
-    ap.add_argument("--tools", default=str(ROOT / "tools/openapi.json"))
+    ap.add_argument("--tools")
     ap.add_argument("--slot")
     ap.add_argument("--minutes", type=float, default=30)
     a = ap.parse_args()
+    a.briefs, a.tools = split_inputs(a.briefs, a.tools)
+    if not a.briefs:
+        ap.error("no brief file (every positional file is an OpenAPI file)")
     t0 = time.time()
     deadline = t0 + a.minutes * 60
     slot = a.slot or "ours-" + pathlib.Path(a.briefs[-1]).stem      # never the slot of another builder
@@ -115,13 +153,20 @@ def main():
     trace = ROOT / "traces" / f"{slot}-{time.strftime('%Y%m%d-%H%M%S')}.jsonl"
     os.environ["TRACE_PATH"] = str(trace)
     log(trace, "start", briefs=a.briefs, tool_api=os.environ["TOOL_API"], model=MODEL, slot=slot, deadline=deadline)
-    try:
-        asyncio.run(asyncio.wait_for(run_agent(a.briefs, os.environ["TOOL_API"], slot, deadline - CLOSE_MINUTES * 60, trace),
-                                     timeout=max(60, deadline - CLOSE_MINUTES * 60 - time.time())))
-    except asyncio.TimeoutError:
-        log(trace, "event", kind="budget_stop", msg="agent stopped at its deadline"); print("agent stopped at its deadline")
-    except Exception as e:
-        log(trace, "event", kind="agent_error", msg=repr(e)[:800]); print("agent error:", e)
+    for attempt in (1, 2):
+        try:
+            asyncio.run(asyncio.wait_for(run_agent(a.briefs, os.environ["TOOL_API"], slot, deadline - CLOSE_MINUTES * 60, trace, again=attempt > 1),
+                                         timeout=max(60, deadline - CLOSE_MINUTES * 60 - time.time())))
+        except asyncio.TimeoutError:
+            log(trace, "event", kind="budget_stop", msg="agent stopped at its deadline"); print("agent stopped at its deadline")
+            break
+        except Exception as e:
+            log(trace, "event", kind="agent_error", attempt=attempt, msg=repr(e)[:800]); print("agent error:", e)
+        left = (deadline - CLOSE_MINUTES * 60 - time.time()) / 60
+        if regenerate(slot, trace).exists() or attempt == 2 or left < RETRY_MINUTES:
+            break
+        log(trace, "event", kind="agent_retry", minutes_left=round(left), msg="no workflow.json after the agent: starting it once more")
+        print(f"no workflow after the agent, {left:.0f} minutes left: starting it once more")
     close(slot, trace)
     log(trace, "end", seconds=round(time.time() - t0))
     summary(trace, str(trace).replace(".jsonl", ".log"))

@@ -21,10 +21,11 @@ python3 tools/preflight.py                    # koşmadan önce
 python3 builder/build.py briefs/hidden-1.md --tools briefs/hidden-1.openapi.json --slot hidden-1 2>&1 | tee traces/hidden-1.console.txt
 ```
 
-`--tools` **şart**: yoksa builder kit'in eski `tools/openapi.json`'unu kullanır (gizli API'nin alanları farklı olabilir). Her gizli brief kendi araç API dosyasıyla gelir. Bir brief başka bir dosyanın üstüne kuruluyorsa (halka açık B, A'nın üstüne kuruluydu) dosyalar sırayla verilir: eski önce, değiştiren sonra (`build.py a.md b.md --tools ...`).
+Araç API dosyası `--tools` ile ya da formdaki gibi ikinci konumsal dosya olarak verilebilir (`build.py brief.md brief.openapi.json`): builder konumsal bir OpenAPI dosyasını araç API'si sayar. İkisi de yoksa kit'in eski `tools/openapi.json`'unu kullanır (gizli API'nin alanları farklı olabilir). Her gizli brief kendi araç API dosyasıyla gelir. Bir brief başka bir dosyanın üstüne kuruluyorsa (halka açık B, A'nın üstüne kuruluydu) dosyalar sırayla verilir: eski önce, değiştiren sonra (`build.py a.md b.md --tools ...`).
 
 - Süre: en fazla 30 dk (`--minutes 30`), pratikte 8-16 dk. Sonra ikinci brief. Her ikisi bittiğinde en az 30 dk marj kalsın.
 - Çıktı: `submission/hidden-1.workflow.json`, `traces/hidden-1-<zaman>.{log,jsonl}`, `out/hidden-1/`.
+- Ajan çökerse ya da workflow bırakmazsa builder onu bir kez daha başlatır (en az 10 dk kalmışsa). Hâlâ workflow yoksa kit'in temel ajanını (`examples/base-agent.json`) teslim eder; konsolda "submitting the fallback base agent" görünür, bu çok düşük puan demektir.
 - Sonda "no workflow to submit" yazarsa: konsol çıktısını oku, **brief'e özgü hiçbir şey yazmadan** yalnızca çökme düzeltmesi yap (izin var), bir daha koş (izin var; teslim edilen workflow'un trace'i o koşununki olmalı).
 - İkinci brief'in koşusu birincinin simülasyonu bitmeden başlamaz (çalışma alanında tek simülasyon).
 
