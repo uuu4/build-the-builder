@@ -49,3 +49,29 @@ Kalan hatalar:
 - PUB-05 `talkative`: hardship yolu, incelenecek.
 
 Not: stil koşuları birer tekrar; 10 aramada 1 ile 2 aramalık fark gürültü sınırında.
+
+## 2. adım: Brief A + B (çok ürün)
+
+`python3 builder/build.py briefs/brief-a.md briefs/brief-b.md` (slot `ours-brief-b`, agent `41163692-a099-4ddf-82bb-eda34adb3acc`): 461 sn, 0,72 USD. Yalnızca B vakaları ölçüldü (A vakaları B'nin not kuralı yüzünden bu ajan için geçerli sınav değil).
+
+| Koşul | Sonuç |
+|---|---|
+| 3 tekrar, 3/3 kuralı | 2/3 (PUB-11 3/3, PUB-12 2/3, PUB-13 3/3) |
+| Stiller (her biri 3 arama) | `pieces` 2, `corrects` 1, `talkative` 1, `asks_back` 3, `in_words` 2: toplam 9/15 |
+
+Hatalar: PUB-12 ürün başına deneme sayısı aşılıyor (merdiven çok ürüne uygulanmamış, sayma prompt'ta). PUB-13 tek tarihin ürün başına son tarihe göre düzeltilmesi modele kalmış, kredi 30 Ekim'e kaydediliyor (doğrusu 23). İkisi de kit'e alınacak: ürün başına merdiven ve ürün başına tarih düzeltmesinin kodda yapılması.
+
+## 3. adım: Brief R (görülmemiş, ham banka malzemesi)
+
+`practice/brief-r/brief-r.md`: mail + politika + memo + kod listesi; banka adı, soru sırası, tatiller, bantlar, geri arama saatleri ve bütün sebep kodları A'dan farklı. Builder (slot `ours-brief-r`, agent `ee8ef9d3-a709-4cdb-8992-05cec46d21f9`): **148 sn, 0,76 USD, kendi testi yok** (pratik bankada bu brief'in vakası yok, finaldeki durum gibi).
+
+Ölçüm notu: pratik banka `close_call` sebebini A/B listesine göre denetliyor ve R'nin kodlarını (`cb_booked`, `restructure`...) reddediyor. Bu yüzden puan, ajanın `close_call`'a gönderdiği değerlerle yeniden hesaplandı (`practice/brief-r/cases.json` cevap anahtarı); hakem (konuşma) hataları olduğu gibi sayıldı.
+
+| Koşul | Sonuç |
+|---|---|
+| 3 tekrar | 28/30 arama; 3/3 kuralıyla 9/10 (PUB-10 1/3) |
+| Stiller | `pieces` 7, `corrects` 8, `talkative` 6, `asks_back` 9, `in_words` 9: toplam 39/50 |
+
+Builder ham malzemeden doğru okudu: bütün sebep kodları, ters soru sırası (önce telefon), memonun üç değişikliği (6. iş günü, 17:00, "iki iş günü"), yeni tatiller ve bant sınırları.
+
+Sistematik hata PUB-10: ilk kayıt başarısız olunca model yeniden denemedi ("bir sorun oldu" deyip devam etti). Düzeltme kit'te: `ladder.py` başarısız sözü motorun kendisi aynı argümanlarla (`{{create_promise_args.*}}`) bir kez daha gönderiyor. Brief A ajanında doğrulandı: PUB-10 3/3, ikinci çağrıda tutar sayı olarak gitti ve kayıt tuttu.

@@ -13,6 +13,7 @@ Spec (JSON, from the brief):
   "record": "now" | "defer",
   "promise_tool": "name of the promise tool (record now only)",
   "on_recorded": "node after a recorded promise", "record_failures": 2, "on_record_failed": "node after that many failed calls",
+  "retry_line": "what is said while the engine repeats a failed promise call (optional; silent if empty)",
   "on_agreed": "node after an agreement (record defer only; agreed_amount / agreed_date are extracted)",
   "situations": {"paid": "node", "dispute": "node", "hardship": "node", "new_plan": "node", "human": "node"},
   "start": "first step",
@@ -72,7 +73,8 @@ def build(api, spec, tools, prefix="neg_", max_turns=12, turn_limit_target=None)
         if record_now:
             pt = spec["promise_tool"]
             trs.append(g.is_true(spec["on_recorded"], f"{pt}_response.data.ok", "The promise was recorded"))
-            trs.append(g.greater(spec["on_record_failed"], f"{pt}_failure_count", int(spec.get("record_failures", 2)) - 1, "Recording failed too often"))
+            # a failed call is repeated by the engine with the same arguments: the model was seen to apologise instead of retrying
+            trs.append(g.greater(prefix + "retry_record", f"{pt}_failure_count", 0, "Recording failed: retry"))
         else:
             trs.append(g.and_eq(spec["on_agreed"], [[(var, "accepts")]], "Agreed"))
         for kind, target in (spec.get("situations") or {}).items():
@@ -90,6 +92,7 @@ def build(api, spec, tools, prefix="neg_", max_turns=12, turn_limit_target=None)
         task = ("The customer's identity is verified.\n\nFACTS (computed, trust them; never compute a date or an amount yourself):\n" + spec.get("facts", "") +
                 "\n\nRULES FOR EVERY STEP:\n" + base_rules + "\n- A date or amount the customer proposes is never a refusal: check it against the facts and answer it."
                 "\n- If the customer corrects a date or an amount, use the corrected value." "\n- " + how +
+                "\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it." +
                 "\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses."
                 "\n\nTHIS STEP:\n" + s["task"])
         extract = [g.enum_field(var, list(kinds), "Classify ONLY the customer's last message. " + " ".join(f"{k}: {v}." for k, v in kinds.items()))]
@@ -99,6 +102,16 @@ def build(api, spec, tools, prefix="neg_", max_turns=12, turn_limit_target=None)
         nodes[name] = g.conversation(name, task, trs, tools=tools, extract=extract,
                                      on_enter={"type": "tts", "text": s["say"]} if s.get("say") else {"type": "llm", "prompt": s["task"]},
                                      max_turns=max_turns, max_turn_target=turn_limit_target)
+    if record_now:
+        pt = spec["promise_tool"]
+        fields = [f for f in api.ops[pt]["fields"] if f != "customer_id"]
+        retry = prefix + "retry_record"
+        extra = max(0, int(spec.get("record_failures", 2)) - 2)       # attempts beyond the model's call and this one
+        nodes[retry] = g.api_request(retry, api.pre_action(pt, {f: "{{%s_args.%s}}" % (pt, f) for f in fields}, retries=extra), spec["on_record_failed"],
+                                     transitions=[g.is_true(spec["on_recorded"], retry + "_response.data.ok", "Recorded on the retry")],
+                                     say=spec.get("retry_line") or "")
+        if not spec.get("retry_line"):
+            nodes[retry]["on_enter"] = {"type": "silent"}
     return nodes
 
 

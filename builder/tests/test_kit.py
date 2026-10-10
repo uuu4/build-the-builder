@@ -146,3 +146,17 @@ class ReadListTest(unittest.TestCase):
     def test_mapped_json(self):
         src = pycode.with_params("vars['out'] = read_list('n', 'products')\n", {})
         self.assertEqual(pycode.run_locally(src, {"products": '[{"a": 1}]'})["out"], [{"a": 1}])
+
+
+class RetryTest(unittest.TestCase):
+    def test_failed_promise_is_retried_by_the_engine(self):
+        from builder.kit import ladder
+        spec = json.load(open(ROOT / "builder/tests/fixtures/ladder-brief-a.json"))
+        nodes = ladder.build(API, spec, tools=[API.tool("create_promise", "d")])
+        trs = nodes["neg_ask_today"]["transitions"]
+        self.assertEqual([t["target_node"] for t in trs[:2]], ["close_promise", "neg_retry_record"])
+        r = nodes["neg_retry_record"]
+        body = r["pre_actions"][0]["function"]["parameters"]["properties"]["body"]["properties"]
+        self.assertEqual(body["amount"]["default"], "{{create_promise_args.amount}}")
+        self.assertEqual(r["transitions"][0]["target_node"], "close_promise")
+        self.assertEqual(r["passthrough_default_transition"], "close_service_error")
