@@ -7,7 +7,7 @@ description: Build a Freya phone agent for a bank's collections brief with the t
 
 You get one or more brief files, a tool API file and a slot. You write two files, generate the workflow with code, deploy it and test it. Work from the repository root.
 
-Every value comes from the brief files and the tool API file you were given. Nothing comes from memory or from another brief. When a later file (a memo, a mail) changes an earlier one, the later one wins.
+Every value comes from the brief files and the tool API file you were given. Nothing comes from memory, from another brief, or from files of other slots in `out/`, `baseline/` or `submission/`: do not open them. When a later file (a memo, a mail) changes an earlier one, the later one wins.
 
 ## Steps
 

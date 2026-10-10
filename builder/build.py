@@ -18,9 +18,9 @@ MODEL = os.environ.get("BUILDER_MODEL", "claude-opus-5-5")
 CLOSE_MINUTES = 4            # kept for the close: lint, save, export, trace
 
 
-def log(trace, kind, **data):
+def log(trace, entry_type, **data):
     with open(trace, "a") as f:
-        f.write(json.dumps({"t": time.strftime("%Y-%m-%dT%H:%M:%S"), "type": kind, **data}, default=str) + "\n")
+        f.write(json.dumps({"t": time.strftime("%Y-%m-%dT%H:%M:%S"), "type": entry_type, **data}, default=str) + "\n")
 
 
 def prompt_for(briefs, tool_api, slot, deadline):
@@ -109,7 +109,7 @@ def main():
     a = ap.parse_args()
     t0 = time.time()
     deadline = t0 + a.minutes * 60
-    slot = a.slot or pathlib.Path(a.briefs[-1]).stem
+    slot = a.slot or "ours-" + pathlib.Path(a.briefs[-1]).stem      # never the slot of another builder
     os.environ["TOOL_API"] = str(pathlib.Path(a.tools).resolve())
     (ROOT / "traces").mkdir(exist_ok=True)
     trace = ROOT / "traces" / f"{slot}-{time.strftime('%Y%m%d-%H%M%S')}.jsonl"

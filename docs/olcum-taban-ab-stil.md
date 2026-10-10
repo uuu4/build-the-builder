@@ -9,7 +9,7 @@
 | | |
 |---|---|
 | workflow_id / agent_id | `26d87818-853d-4bdf-9cd9-f61309e01209` / `5b9f761c-ea1a-4358-8547-8a84a0b0a79d` (slot `brief-b`) |
-| Builder | 1158 sn, 33 tur, 2,07 USD. Üreteç `out/gen_brief_b.py`, iz `traces/20261010-132017.jsonl` |
+| Builder | 1158 sn, 33 tur, 2,07 USD. Üreteç `baseline/example-builder/gen_brief_b.py`, iz `baseline/example-builder/20261010-132017.jsonl` |
 | Builder'ın kendi ölçümü | yalnızca B vakaları, 3 tekrar: 9/9. Arada PUB-12 ve PUB-13 için bir düzeltme turu |
 
 Bizim ölçümümüz: 13 vaka, 3 tekrar.
