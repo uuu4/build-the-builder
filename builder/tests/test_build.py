@@ -4,6 +4,7 @@ The organisers' form runs `build.py {brief_path} {tool_api_path}`: the tool API 
 A crashed agent is started once more; with no workflow at all the kit's base agent is submitted rather than nothing."""
 import asyncio
 import json
+import os
 import pathlib
 import shutil
 import sys
@@ -62,7 +63,8 @@ class Flow(unittest.TestCase):
 
     def run_main(self, agent):
         argv = ["build.py", "briefs/brief-a.md", API, "--slot", self.slot, "--minutes", "30"]
-        with mock.patch.object(sys, "argv", argv), mock.patch.object(build, "run_agent", agent), \
+        # main() sets TRACE_PATH, TOOL_API in os.environ; restored here so later tests do not write into this trace
+        with mock.patch.dict(os.environ), mock.patch.object(sys, "argv", argv), mock.patch.object(build, "run_agent", agent), \
                 mock.patch("builder.kit.deploy.deploy", self.fake_deploy):
             build.main()
 
