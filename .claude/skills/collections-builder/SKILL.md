@@ -48,6 +48,8 @@ What the practice runs taught. Each point cost passes when it was missing.
 
 **Turns.** Every conversation node: `max_turns` with a `max_turn_target` that closes sensibly. Tell the model in the system prompt: after every tool result speak or call the next tool; one tool per message; do not say goodbye yourself.
 
+**Names come from the tool API file.** Operation names, field names, enum values, reason and queue codes, the id field and the "ok" flag of a response are read from the file (`Api` finds the id field, the close operation and the ok flag itself). Anything the file does not decide you write in the specs: `front.json` (`identity.tool`, `human.tool`, `human.queue_param`, callback tool and its fields) and `multi.json` (`tools`, `fields`, `reasons`, `queues`, `closes`). The front spec needs every part the kit names in its error message; a missing part is never filled with an invented value.
+
 ## Budget
 
 `build.py` gives you a deadline. Deploy a first complete version early (about a third of the time), then improve. A test of ten customers takes 3 to 11 minutes. Log a choice you were unsure about with `python3 -m builder.cli event uncertain_default "<what and why>"`.

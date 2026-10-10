@@ -174,5 +174,18 @@
     "new_plan": "restructuring",
     "hardship": "support",
     "human": "general"
+  },
+  "tools": {
+    "promise": "create_promise",
+    "note": "add_note",
+    "transfer": "transfer_to_agent",
+    "account": "get_account"
+  },
+  "fields": {
+    "product": "product_id",
+    "amount": "amount",
+    "date": "date",
+    "reason": "reason",
+    "queue": "queue"
   }
 }

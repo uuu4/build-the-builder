@@ -88,10 +88,10 @@ def close(api, name, outcome, reason, farewell, end_node="end"):
 
     The outcome is baked as a literal: no model call, no code sandbox, no variable that might be unset.
     close_call is idempotent enough to retry: the API says a 500 recorded nothing."""
-    values = {"outcome": outcome}
+    values = {api.close_outcome: outcome}
     if reason:
-        values["reason"] = reason
-    return api_request(name, api.pre_action("close_call", values, retries=2), end_node, say=farewell)
+        values[api.close_reason] = reason
+    return api_request(name, api.pre_action(api.close_op, values, retries=2), end_node, say=farewell)
 
 
 def close_from_vars(api, name, farewell, outcome_var="final_outcome", reason_var="final_reason", end_node="end"):
@@ -99,8 +99,8 @@ def close_from_vars(api, name, farewell, outcome_var="final_outcome", reason_var
 
     Give the code node that computes the outcome a first transition `unset(fallback, outcome_var)` to a literal close:
     if the sandbox dropped the code, the outcome is unset and the call still closes."""
-    values = {"outcome": "{{%s}}" % outcome_var, "reason": "{{%s}}" % reason_var}
-    return api_request(name, api.pre_action("close_call", values, retries=2), end_node, say=farewell)
+    values = {api.close_outcome: "{{%s}}" % outcome_var, api.close_reason: "{{%s}}" % reason_var}
+    return api_request(name, api.pre_action(api.close_op, values, retries=2), end_node, say=farewell)
 
 
 

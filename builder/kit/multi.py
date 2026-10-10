@@ -47,7 +47,8 @@ Spec (JSON, every value from the brief; the ladder template is a ladder.py spec 
              "error": {"outcome": "...", "reason": "...", "farewell": "..."}},
   "situations": {"paid": "sentence spoken when the customer says a product is paid", "dispute": "..."},   optional
   "notes": true,         optional. false when the brief takes no notes (a product without a promise is only closed on)
-  "tools": {"promise": "create_promise", "note": "add_note", "transfer": "transfer_to_agent"}   optional
+  "tools": {"promise": "create_promise", "note": "add_note", "transfer": "transfer_to_agent"}   optional, names in the tool API file
+  "fields": {"product": "product_id", "amount": "amount", "date": "date", "reason": "reason", "queue": "queue"}   optional, their request fields
 }
 `build` returns the nodes; enter at `m_today`. Targets it uses that you provide: nothing (every node is built here).
 """
@@ -325,6 +326,8 @@ def build(api, spec, ladder_tpl=None):
     K = int(spec["slots"])
     tpl = copy.deepcopy(ladder_tpl or spec["ladder"])
     tools = {"promise": "create_promise", "note": "add_note", "transfer": "transfer_to_agent", **(spec.get("tools") or {})}
+    # request fields of those tools, by what they mean (names as in the tool API file)
+    F = {"product": "product_id", "amount": "amount", "date": "date", "reason": "reason", "queue": "queue", **(spec.get("fields") or {})}
     closes = spec["closes"]
     reasons = dict(spec["reasons"])      # logical reason -> the value the bank's note tool takes
     outcomes = {"promise": closes["promise"]["outcome"], "paid": closes["paid"]["outcome"], "other": closes["other"]["outcome"]}
@@ -416,18 +419,19 @@ def build(api, spec, ladder_tpl=None):
         nodes[f"rg_{k}"] = _code(f"rg_{k}", _GATE, "close_error",
                                   _eqs("gate_route", [("promise", f"rec_{k}"), ("note", f"note_{k}"), ("skip", nxt)]), k=k,
                                   notes=bool(spec.get("notes", True)))
-        body = {"product_id": "{{s%d_pid}}" % k, "amount": "{{amt_%d}}" % k, "date": "{{date_%d}}" % k}
+        body = {F["product"]: "{{s%d_pid}}" % k, F["amount"]: "{{amt_%d}}" % k, F["date"]: "{{date_%d}}" % k}
+        ok = api.ok_field(pt)
         # two explicit tries: a failure answered with ok false is not an HTTP error, so a retry setting on the call would not fire
         nodes[f"rec_{k}"] = g.api_request(
             f"rec_{k}", api.pre_action(pt, body, retries=0), f"rec2_{k}",
-            transitions=[g.is_true(f"recok_{k}", f"rec_{k}_response.data.ok", "recorded")])
+            transitions=[g.is_true(f"recok_{k}", f"rec_{k}_response.data.{ok}", "recorded")])
         nodes[f"rec2_{k}"] = g.api_request(
             f"rec2_{k}", api.pre_action(pt, body, retries=0), f"recfail_{k}",
-            transitions=[g.is_true(f"recok_{k}", f"rec2_{k}_response.data.ok", "recorded on the second try")])
+            transitions=[g.is_true(f"recok_{k}", f"rec2_{k}_response.data.{ok}", "recorded on the second try")])
         nodes[f"recok_{k}"] = _code(f"recok_{k}", _REC_OK, "close_error", _eqs("rec_route", [("ok", nxt)]), k=k)
         nodes[f"recfail_{k}"] = _code(f"recfail_{k}", _REC_FAIL, "close_error", _eqs("rec_route", [("failed", f"note_{k}" if spec.get("notes", True) else nxt)]), k=k, reasons=reasons)
         nodes[f"note_{k}"] = g.api_request(
-            f"note_{k}", api.pre_action(nt, {"product_id": "{{s%d_pid}}" % k, "reason": "{{reason_%d}}" % k}, retries=2), nxt)
+            f"note_{k}", api.pre_action(nt, {F["product"]: "{{s%d_pid}}" % k, F["reason"]: "{{reason_%d}}" % k}, retries=2), nxt)
     nodes["final"] = _code("final", _FINAL, "close_error",
                            _eqs("final_route", [("promise", "close_promise"), ("paid", "close_paid"), ("other", "close_other")]),
                            reasons=reasons, outcomes=outcomes)
@@ -459,7 +463,7 @@ def build(api, spec, ladder_tpl=None):
     # --- transfers and closes
     for key in ("new_plan", "hardship", "human"):
         c = closes[key]
-        nodes[f"transfer_{key}"] = g.api_request(f"transfer_{key}", api.pre_action(tools["transfer"], {"queue": queues[key]}, retries=2), f"close_{key}")
+        nodes[f"transfer_{key}"] = g.api_request(f"transfer_{key}", api.pre_action(tools["transfer"], {F["queue"]: queues[key]}, retries=2), f"close_{key}")
         nodes[f"close_{key}"] = g.close(api, f"close_{key}", c["outcome"], c.get("reason", ""), c["farewell"])
     nodes["close_promise"] = g.close(api, "close_promise", outcomes["promise"], "", closes["promise"]["farewell"])
     nodes["close_paid"] = g.close(api, "close_paid", outcomes["paid"], "", closes["paid"]["farewell"])

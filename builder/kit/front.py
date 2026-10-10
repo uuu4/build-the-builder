@@ -36,7 +36,8 @@ SPEC_DOC = """front spec (JSON), every value from the brief and the tool API fil
     "decline_kinds": ["refuses", "asks_purpose", "no_talk"],
     "declines_to_close": 2
   },
-  "human": {"ask_first": "what to ask once before transferring a customer who wants a human", "queue": "queue value"},
+  "human": {"ask_first": "what to ask once before transferring a customer who wants a human", "queue": "queue value",
+            "tool": "the transfer tool of the tool API file, default transfer_to_agent", "queue_param": "its queue field, default queue"},
   "third_party": {
     "rules": ["what to do and not do with someone who is not the customer, one sentence each"],
     "callback": {"tool": "schedule_callback", "days": ["today", "next_business_day"], "from": "HH:MM", "to": "HH:MM", "after_now": true,
@@ -124,11 +125,36 @@ def common_answers(spec):
     return "\n".join("- " + x for x in out)
 
 
+REQUIRED = ["opening_line", "confirm_question", "confirm_words", "not_confirm_words", "purpose_before_verify", "agent_identity",
+            "identity.questions", "identity.field_param", "identity.answer_param", "identity.result.all_verified", "identity.explain_line",
+            "human.ask_first", "human.queue", "third_party.callback", "third_party.loss_line"] + ["closes." + k for k in FRONT_CLOSES]
+
+
+def check_spec(spec):
+    """Names of the spec parts that are missing. The front is the same for every brief of this kind of bank (who answered,
+    someone else on the line, a callback, the identity check, a human): a brief that lacks one of them still needs a value here,
+    taken from the brief, not invented."""
+    missing = []
+    for path in REQUIRED:
+        cur = spec
+        for part in path.split("."):
+            if not isinstance(cur, dict) or part not in cur:
+                missing.append(path)
+                break
+            cur = cur[part]
+    return missing
+
+
 def build(api, spec, after_verify, prefix=""):
     """Return {node_key: node} for the front of the call. `after_verify` is the node that follows a verified identity.
 
     Entry node: `{prefix}setup`. Close nodes: `{prefix}close_<kind>` for FRONT_CLOSES, all leading to `{prefix}end`."""
     P = lambda n: prefix + n  # noqa: E731
+    spec = dict(spec)
+    spec.setdefault("calendar", {"holidays": [], "weekend_days": [5, 6]})
+    missing = check_spec(spec)
+    if missing:
+        raise ValueError("front spec is missing: " + ", ".join(missing))
     idn, tp = spec["identity"], spec["third_party"]
     r = idn["result"]
     nodes = {}
@@ -174,6 +200,9 @@ def build(api, spec, after_verify, prefix=""):
 
     # --- someone else on the line
     cb = tp["callback"]
+    cb_ok = api.ok_field(cb.get("tool", "schedule_callback"))
+    hu = spec["human"]
+    xfer, xq = hu.get("tool", "transfer_to_agent"), hu.get("queue_param", "queue")
     cb_tool = api.tool(cb.get("tool", "schedule_callback"),
                        "Book a callback. CALL it as soon as the person gives a day and an exact time that are inside the callback window. "
                        "Never call it for a day or time outside the window. If the result has ok false or an error, nothing was booked: do not say it was.",
@@ -195,7 +224,7 @@ def build(api, spec, after_verify, prefix=""):
                               "were asked for another one, and proposed a time outside it again. no_time: they cannot or will not say when the customer can be reached. "
                               "wrong_number: the number does not belong to the customer. deceased: the customer has died. giving_time: they are giving or about to give a time. other: anything else.")],
         on_enter={"type": "llm", "prompt": "The person on the line is not {{title}} {{last_name}}. Do not say why you are calling. Ask politely when {{title}} {{last_name}} can be reached."},
-        transitions=[g.is_true(P("close_callback"), cb.get("tool", "schedule_callback") + "_response.data.ok", "The callback was booked"),
+        transitions=[g.is_true(P("close_callback"), cb.get("tool", "schedule_callback") + "_response.data." + cb_ok, "The callback was booked"),
                      g.eq(P("close_deceased"), "tp_state", "deceased", "The customer has died"),
                      g.eq(P("close_wrong_number"), "tp_state", "wrong_number", "Wrong number"),
                      g.any_eq(P("close_no_callback"), "tp_state", ["outside_twice", "no_time"], "No callback can be booked")],
@@ -211,9 +240,9 @@ def build(api, spec, after_verify, prefix=""):
         "Never call it with a partial answer. Never call it twice for the same answer. After the result, speak to the customer.",
         descriptions={idn["field_param"]: "Which question was answered. One of: " + ", ".join(q["field"] for q in qs) + ".",
                       idn["answer_param"]: "The customer's complete answer, converted: " + "; ".join(f"{q['field']} as {q['format']}" for q in qs) + "."})
-    transfer = api.tool("transfer_to_agent",
+    transfer = api.tool(xfer,
                         "Hand the call to a person. CALL it with queue " + spec["human"]["queue"] + " only when the customer insists on a human after you asked once whether you can help. Never call it because of a technical problem.",
-                        model_fields=("queue",), descriptions={"queue": "Use " + spec["human"]["queue"] + "."})
+                        model_fields=(xq,), descriptions={xq: "Use " + spec["human"]["queue"] + "."})
     id_rules = "\n".join("- " + x for x in idn.get("rules") or [])
     id_task = (pre_verify_rules(spec) + "\n\nVerify the customer's identity. Ask these questions one at a time, in this order:\n" + q_lines + "\n\n"
                "How to handle answers:\n"
@@ -223,7 +252,7 @@ def build(api, spec, after_verify, prefix=""):
                "- If the customer asks a question back (why you need it, who is calling, is this a robot, is this a scam), answer it in one short sentence, then ask the same question again.\n"
                "- If the customer talks about something else, reply in a few words and ask the same question again.\n"
                "- Never tell the customer a correct answer. Never say anything about the account.\n" + id_rules + "\n"
-               f"- If the customer asks for a human: ask once, \"{spec['human']['ask_first']}\" If they still want a human, call transfer_to_agent.\n"
+               f"- If the customer asks for a human: ask once, \"{spec['human']['ask_first']}\" If they still want a human, call {xfer}.\n"
                + common_answers(spec) + "\n\n" + verify_result_rules(spec))
     kinds = {"answer": "they give an answer or part of one, even with other words around it",
              "question": "they ask something back (why do you need this, who is calling, is this a robot, is this a scam, which account) without answering",
@@ -238,7 +267,7 @@ def build(api, spec, after_verify, prefix=""):
     id_trs = [g.is_true(after_verify, f"{idn.get('tool', 'verify_identity')}_response.data.{r['all_verified']}", "Identity verified")]
     if r.get("left"):
         id_trs.append(g.eq(P("close_failed"), f"{idn.get('tool', 'verify_identity')}_response.data.{r['left']}", "0", "No answers left"))
-    id_trs.append(g.and_eq(P("close_human"), [[("transfer_to_agent_response.data.ok", v), ("transfer_to_agent_args.queue", spec["human"]["queue"])] for v in ("true", "True")],
+    id_trs.append(g.and_eq(P("close_human"), [[(xfer + "_response.data." + api.ok_field(xfer), v), (xfer + "_args." + xq, spec["human"]["queue"])] for v in ("true", "True")],
                            "Transferred to a human"))
     nodes[P("identity")] = g.conversation(
         P("identity"), id_task,

@@ -72,7 +72,7 @@ def build(api, spec, tools, prefix="neg_", max_turns=12, turn_limit_target=None)
         trs = []
         if record_now:
             pt = spec["promise_tool"]
-            trs.append(g.is_true(spec["on_recorded"], f"{pt}_response.data.ok", "The promise was recorded"))
+            trs.append(g.is_true(spec["on_recorded"], f"{pt}_response.data.{api.ok_field(pt)}", "The promise was recorded"))
             # a failed call is repeated by the engine with the same arguments: the model was seen to apologise instead of retrying
             trs.append(g.greater(prefix + "retry_record", f"{pt}_failure_count", 0, "Recording failed: retry"))
         else:
@@ -104,11 +104,11 @@ def build(api, spec, tools, prefix="neg_", max_turns=12, turn_limit_target=None)
                                      max_turns=max_turns, max_turn_target=turn_limit_target)
     if record_now:
         pt = spec["promise_tool"]
-        fields = [f for f in api.ops[pt]["fields"] if f != "customer_id"]
+        fields = [f for f in api.ops[pt]["fields"] if f != api.id_field]
         retry = prefix + "retry_record"
         extra = max(0, int(spec.get("record_failures", 2)) - 2)       # attempts beyond the model's call and this one
         nodes[retry] = g.api_request(retry, api.pre_action(pt, {f: "{{%s_args.%s}}" % (pt, f) for f in fields}, retries=extra), spec["on_record_failed"],
-                                     transitions=[g.is_true(spec["on_recorded"], retry + "_response.data.ok", "Recorded on the retry")],
+                                     transitions=[g.is_true(spec["on_recorded"], retry + "_response.data." + api.ok_field(pt), "Recorded on the retry")],
                                      say=spec.get("retry_line") or "")
         if not spec.get("retry_line"):
             nodes[retry]["on_enter"] = {"type": "silent"}

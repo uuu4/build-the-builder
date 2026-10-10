@@ -64,12 +64,12 @@ def lint(wf, api=None):
                 errs.append(f"{k}: 'const' in tool {tool['function']['name']} is never sent")
         if api:
             for a in n.get("pre_actions", []):
-                if a["function"]["name"] == "close_call":
+                if a["function"]["name"] == api.close_op:
                     body = a["function"]["parameters"]["properties"]["body"]["properties"]
-                    out = body.get("outcome", {}).get("default")
-                    allowed = api.enum("close_call", "outcome")
+                    out = body.get(api.close_outcome, {}).get("default")
+                    allowed = api.enum(api.close_op, api.close_outcome)
                     if allowed and out not in allowed and not str(out).startswith("{{"):
-                        errs.append(f"{k}: close_call outcome {out!r} not in the tool API ({', '.join(allowed)})")
+                        errs.append(f"{k}: {api.close_op} outcome {out!r} not in the tool API ({', '.join(allowed)})")
     reach, todo = set(), [wf.get("initial_node")]
     while todo:
         k = todo.pop()
