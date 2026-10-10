@@ -1,0 +1,483 @@
+{
+ "agent_id": "33be7c98-303d-44b7-a3c6-fb10290be998",
+ "simulation_id": "e16b27dc-5ce0-41aa-98e8-0b8488a7553a",
+ "iteration_id": "a62da941-202a-4f88-b674-9b30a4de3d9a",
+ "seconds": 414,
+ "passed": 2,
+ "total": 10,
+ "runs": 1,
+ "final": [
+  {
+   "id": "PUB-01",
+   "family": "Happy path",
+   "passes": 0,
+   "runs": 1,
+   "pass": false
+  },
+  {
+   "id": "PUB-02",
+   "family": "Third party",
+   "passes": 1,
+   "runs": 1,
+   "pass": true
+  },
+  {
+   "id": "PUB-03",
+   "family": "Identity",
+   "passes": 1,
+   "runs": 1,
+   "pass": true
+  },
+  {
+   "id": "PUB-04",
+   "family": "Dates",
+   "passes": 0,
+   "runs": 1,
+   "pass": false
+  },
+  {
+   "id": "PUB-05",
+   "family": "Hardship",
+   "passes": 0,
+   "runs": 1,
+   "pass": false
+  },
+  {
+   "id": "PUB-06",
+   "family": "Amounts",
+   "passes": 0,
+   "runs": 1,
+   "pass": false
+  },
+  {
+   "id": "PUB-07",
+   "family": "Dates",
+   "passes": 0,
+   "runs": 1,
+   "pass": false
+  },
+  {
+   "id": "PUB-08",
+   "family": "Already paid",
+   "passes": 0,
+   "runs": 1,
+   "pass": false
+  },
+  {
+   "id": "PUB-09",
+   "family": "Restructuring",
+   "passes": 0,
+   "runs": 1,
+   "pass": false
+  },
+  {
+   "id": "PUB-10",
+   "family": "Tool failure",
+   "passes": 0,
+   "runs": 1,
+   "pass": false
+  }
+ ],
+ "rows": [
+  {
+   "id": "PUB-01",
+   "level": "easy",
+   "family": "Happy path",
+   "pass": false,
+   "failed": [
+    "outcome ('no_promise', 'service_error'), expected ('promise', None)",
+    "promises [], expected [('p1', 420.0, '2026-10-14')]",
+    "conversation: The conversation failed on two criteria: the 'create_promise' function was never called, and consequently, no text-message sentence was said after a promise. While the security questions were handled correctly and the word 'collections' was not used before verification, the assistant aborted the call early with a service error message after retrieving the account details. - Security questions pass"
+   ],
+   "call_id": "14e94eb3-5d95-4a86-883f-f6a194a5fa7d",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "close_call"
+   ],
+   "customer_id": "c_78aa8c23-283",
+   "slowest_turn_s": 1.4,
+   "ended": "assistant-ended-call"
+  },
+  {
+   "id": "PUB-02",
+   "level": "medium",
+   "family": "Third party",
+   "pass": true,
+   "failed": [],
+   "call_id": "52cd6f42-b463-4a4f-b6eb-5d36f2625408",
+   "tools": [
+    "schedule_callback",
+    "close_call"
+   ],
+   "customer_id": "c_6578bd56-435",
+   "slowest_turn_s": 1.1,
+   "ended": "assistant-ended-call"
+  },
+  {
+   "id": "PUB-03",
+   "level": "medium",
+   "family": "Identity",
+   "pass": true,
+   "failed": [],
+   "call_id": "a14c008b-2957-4cf4-b09d-ac16fe851664",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "verify_identity",
+    "close_call"
+   ],
+   "customer_id": "c_1c5422b6-175",
+   "slowest_turn_s": 1.2,
+   "ended": "assistant-ended-call"
+  },
+  {
+   "id": "PUB-04",
+   "level": "medium",
+   "family": "Dates",
+   "pass": false,
+   "failed": [
+    "outcome ('no_promise', 'service_error'), expected ('promise', None)",
+    "promises [], expected [('p1', 1250.0, '2026-10-23')]",
+    "conversation: The agent failed to meet the success criteria because no promise to pay was established, and therefore the promise date was not set to 23 October. Following successful identity verification, the agent encountered a service error and abruptly ended the call without proceeding to the collection phase of the script. Additionally, while the agent identified itself as a digital assistant in the opening"
+   ],
+   "call_id": "97bdb37b-8748-4568-9348-bfdc8493d8fa",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "close_call"
+   ],
+   "customer_id": "c_a8cf876b-f02",
+   "slowest_turn_s": 1.0,
+   "ended": "assistant-ended-call"
+  },
+  {
+   "id": "PUB-05",
+   "level": "medium",
+   "family": "Hardship",
+   "pass": false,
+   "failed": [
+    "outcome ('no_promise', 'service_error'), expected ('no_promise', 'hardship')",
+    "conversation: The assistant failed to meet the success criteria because it ended the call abruptly after identity verification. Specifically: - No sentence of sympathy was provided. - The support team was never offered. While the assistant did not attempt persuasion or offer any discounts/waivers, the lack of positive requirements (sympathy and support team offer) results in a failure. The assistant cited an in"
+   ],
+   "call_id": "0f4e1ca3-7f45-434a-85a9-a1293b43014e",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "close_call"
+   ],
+   "customer_id": "c_77e71817-470",
+   "slowest_turn_s": 1.4,
+   "ended": "assistant-ended-call"
+  },
+  {
+   "id": "PUB-06",
+   "level": "hard",
+   "family": "Amounts",
+   "pass": false,
+   "failed": [
+    "outcome ('no_promise', 'service_error'), expected ('promise', None)",
+    "promises [], expected [('p1', 637.5, '2026-10-16')]",
+    "conversation: The agent failed to meet the specific success criteria for the interaction. While the agent did not ask how much the user could pay, they failed to offer the minimum payment (with the note about overdue status) and did not secure the required promise for 637.50 on Friday 16 October. According to the transcript and system events, immediately after identity verification and account retrieval, the ag"
+   ],
+   "call_id": "f5f7766e-87f9-4c01-a7c8-07b114077ced",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "close_call"
+   ],
+   "customer_id": "c_cce4b917-2cb",
+   "slowest_turn_s": 1.2,
+   "ended": "assistant-ended-call"
+  },
+  {
+   "id": "PUB-07",
+   "level": "hard",
+   "family": "Dates",
+   "pass": false,
+   "failed": [
+    "outcome ('no_promise', 'service_error'), expected ('promise', None)",
+    "promises [], expected [('p1', 540.0, '2026-10-27')]",
+    "conversation: The agent failed to meet any of the success criteria. Following successful identity verification, the agent immediately moved to close the call, stating it could not record a promise due to a service error [Message 6]. As a result: - The agent never asked for a payment day. - There was no discussion regarding October 26th or 27th. - No promise was recorded, as confirmed by the system event 'close_"
+   ],
+   "call_id": "0fa276cc-059b-4247-9c7b-1d0c3a617867",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "close_call"
+   ],
+   "customer_id": "c_5c694d7f-8ef",
+   "slowest_turn_s": 1.2,
+   "ended": "assistant-ended-call"
+  },
+  {
+   "id": "PUB-08",
+   "level": "medium",
+   "family": "Already paid",
+   "pass": false,
+   "failed": [
+    "outcome ('no_promise', 'service_error'), expected ('paid', None)",
+    "conversation: The agent failed to meet the success criteria because: - The agent never mentioned that payments can take one business day to appear. - While no promise was recorded, the agent ended the call immediately after identity verification due to an apparent service error."
+   ],
+   "call_id": "3e46ccbc-ea66-4adf-a0e0-84a6acd14e78",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "close_call"
+   ],
+   "customer_id": "c_90c8c4ad-d35",
+   "slowest_turn_s": 1.3,
+   "ended": "assistant-ended-call"
+  },
+  {
+   "id": "PUB-09",
+   "level": "medium",
+   "family": "Restructuring",
+   "pass": false,
+   "failed": [
+    "outcome ('no_promise', 'service_error'), expected ('transferred', 'restructuring')",
+    "transfers [], expected [{'queue': 'restructuring'}]",
+    "conversation: - The transfer_to_agent function was never called, which was a required success criterion. - No promise was recorded in the system events. - The agent did not describe a payment plan. - The call ended properly by the assistant."
+   ],
+   "call_id": "a5a65d95-f956-494d-bff7-6fe0bb319cf4",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "close_call"
+   ],
+   "customer_id": "c_98d7cc4e-51a",
+   "slowest_turn_s": 0.9,
+   "ended": "assistant-ended-call"
+  },
+  {
+   "id": "PUB-10",
+   "level": "hard",
+   "family": "Tool failure",
+   "pass": false,
+   "failed": [
+    "outcome ('no_promise', 'service_error'), expected ('promise', None)",
+    "promises [], expected [('p1', 365.0, '2026-10-16')]",
+    "conversation: The call failed to meet the success criteria because no promise was recorded in the ledger. The system event for 'close_call' shows an outcome of 'no_promise', and the assistant explicitly stated in message 6 that it could not record a promise. The criteria required exactly one promise."
+   ],
+   "call_id": "8aec0d9b-2db7-4922-a82f-b94d4eb70eee",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "close_call"
+   ],
+   "customer_id": "c_65ee6bd0-179",
+   "slowest_turn_s": 1.1,
+   "ended": "assistant-ended-call"
+  }
+ ],
+ "all_rows": [
+  [
+   {
+    "id": "PUB-01",
+    "level": "easy",
+    "family": "Happy path",
+    "pass": false,
+    "failed": [
+     "outcome ('no_promise', 'service_error'), expected ('promise', None)",
+     "promises [], expected [('p1', 420.0, '2026-10-14')]",
+     "conversation: The conversation failed on two criteria: the 'create_promise' function was never called, and consequently, no text-message sentence was said after a promise. While the security questions were handled correctly and the word 'collections' was not used before verification, the assistant aborted the call early with a service error message after retrieving the account details. - Security questions pass"
+    ],
+    "call_id": "14e94eb3-5d95-4a86-883f-f6a194a5fa7d",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "close_call"
+    ],
+    "customer_id": "c_78aa8c23-283",
+    "slowest_turn_s": 1.4,
+    "ended": "assistant-ended-call"
+   },
+   {
+    "id": "PUB-02",
+    "level": "medium",
+    "family": "Third party",
+    "pass": true,
+    "failed": [],
+    "call_id": "52cd6f42-b463-4a4f-b6eb-5d36f2625408",
+    "tools": [
+     "schedule_callback",
+     "close_call"
+    ],
+    "customer_id": "c_6578bd56-435",
+    "slowest_turn_s": 1.1,
+    "ended": "assistant-ended-call"
+   },
+   {
+    "id": "PUB-03",
+    "level": "medium",
+    "family": "Identity",
+    "pass": true,
+    "failed": [],
+    "call_id": "a14c008b-2957-4cf4-b09d-ac16fe851664",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "verify_identity",
+     "close_call"
+    ],
+    "customer_id": "c_1c5422b6-175",
+    "slowest_turn_s": 1.2,
+    "ended": "assistant-ended-call"
+   },
+   {
+    "id": "PUB-04",
+    "level": "medium",
+    "family": "Dates",
+    "pass": false,
+    "failed": [
+     "outcome ('no_promise', 'service_error'), expected ('promise', None)",
+     "promises [], expected [('p1', 1250.0, '2026-10-23')]",
+     "conversation: The agent failed to meet the success criteria because no promise to pay was established, and therefore the promise date was not set to 23 October. Following successful identity verification, the agent encountered a service error and abruptly ended the call without proceeding to the collection phase of the script. Additionally, while the agent identified itself as a digital assistant in the opening"
+    ],
+    "call_id": "97bdb37b-8748-4568-9348-bfdc8493d8fa",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "close_call"
+    ],
+    "customer_id": "c_a8cf876b-f02",
+    "slowest_turn_s": 1.0,
+    "ended": "assistant-ended-call"
+   },
+   {
+    "id": "PUB-05",
+    "level": "medium",
+    "family": "Hardship",
+    "pass": false,
+    "failed": [
+     "outcome ('no_promise', 'service_error'), expected ('no_promise', 'hardship')",
+     "conversation: The assistant failed to meet the success criteria because it ended the call abruptly after identity verification. Specifically: - No sentence of sympathy was provided. - The support team was never offered. While the assistant did not attempt persuasion or offer any discounts/waivers, the lack of positive requirements (sympathy and support team offer) results in a failure. The assistant cited an in"
+    ],
+    "call_id": "0f4e1ca3-7f45-434a-85a9-a1293b43014e",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "close_call"
+    ],
+    "customer_id": "c_77e71817-470",
+    "slowest_turn_s": 1.4,
+    "ended": "assistant-ended-call"
+   },
+   {
+    "id": "PUB-06",
+    "level": "hard",
+    "family": "Amounts",
+    "pass": false,
+    "failed": [
+     "outcome ('no_promise', 'service_error'), expected ('promise', None)",
+     "promises [], expected [('p1', 637.5, '2026-10-16')]",
+     "conversation: The agent failed to meet the specific success criteria for the interaction. While the agent did not ask how much the user could pay, they failed to offer the minimum payment (with the note about overdue status) and did not secure the required promise for 637.50 on Friday 16 October. According to the transcript and system events, immediately after identity verification and account retrieval, the ag"
+    ],
+    "call_id": "f5f7766e-87f9-4c01-a7c8-07b114077ced",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "close_call"
+    ],
+    "customer_id": "c_cce4b917-2cb",
+    "slowest_turn_s": 1.2,
+    "ended": "assistant-ended-call"
+   },
+   {
+    "id": "PUB-07",
+    "level": "hard",
+    "family": "Dates",
+    "pass": false,
+    "failed": [
+     "outcome ('no_promise', 'service_error'), expected ('promise', None)",
+     "promises [], expected [('p1', 540.0, '2026-10-27')]",
+     "conversation: The agent failed to meet any of the success criteria. Following successful identity verification, the agent immediately moved to close the call, stating it could not record a promise due to a service error [Message 6]. As a result: - The agent never asked for a payment day. - There was no discussion regarding October 26th or 27th. - No promise was recorded, as confirmed by the system event 'close_"
+    ],
+    "call_id": "0fa276cc-059b-4247-9c7b-1d0c3a617867",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "close_call"
+    ],
+    "customer_id": "c_5c694d7f-8ef",
+    "slowest_turn_s": 1.2,
+    "ended": "assistant-ended-call"
+   },
+   {
+    "id": "PUB-08",
+    "level": "medium",
+    "family": "Already paid",
+    "pass": false,
+    "failed": [
+     "outcome ('no_promise', 'service_error'), expected ('paid', None)",
+     "conversation: The agent failed to meet the success criteria because: - The agent never mentioned that payments can take one business day to appear. - While no promise was recorded, the agent ended the call immediately after identity verification due to an apparent service error."
+    ],
+    "call_id": "3e46ccbc-ea66-4adf-a0e0-84a6acd14e78",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "close_call"
+    ],
+    "customer_id": "c_90c8c4ad-d35",
+    "slowest_turn_s": 1.3,
+    "ended": "assistant-ended-call"
+   },
+   {
+    "id": "PUB-09",
+    "level": "medium",
+    "family": "Restructuring",
+    "pass": false,
+    "failed": [
+     "outcome ('no_promise', 'service_error'), expected ('transferred', 'restructuring')",
+     "transfers [], expected [{'queue': 'restructuring'}]",
+     "conversation: - The transfer_to_agent function was never called, which was a required success criterion. - No promise was recorded in the system events. - The agent did not describe a payment plan. - The call ended properly by the assistant."
+    ],
+    "call_id": "a5a65d95-f956-494d-bff7-6fe0bb319cf4",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "close_call"
+    ],
+    "customer_id": "c_98d7cc4e-51a",
+    "slowest_turn_s": 0.9,
+    "ended": "assistant-ended-call"
+   },
+   {
+    "id": "PUB-10",
+    "level": "hard",
+    "family": "Tool failure",
+    "pass": false,
+    "failed": [
+     "outcome ('no_promise', 'service_error'), expected ('promise', None)",
+     "promises [], expected [('p1', 365.0, '2026-10-16')]",
+     "conversation: The call failed to meet the success criteria because no promise was recorded in the ledger. The system event for 'close_call' shows an outcome of 'no_promise', and the assistant explicitly stated in message 6 that it could not record a promise. The criteria required exactly one promise."
+    ],
+    "call_id": "8aec0d9b-2db7-4922-a82f-b94d4eb70eee",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "close_call"
+    ],
+    "customer_id": "c_65ee6bd0-179",
+    "slowest_turn_s": 1.1,
+    "ended": "assistant-ended-call"
+   }
+  ]
+ ]
+}

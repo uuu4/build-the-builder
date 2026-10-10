@@ -1,0 +1,43 @@
+{
+  "rules": [
+    "Never ask how much the customer can pay. You propose every amount.",
+    "A proposed date is checked against the DATE TABLE in the facts: if allowed accept it; if a weekend or holiday not after the deadline, offer the next business day given in the table; if after the deadline, say the latest date you can record is the deadline and offer it.",
+    "A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the deadline.",
+    "\"Next <weekday>\" means that weekday in the following calendar week; \"this <weekday>\" the one in the current week. Use the WEEKDAY TABLE in the facts.",
+    "A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once. If the customer offers the floor to be paid in full: fine.",
+    "When the floor is agreed instead of the full amount, say that the rest stays overdue.",
+    "Never offer a discount, a waiver, an instalment plan or any term not in the facts.",
+    "Read-back: say the product, the amount and the date, then ask exactly: \"Do you confirm?\" Call create_promise only after a clear yes, with product_id {{product_id}}, the exact amount as a number and the date as YYYY-MM-DD from the facts.",
+    "If create_promise fails, say you will try once more and call it again. Never say the promise is recorded unless the result has ok true.",
+    "A recorded promise cannot be changed in this call; changes can be made in the mobile app.",
+    "Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. Asked if you are a robot: you are Freya Bank's digital assistant. A question you cannot answer from the facts: say you do not have that information."
+  ],
+  "facts": "{{facts}}",
+  "record": "now",
+  "promise_tool": "create_promise",
+  "on_recorded": "close_promise",
+  "record_failures": 2,
+  "on_record_failed": "close_service_error",
+  "situations": {"paid": "close_paid", "dispute": "close_dispute", "hardship": "hardship", "new_plan": "transfer_restructuring", "human": "human_check"},
+  "start": "ask_today",
+  "steps": {
+    "ask_today": {"say": "{{debt_line}}",
+      "task": "You asked: can the customer pay the full past-due amount today ({{today_say}})? If yes, read back and confirm. Handle proposed dates and amounts with the rules.",
+      "on": {"refuses": "attempt1_full", "too_much": "floor_offer"}},
+    "floor_offer": {"say": "{{floor_line}}",
+      "task": "You offered the floor amount {{floor_say}} today; the rest stays overdue. If they accept, read back and confirm. Do not offer anything else.",
+      "on": {"refuses": "attempt1_floor"}},
+    "attempt1_full": {"say": "{{attempt1_full_line}}",
+      "task": "You offered the full amount {{past_due_say}} on {{attempt1_say}} ({{attempt1_iso}}). If they accept, read back and confirm. If they say it is too much, the system offers the floor.",
+      "on": {"refuses": [{"if": {"band": "late"}, "go": "attempt2"}, {"go": "close_refused"}], "too_much": "floor_offer_b"}},
+    "floor_offer_b": {"say": "{{floor_b_line}}",
+      "task": "You offered the floor amount {{floor_say}} on {{attempt1_say}} ({{attempt1_iso}}); the rest stays overdue. If they accept, read back and confirm.",
+      "on": {"refuses": [{"if": {"band": "late"}, "go": "attempt2"}, {"go": "close_refused"}]}},
+    "attempt1_floor": {"say": "{{attempt1_floor_line}}",
+      "task": "You offered the floor amount {{floor_say}} on {{attempt1_say}} ({{attempt1_iso}}). If they accept, read back and confirm.",
+      "on": {"refuses": [{"if": {"band": "late"}, "go": "attempt2"}, {"go": "close_refused"}]}},
+    "attempt2": {"say": "{{attempt2_line}}",
+      "task": "Last offer: the floor amount {{floor_say}} on the deadline {{deadline_say}} ({{deadline_iso}}). If they accept, read back and confirm. Make no other offer.",
+      "on": {"refuses": "close_refused"}}
+  }
+}
