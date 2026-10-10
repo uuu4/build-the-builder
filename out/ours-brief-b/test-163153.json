@@ -1,0 +1,164 @@
+{
+ "agent_id": "41163692-a099-4ddf-82bb-eda34adb3acc",
+ "simulation_id": "8651de3d-455a-4615-bf41-d94b7981f8aa",
+ "iteration_id": "d3bdb9ee-ed83-4168-b416-6e10918a1e4e",
+ "seconds": 88,
+ "passed": 1,
+ "total": 3,
+ "runs": 1,
+ "final": [
+  {
+   "id": "PUB-11",
+   "family": "Multi-product",
+   "passes": 0,
+   "runs": 1,
+   "pass": false
+  },
+  {
+   "id": "PUB-12",
+   "family": "Multi-product",
+   "passes": 1,
+   "runs": 1,
+   "pass": true
+  },
+  {
+   "id": "PUB-13",
+   "family": "Multi-product",
+   "passes": 0,
+   "runs": 1,
+   "pass": false
+  }
+ ],
+ "rows": [
+  {
+   "id": "PUB-11",
+   "level": "medium",
+   "family": "Multi-product",
+   "pass": false,
+   "failed": [
+    "promises [], expected [('p1', 220.0, '2026-10-16'), ('p2', 640.0, '2026-10-16'), ('p3', 75.0, '2026-10-16')]",
+    "conversation: The agent failed to meet the success criteria because it did not execute the 'create_promise' tool for any of the products. Although the agent correctly stated all three products before the initial payment ask (Message 6) and provided a consolidated read-back and confirmation (Messages 14 and 15), the system events show no record of the three required 'create_promise' function calls. The call ende"
+   ],
+   "call_id": "88e3d4c9-74b5-42a2-b944-47c44f692758",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "close_call"
+   ],
+   "customer_id": "c_2552ab60-952",
+   "slowest_turn_s": 5.8,
+   "ended": "assistant-ended-call"
+  },
+  {
+   "id": "PUB-12",
+   "level": "hard",
+   "family": "Multi-product",
+   "pass": true,
+   "failed": [],
+   "call_id": "9ac4d2db-298a-49c4-9681-e9540ba51d7b",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "add_note",
+    "add_note",
+    "create_promise",
+    "close_call"
+   ],
+   "customer_id": "c_be9591f7-c6b",
+   "slowest_turn_s": 6.9,
+   "ended": "assistant-ended-call"
+  },
+  {
+   "id": "PUB-13",
+   "level": "hard",
+   "family": "Multi-product",
+   "pass": false,
+   "failed": [
+    "promises [('p1', 300.0, '2026-10-30'), ('p2', 900.0, '2026-10-30')], expected [('p1', 300.0, '2026-10-30'), ('p2', 900.0, '2026-10-23')]",
+    "conversation: The assistant failed to meet the requirement of recording the loan payment on its own deadline of 23 October. According to the transcript (Message 10) and the system events (create_promise for product p2), the assistant recorded the loan payment for 30 October. Consequently, the read-back in Message 12 did not include the 23 October date. The call ended correctly via the end_call tool."
+   ],
+   "call_id": "f2f9d1af-9f28-4aac-b404-83b9ed48af72",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "create_promise",
+    "create_promise",
+    "close_call"
+   ],
+   "customer_id": "c_a9b11f6c-6ff",
+   "slowest_turn_s": 7.0,
+   "ended": "assistant-ended-call"
+  }
+ ],
+ "all_rows": [
+  [
+   {
+    "id": "PUB-11",
+    "level": "medium",
+    "family": "Multi-product",
+    "pass": false,
+    "failed": [
+     "promises [], expected [('p1', 220.0, '2026-10-16'), ('p2', 640.0, '2026-10-16'), ('p3', 75.0, '2026-10-16')]",
+     "conversation: The agent failed to meet the success criteria because it did not execute the 'create_promise' tool for any of the products. Although the agent correctly stated all three products before the initial payment ask (Message 6) and provided a consolidated read-back and confirmation (Messages 14 and 15), the system events show no record of the three required 'create_promise' function calls. The call ende"
+    ],
+    "call_id": "88e3d4c9-74b5-42a2-b944-47c44f692758",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "close_call"
+    ],
+    "customer_id": "c_2552ab60-952",
+    "slowest_turn_s": 5.8,
+    "ended": "assistant-ended-call"
+   },
+   {
+    "id": "PUB-12",
+    "level": "hard",
+    "family": "Multi-product",
+    "pass": true,
+    "failed": [],
+    "call_id": "9ac4d2db-298a-49c4-9681-e9540ba51d7b",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "add_note",
+     "add_note",
+     "create_promise",
+     "close_call"
+    ],
+    "customer_id": "c_be9591f7-c6b",
+    "slowest_turn_s": 6.9,
+    "ended": "assistant-ended-call"
+   },
+   {
+    "id": "PUB-13",
+    "level": "hard",
+    "family": "Multi-product",
+    "pass": false,
+    "failed": [
+     "promises [('p1', 300.0, '2026-10-30'), ('p2', 900.0, '2026-10-30')], expected [('p1', 300.0, '2026-10-30'), ('p2', 900.0, '2026-10-23')]",
+     "conversation: The assistant failed to meet the requirement of recording the loan payment on its own deadline of 23 October. According to the transcript (Message 10) and the system events (create_promise for product p2), the assistant recorded the loan payment for 30 October. Consequently, the read-back in Message 12 did not include the 23 October date. The call ended correctly via the end_call tool."
+    ],
+    "call_id": "f2f9d1af-9f28-4aac-b404-83b9ed48af72",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "create_promise",
+     "create_promise",
+     "close_call"
+    ],
+    "customer_id": "c_a9b11f6c-6ff",
+    "slowest_turn_s": 7.0,
+    "ended": "assistant-ended-call"
+   }
+  ]
+ ]
+}
