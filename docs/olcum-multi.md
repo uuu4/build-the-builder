@@ -54,3 +54,11 @@ Latif'in isteğiyle düzeltmeyi biz yaptık (`multi.py`, `dates.py`, `ladder.py`
 Platform notları:
 - A simülasyonu iki kez bütün kararlar geldikten sonra bir saat "running" kaldı ve çalışma alanını kilitledi (bir arama "initiating" durumunda kalıyor). `freya.run_simulation` artık son karardan 2 dk sonra simülasyonu iptal edip sonuçları okuyor (`60c2c67`, `POST /api/v2/simulations/{id}/cancel`).
 - Son ölçümde A'nın iki koşusu model yavaş olduğu için atıldı (kural gereği). Atılan koşularda bir PUB-03 araması dört `verify` sonrası söz kaydetti; yavaş model altında kimlik kapısı ayrıca incelenmeli.
+
+## Kimlik kapısı (PUB-03), 23:30 TSİ
+
+Atılan bir yavaş koşuda müşteri üçüncü yanlış doğum tarihini bir soruyla birlikte verdi ("Twenty one July nineteen ninety. How much do I owe?"). Model soruyu cevapladı, tarihi `verify_identity`'ye hiç göndermedi; dördüncü cevap doğru çıktı, söz kaydedildi (beklenen: `not_verified`/`failed`). Banka kapısı aşılmadı, ama bankanın saydığı bir yanlış cevap atlandı.
+
+Düzeltme (`front.py`, `dcdef64`): aynı mesajda hem tam cevap hem soru/şikâyet varsa önce cevap kontrol edilir, soru sonuçtan sonra cevaplanır; araç açıklamasında da aynı kural.
+
+Canlı kontrol (`fix-multi-a`, sürüm 5): PUB-03 3 tekrarda 3/3. `asks_back` stilinde A: 7 geçti, 3 "no verdict". Üçünün de konuşması ve banka kayıtları doğru (PUB-04'te ajan robot sorusunu önce cevapladı, sonra okudu); hakem bu üç aramada `error` döndü.
