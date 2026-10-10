@@ -1,0 +1,12 @@
+# Brief A rules (single product, one brief file, no conflicts)
+- R1-4 opening/robot/scam -> front.json opening_line, agent_identity, scam_answer; confirm twice else not_reached/unclear
+- R5-10 third party, callback today/next biz day 10:00-19:00 after now, 2 asks, wrong_number, deceased line -> front third_party + closes
+- R11-15 identity DOB (YYYY-MM-DD, D/M/Y) then phone_last4, 3 wrong total, day_month_swapped hint, failed/declined -> front identity
+- R16-17 get_account + debt statement (fixed line in code: dates.json lines.state + suffix_one "Can you make this payment today?") -> back half
+- R18-23 bands early(1-7,12 biz,1 attempt)/late(8-45,7 biz,2 attempts), holidays, next weekday = following week -> dates.json, multi next_weekday
+- R24-27 full first, floor = minimum_payment / instalment_amount, too much -> floor once -> refusal -> ladder
+- Ladder: today? -> no: attempt1_full (end of week, full) | too much: floor_b; refuse -> late: attempt2 (floor on deadline) | early: refused close
+- R32 hardship -> hardship node -> transfer support / no_promise hardship
+- R34-38 readback "Do you confirm?", create_promise retry once, service_error, text-message sentence in promise farewell
+- R39-45 paid, dispute, restructuring, human (ask once), refused -> multi situations/closes
+- R46-47 one close_call, thank + goodbye in farewells. No add_note (notes:false).
