@@ -133,3 +133,16 @@ class LadderTest(unittest.TestCase):
         nodes["start"] = g.always("neg_ask_today") and g.code("start", "x = 1\n", "neg_ask_today")
         nodes["end"] = g.end()
         self.assertEqual([e for e in lint({"initial_node": "start", "nodes": nodes}, API) if "not reachable" not in e], [])
+
+
+class ReadListTest(unittest.TestCase):
+    def test_flattened_keys(self):
+        src = pycode.with_params("vars['out'] = read_list('fetch_account', 'products')\nvars['m'] = money(vars['out'][1]['past_due'])\n", {})
+        v = pycode.run_locally(src, {"fetch_account_response.data.products.1.past_due": "310.5", "fetch_account_response.data.products.0.product_id": "p1",
+                                     "fetch_account_response.data.products.1.product_id": "p2", "other.products.0.x": "y"})
+        self.assertEqual([p["product_id"] for p in v["out"]], ["p1", "p2"])
+        self.assertEqual(v["m"], "310.50")
+
+    def test_mapped_json(self):
+        src = pycode.with_params("vars['out'] = read_list('n', 'products')\n", {})
+        self.assertEqual(pycode.run_locally(src, {"products": '[{"a": 1}]'})["out"], [{"a": 1}])

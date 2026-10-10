@@ -24,6 +24,32 @@ def nth_biz_after(d, n):
     for i in range(n):
         x = nextbiz(x)
     return x
+def read_list(node, field):
+    # A list from an api_request result. A node-level mapping of a list did not arrive in practice;
+    # the flattened keys <node>_response.data.<field>.<i>.<key> did. Try the mapped variable first, then those keys.
+    v = vars.get(field)
+    if isinstance(v, str):
+        try:
+            v = json.loads(v)
+        except Exception:
+            v = None
+    if isinstance(v, list) and v:
+        return v
+    found = dict()
+    pat = re.compile('^' + re.escape(node) + r'_response\.data\.' + re.escape(field) + r'\.(\d+)\.(\w+)$')
+    for k in list(vars.keys()):
+        m = pat.match(str(k))
+        if m:
+            found.setdefault(int(m.group(1)), dict())[m.group(2)] = vars.get(k)
+    return [found[i] for i in sorted(found)]
+def num(x, default=0.0):
+    try:
+        return float(str(x).replace(',', ''))
+    except Exception:
+        return default
+def money(x):
+    x = num(x)
+    return str(int(round(x))) if abs(x - round(x)) < 0.005 else '%.2f' % x
 def get_now():
     s = str(vars.get('now') or '').strip().replace(' ', 'T')
     try:
