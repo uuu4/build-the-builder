@@ -2,6 +2,17 @@
 import json
 
 
+def _has_null(o):
+    """A real null in the structure. The word null inside a code string is fine."""
+    if o is None:
+        return True
+    if isinstance(o, dict):
+        return any(_has_null(v) for v in o.values())
+    if isinstance(o, list):
+        return any(_has_null(v) for v in o)
+    return False
+
+
 def lint(wf, api=None):
     errs = []
     nodes = wf.get("nodes", {})
@@ -9,7 +20,7 @@ def lint(wf, api=None):
         errs.append(f"initial_node {wf.get('initial_node')!r} is not a node")
     if "agent_config" in wf:
         errs.append("agent_config must be left out")
-    if "null" in json.dumps(wf).replace('"null"', ""):
+    if _has_null(wf):
         errs.append("a null value (the schema rejects null)")
     allnodes = {**nodes, **wf.get("global_nodes", {})}
     for k, n in allnodes.items():
