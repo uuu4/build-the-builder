@@ -1,0 +1,39 @@
+{
+  "rules": [
+    "Only one arrangement in this call, for the product in the facts. It cannot be changed later in the call; the customer can change it in the Northwind app.",
+    "Never ask the customer how much they can pay. You propose every amount.",
+    "An amount the customer proposes from the floor up to the full overdue amount is accepted. Below the floor: say it cannot be recorded and offer the floor once.",
+    "A date the customer proposes: look it up in the DATE TABLE and follow it exactly. A weekend day or bank holiday: offer the next business day given there. A date after the latest date: say the latest date that can be recorded and offer it.",
+    "A vague time (next week, when I get paid): ask once for the exact day. If none is given, propose the latest arrangement date.",
+    "'Next Friday' is the Friday of the following calendar week; 'this Friday' is the Friday of the current week. Both are in the date table.",
+    "No discounts, waivers, payment plans or any other terms. Never invent a figure.",
+    "Read back with exactly this pattern: '<product>, <amount>, on <date>. Can you confirm?' Call create_promise only after a clear yes. A change at the read-back is checked again and read back again.",
+    "After create_promise, do not say goodbye; if the result is not ok, nothing was recorded, never say it was; say there was a problem and try the call once more."
+  ],
+  "facts": "{{facts}}",
+  "record": "now",
+  "promise_tool": "create_promise",
+  "on_recorded": "close_ptp",
+  "record_failures": 2,
+  "on_record_failed": "close_error",
+  "situations": {"paid": "close_paid", "dispute": "close_dispute", "hardship": "hardship", "new_plan": "restructure", "human": "human_ask"},
+  "start": "today",
+  "steps": {
+    "today": {"say": "{{debt_line}}", "task": "You asked whether the customer can pay the full overdue amount today. If they say yes, read back the product, the full amount and today's date and confirm.",
+              "on": {"refuses": "a1_full", "too_much": "floor0"}},
+    "again": {"say": "", "task": "Ask once more, in one sentence, whether the customer can pay the full overdue amount ({{full_say}}) today.",
+              "on": {"refuses": "a1_full", "too_much": "floor0"}},
+    "floor0": {"say": "{{floor_line}}", "task": "You offered the floor amount (no date pinned). If they accept, ask on which day (within the date table) and then read back.",
+              "on": {"refuses": "a1_floor"}},
+    "a1_full": {"say": "{{a1_full_line}}", "task": "You offered the full amount on {{a1_say}}.",
+              "on": {"refuses": [{"if": {"band": "priority"}, "go": "a2_floor"}, {"go": "close_refusal"}], "too_much": "floor1"}},
+    "floor1": {"say": "{{floor_line}}", "task": "You offered the floor amount (no date pinned). If they accept, ask on which day (within the date table) and then read back.",
+              "on": {"refuses": [{"if": {"band": "priority"}, "go": "a2_date"}, {"go": "close_refusal"}]}},
+    "a1_floor": {"say": "{{a1_date_line}}", "task": "You offered the floor amount ({{floor_say}}) on {{a1_say}}.",
+              "on": {"refuses": [{"if": {"band": "priority"}, "go": "a2_date"}, {"go": "close_refusal"}]}},
+    "a2_floor": {"say": "{{a2_floor_line}}", "task": "You offered the floor amount ({{floor_say}}) on {{latest_say}}, the latest date that can be recorded. This is the last offer.",
+              "on": {"refuses": "close_refusal"}},
+    "a2_date": {"say": "{{a2_date_line}}", "task": "You offered the floor amount ({{floor_say}}) on {{latest_say}}, the latest date that can be recorded. This is the last offer.",
+              "on": {"refuses": "close_refusal"}}
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "rules": ["Never ask how much the customer can pay. You propose every amount.", "Never offer a discount, a waiver or an instalment plan."],
+  "facts": "{{debt_facts}}\n\n{{calendar}}",
+  "record": "now", "promise_tool": "create_promise",
+  "on_recorded": "close_promise", "record_failures": 2, "on_record_failed": "close_service_error",
+  "situations": {"paid": "close_paid", "dispute": "close_dispute", "hardship": "hardship", "new_plan": "xfer_restructuring", "human": "human_check"},
+  "start": "ask_today",
+  "steps": {
+    "ask_today": {"say": "{{debt_line}}", "task": "You asked whether they can pay the full amount today.",
+                  "on": {"refuses": "attempt1_full", "too_much": "floor_a"}},
+    "floor_a": {"say": "{{floor_line}}", "task": "You offered the floor today; the rest stays overdue.",
+                "on": {"refuses": "attempt1_floor"}},
+    "attempt1_full": {"say": "{{attempt1_full_line}}", "task": "Attempt 1: the full amount on the attempt-1 date.",
+                      "on": {"refuses": [{"if": {"attempts": "2"}, "go": "attempt2"}, {"go": "close_refused"}], "too_much": "floor_b"}},
+    "floor_b": {"say": "{{floor_line}}", "task": "You offered the floor; the rest stays overdue.",
+                "on": {"refuses": [{"if": {"attempts": "2"}, "go": "attempt2"}, {"go": "close_refused"}]}},
+    "attempt1_floor": {"say": "{{attempt1_floor_line}}", "task": "Attempt 1: the floor on the attempt-1 date.",
+                       "on": {"refuses": [{"if": {"attempts": "2"}, "go": "attempt2"}, {"go": "close_refused"}]}},
+    "attempt2": {"say": "{{attempt2_line}}", "task": "Attempt 2: the floor on the deadline. The last offer.",
+                 "on": {"refuses": "close_refused"}}
+  }
+}

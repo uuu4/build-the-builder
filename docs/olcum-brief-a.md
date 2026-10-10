@@ -2,7 +2,7 @@
 
 Builder: `examples/agent_builder.py` + `.claude/skills/build-phone-agent` (değiştirilmeden), model `claude-opus-5-5`.
 Ajan: workflow_id `d8045db7-ae61-48c6-9b1e-2cd16f880335`, agent_id `e84ca520-d125-4644-8905-7bbbee1c29ce`.
-Çıktılar: `out/brief-a.workflow.json`, üreteç `out/gen_brief_a.py`, iz `traces/20261010-123638.jsonl`.
+Çıktılar: `baseline/example-builder/brief-a.workflow.json`, üreteç `baseline/example-builder/gen_brief_a.py`, iz `baseline/example-builder/20261010-123638.jsonl`.
 
 ## Builder koşusu
 
@@ -39,3 +39,5 @@ Koşu süreleri 107, 118, 117 sn. En yavaş ajan turunun medyanı 7, 13, 9 sn (k
 Brief'in 30. kuralı, müşteri tam tutarın çok olduğunu zaten söylediyse 1. denemenin minimum için olmasını istiyor. Ajan 1. denemede tam tutara geri döndü ve konuşma bir tur uzayınca minimum ikinci kez önerildi. Deneme tutarını "tam tutar çok fazla" bayrağına bağlayan bir kod/rota bunu kapatır.
 
 **PUB-10 (1 kez).** Kayıtlar doğru (ilk `create_promise` hata, ikincisi başarılı, tek söz). Hakem, açılıştaki "this call is recorded" cümlesini sözün kaydedildiği iddiası saydı. Cümle 1. kuralın gereği; büyük olasılıkla hakem gürültüsü. Yine de açılışta "recorded" kelimesinden kaçınan bir ifade ("this call may be monitored and kept on record" gibi) riski düşürebilir; brief'in diline uygunluğu ayrıca tartılmalı.
+
+**Not (aynı gün, sonra):** kendi builder'ımızın ilk çalışması aynı `brief-a` slot'unu kullandı ve bu workflow'un (`d8045db7...`, agent `e84ca520...`) üstüne yazdı (sürüm 3). Yukarıdaki ölçümler sürüm 1'e, yani örnek builder'ın ajanına ait. Örnek builder'ın çıktıları `baseline/example-builder/` altına taşındı; `build.py` artık `ours-<brief>` slot'unu kullanıyor.
