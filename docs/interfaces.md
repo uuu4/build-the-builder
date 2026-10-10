@@ -81,7 +81,7 @@ Rule:
 - `source.quote`, atıf yapılan kaynakta (boşluk normalleştirilerek) **gerçekten geçiyor**; geçmiyorsa `confidence` zorla `uncertain`.
 - `identity_fields.fields[].name` ve `outcome_codes.codes[].code`, tool API'nin enum'larıyla uyuşuyor; uyuşmazlık uyarı olarak trace'e.
 - Çakışan geçerli kurallar (aynı `type` ve örtüşen `applies_to`): **runtime'da hata değil uyarı.** En yeni `source_date`'li kural seçilir; tarih eşit/yoksa Policy açısından güvenli (daha kısıtlayıcı) olan seçilir. Ötekisi `uncertain` sayılır ve `trace.event("uncertain_default", ...)` ile yazılır. Gizli brief'te 30 dk elle müdahalesiz koşulduğu için sert hata çökme, çökme sıfır puan demektir.
-- **İki mod:** `validate(..., strict=False)` runtime (build.py), `strict=True` testler ve yerel koşular. Çakışma, kırık `supersedes` ve eksik alıntı strict'te hata. **Hata her iki modda yalnızca okunamayan veya boş tablo içindir.**
+- **İki mod:** `validate(..., strict=False)` runtime (build.py), `strict=True` testler ve yerel koşular. Çakışma, kırık `supersedes` ve eksik alıntı strict'te hata. **Runtime'da (strict=False) hata yalnızca okunamayan veya boş tablo içindir**, geri kalan her şey uyarı + trace olayıdır.
 
 Okuma stratejisi (A'nın iç işi, arayüzü etkilemez): iki bağımsız okuyucu + uyuşmazlıkta ham metinden alıntı getiren üçüncü çağrı; alıntı yoksa `uncertain`.
 
