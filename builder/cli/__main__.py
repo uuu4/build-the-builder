@@ -2,12 +2,16 @@
 
     python3 -m builder.cli <command> [args]
 
-Commands: tools
+Commands: tools, lint, compile, deploy, rules-validate
 """
 import sys
 
 COMMANDS = {
     "tools": "builder.cli.tools",
+    "lint": "builder.cli.lint",
+    "compile": "builder.cli.compile",
+    "deploy": "builder.cli.deploy",
+    "rules-validate": "builder.cli.rules_validate",
 }
 
 

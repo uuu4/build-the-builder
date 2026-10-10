@@ -165,8 +165,10 @@ def build_tools(spec, notes=None, baked=None, lifecycle=None):
                     },
                 },
             }
-            cfg = {"generic_ok": GENERIC_OK, "generic_fail": GENERIC_FAIL, "on_ok": note.get("on_ok"),
-                   "on_fail": note.get("on_fail"), "cases": note.get("cases") or []}
+            cfg = {"generic_ok": GENERIC_OK, "generic_fail": GENERIC_FAIL, "cases": note.get("cases") or []}
+            for k in ("on_ok", "on_fail"):
+                if note.get(k):
+                    cfg[k] = note[k]
             tool["post_process_code"] = POST_HOOK.replace("__CFG__", code_literal(cfg))
             tool["pre_process_code"] = DROP_EMPTY_HOOK.replace("__REQ__", code_literal(required))
             if life:
