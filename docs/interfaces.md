@@ -1,6 +1,6 @@
 # Arayüz sözleşmesi (taslak v0.2, 2026-10-10)
 
-**v0.2 değişiklikleri** (13 pratik vaka okundu, `data/public-test-set.json`): yeni türler `band`, `attempts`, `statement`, `callback` · `identity_fields`'e alan başına yeniden sorma · `amount_min.floor_field` · rotalara `already_paid` ve `restructuring` · **araç hatasında önce yeniden dene** (PUB-10 tekrar deneyip sözü kaydetmeyi bekliyor; v0.1'deki "hata → doğrudan kapat" bu vakayı kaybettirirdi) · sonuç değerleri sabit bir listeden değil tool API'den.
+**v0.2 değişiklikleri** (13 pratik vaka okundu, kit'in `public-test-set.json`'u): yeni türler `band`, `attempts`, `statement`, `callback` · `identity_fields`'e alan başına yeniden sorma · `amount_min.floor_field` · rotalara `already_paid` ve `restructuring` · **araç hatasında önce yeniden dene** (PUB-10 tekrar deneyip sözü kaydetmeyi bekliyor; v0.1'deki "hata → doğrudan kapat" bu vakayı kaybettirirdi) · sonuç değerleri sabit bir listeden değil tool API'den.
 
 **v0.1 değişiklikleri** (Latif'in ajanının incelemesi, #3): `installments` türü eklendi · `date_window.from` içine `now` · `rules.validate` runtime'da çakışmada **uyarı** verir (sert hata yalnızca test modunda) · `outcomes` global rotaları da kapsar.
 
@@ -147,7 +147,7 @@ Okuma stratejisi (A'nın iç işi, arayüzü etkilemez): iki bağımsız okuyucu
 
 - `persona_from_rules(rules, params) -> [Case]`: elle yazılmış tohum davranış türü + kural tablosundaki değerler. Biçim kit'in `public-test-set.json`'una uyacak (kit gelince doğrulanır).
 - Yerel testler (Freya'ya gitmez, maliyet sıfır): `rules.validate`, `derive_params`, `check` kodunun sınır vakaları (pencerenin son günü, tatil, minimumun 1 altı), `validate_workflow`, sızıntı testi.
-- **Vaka biçimi** `data/public-test-set.json` ile aynı: `id, brief, family, level, title, variables{first_name,last_name,title,now}, products[{type, card_last4?, past_due, days_late, minimum_payment|instalment_amount}], script, expected{outcome, reason, promises[{product_id,amount,date}], notes[{product_id,reason}], callbacks[{date,time}], transfers[{queue}]}, checks[str], faults?[{tool, fail_first_n}]`. Builder'ın ürettiği personalar bu biçimde yazılır; `checks` alanı kural tablosundaki satırlardan üretilir (hakem bunlara göre okuyor).
+- **Vaka biçimi** kit'in kökteki `public-test-set.json`'u ile aynı: `id, brief, family, level, title, variables{first_name,last_name,title,now}, identity{...doğru güvenlik cevapları}, products[{type, card_last4?, past_due, days_late, minimum_payment|instalment_amount}], script, expected{outcome, reason, promises[{product_id,amount,date}], notes[{product_id,reason}], callbacks[{date,time}], transfers[{queue}]}, checks[str], faults?[{tool, fail_first_n}]`. Builder'ın ürettiği personalar bu biçimde yazılır; `checks` alanı kural tablosundaki satırlardan üretilir (hakem bunlara göre okuyor).
 - Freya turları: 1. tur ~8 vaka (kimlik başarısız, sınır tarih, memo'nun değiştirdiği kural, araç hatası, itiraz, zor durum, numarayı iki parçada veren, yazıyla rakam söyleyen), 2. tur yalnızca kalanlar + yama. Tek simülasyon aynı anda çalışır.
 - C yamayı **önerir**, B `overrides` ile uygular. C workflow'u doğrudan düzenlemez.
 
