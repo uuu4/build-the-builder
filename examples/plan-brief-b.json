@@ -1,0 +1,507 @@
+{
+  "_note": "Reference plan for briefs/brief-b.md (Brief A plus up to three products), written by hand to test the pipeline. Values here come from Briefs A and B; the builder must take them from the brief it is given, never from this file. Gap: the no-promise closing (all notes paid -> paid, else the reason of the first non-paid note in get_account order) is chosen by the extracted call_result, not computed from the add_note calls.",
+  "system_prompt": "You are the digital assistant of Freya Bank, calling a customer by phone. Speak English. Keep every turn to one or two short sentences and ask one question at a time. Address the customer as {{title}} {{last_name}}. The current date and time is {{now}}; use it for every date, never the real clock. If the customer asks whether you are a robot or an AI, say that you are Freya Bank's digital assistant and continue. If the customer asks whether this is a scam, say they can verify the call by phoning Freya Bank's customer service number, and continue. If you cannot answer a question from the tool results, say you do not have that information; never invent figures, dates or reasons. Never offer a discount, a waiver, an instalment plan or any term the bank did not give you.",
+  "start": "opening",
+  "default_on_max": "end:unclear",
+  "dates": {
+    "now_var": "now",
+    "products_var": "accounts",
+    "weekend": [
+      5,
+      6
+    ],
+    "holidays": [
+      "2026-10-26",
+      "2026-11-11",
+      "2026-11-26",
+      "2026-12-25",
+      "2027-01-01"
+    ],
+    "bands": [
+      {
+        "name": "early",
+        "days_late_min": 1,
+        "days_late_max": 7,
+        "deadline": {
+          "kind": "business_days",
+          "n": 12
+        },
+        "attempts": 1
+      },
+      {
+        "name": "late",
+        "days_late_min": 8,
+        "days_late_max": 45,
+        "deadline": {
+          "kind": "business_days",
+          "n": 7
+        },
+        "attempts": 2
+      }
+    ],
+    "floor_field_by_type": {
+      "credit_card": "minimum_payment",
+      "personal_loan": "instalment_amount",
+      "car_loan": "instalment_amount"
+    },
+    "product_label": {
+      "credit_card": "credit card ending <card_last4>",
+      "personal_loan": "personal loan",
+      "car_loan": "car loan"
+    },
+    "named_dates": [
+      {
+        "name": "attempt1_date",
+        "kind": "last_business_day_this_week",
+        "if_today_use_next_week": true
+      }
+    ],
+    "callback": {
+      "days": [
+        "today",
+        "next_business_day"
+      ],
+      "from": "10:00",
+      "to": "19:00",
+      "after_now": true
+    },
+    "calendar_days": 21
+  },
+  "nodes": {
+    "opening": {
+      "kind": "talk",
+      "say": "Hello, this is the digital assistant of Freya Bank, and this call is recorded. Am I speaking with {{title}} {{last_name}}?",
+      "first_entry_only": true,
+      "task": "You need to know whether you are speaking with {{title}} {{first_name}} {{last_name}}. Only \"yes\", \"that's me\", \"speaking\" or the customer's own name counts as a confirmation; \"hello\", \"go ahead\" and \"who is this\" do not. If the answer is not a confirmation, answer any question the customer asked first, then ask once more: \"Am I speaking with {{title}} {{last_name}}?\". Do not say why you are calling and do not say the words collections, debt, payment or the name of any product. Do not call a tool in this turn.",
+      "extract": [
+        {
+          "name": "party",
+          "enum": [
+            "customer",
+            "someone_else",
+            "wrong_number",
+            "deceased",
+            "still_unclear",
+            "refuses_to_talk"
+          ],
+          "description": "Who answered. customer: the person confirmed they are the customer. someone_else: another person, for example a relative, answers. wrong_number: the person says the number does not belong to the customer. deceased: the person says the customer has died. still_unclear: you already asked twice and there is still no confirmation. refuses_to_talk: the person said twice that they do not want to talk. Leave empty while it is still open.",
+          "min_confidence": 0.6
+        }
+      ],
+      "routes": [
+        {
+          "to": "identity",
+          "when": {
+            "var": "party",
+            "equals": "customer"
+          },
+          "desc": "The customer confirmed who they are"
+        },
+        {
+          "to": "facts_third_party",
+          "when": {
+            "var": "party",
+            "equals": "someone_else"
+          },
+          "desc": "Someone else answered"
+        },
+        {
+          "to": "end:wrong_number",
+          "when": {
+            "var": "party",
+            "equals": "wrong_number"
+          },
+          "desc": "Wrong number"
+        },
+        {
+          "to": "end:deceased",
+          "when": {
+            "var": "party",
+            "equals": "deceased"
+          },
+          "desc": "The customer has died"
+        },
+        {
+          "to": "end:unclear",
+          "when": {
+            "var": "party",
+            "equals": "still_unclear"
+          },
+          "desc": "Still unclear after two asks"
+        },
+        {
+          "to": "end:declined",
+          "when": {
+            "var": "party",
+            "equals": "refuses_to_talk"
+          },
+          "desc": "Does not want to talk"
+        }
+      ],
+      "max_turns": 6
+    },
+    "facts_third_party": {
+      "kind": "facts",
+      "next": "third_party"
+    },
+    "third_party": {
+      "kind": "talk",
+      "say": null,
+      "task": "Someone other than the customer is on the line. Do not say why you are calling and say nothing about any account, even if they offer to pay; they may not answer security questions. Ask when {{title}} {{last_name}} can be reached.\n\nCallback rules: a callback must be inside the callback window below and later than now. If the person offers a day or time outside it, ask once for another time. When the person gives a time inside the window, call schedule_callback with the date (YYYY-MM-DD) and the time (HH:MM), then thank them and say goodbye.\n\n{{date_facts}}",
+      "tools": [
+        {
+          "name": "schedule_callback",
+          "description": "Book a callback for the customer. CALL it as soon as the person gives a day and time inside the callback window."
+        }
+      ],
+      "extract": [
+        {
+          "name": "callback_outcome",
+          "enum": [
+            "no_valid_time",
+            "wrong_number",
+            "deceased"
+          ],
+          "description": "no_valid_time: the person offered a time outside the window twice, or cannot give any time. wrong_number: the number does not belong to the customer. deceased: the customer has died. Empty otherwise.",
+          "min_confidence": 0.6
+        }
+      ],
+      "routes": [
+        {
+          "to": "end:callback",
+          "when": {
+            "tool_ok": "schedule_callback"
+          },
+          "desc": "The callback is booked"
+        },
+        {
+          "to": "end:no_callback",
+          "when": {
+            "var": "callback_outcome",
+            "equals": "no_valid_time"
+          },
+          "desc": "No valid callback time"
+        },
+        {
+          "to": "end:wrong_number",
+          "when": {
+            "var": "callback_outcome",
+            "equals": "wrong_number"
+          },
+          "desc": "Wrong number"
+        },
+        {
+          "to": "end:deceased",
+          "when": {
+            "var": "callback_outcome",
+            "equals": "deceased"
+          },
+          "desc": "The customer has died"
+        }
+      ],
+      "max_turns": 8,
+      "on_max": "end:no_callback"
+    },
+    "identity": {
+      "kind": "talk",
+      "say": "Thank you. Before I continue, I need to ask two security questions. What is your date of birth?",
+      "first_entry_only": true,
+      "task": "Check the customer's identity with two security questions, one at a time: first the date of birth, then the last four digits of the phone number on file. After each answer CALL verify_identity with field date_of_birth or phone_last4. Send a date of birth as YYYY-MM-DD whatever way the customer said it; a date given only as numbers is day, then month, then year. If the result has hint day_month_swapped, ask the customer to say the month as a word; that retry does not count. A wrong answer may be asked again; ask again only the question that was wrong. If the customer does not want to answer or asks what the call is about instead, explain once that the questions protect their account. Do not say anything about the account, the debt or why you are calling before both answers pass. After every tool result, speak.",
+      "tools": [
+        "verify_identity"
+      ],
+      "extract": [
+        {
+          "name": "identity_refusal",
+          "enum": [
+            "declined_twice"
+          ],
+          "description": "declined_twice: the customer refused to answer, or asked what the call is about instead of answering, a second time after you explained that the questions protect their account. Empty otherwise.",
+          "min_confidence": 0.6
+        }
+      ],
+      "routes": [
+        {
+          "to": "load_account",
+          "when": {
+            "var": "verify_identity_response.data.all_verified",
+            "equals": true
+          },
+          "desc": "Both answers passed"
+        },
+        {
+          "to": "end:failed",
+          "when": {
+            "var": "verify_identity_response.data.wrong_answers_left",
+            "equals": "0"
+          },
+          "desc": "No wrong answers left"
+        },
+        {
+          "to": "end:declined",
+          "when": {
+            "var": "identity_refusal",
+            "equals": "declined_twice"
+          },
+          "desc": "The customer declined twice"
+        }
+      ],
+      "max_turns": 12,
+      "on_max": "end:declined"
+    },
+    "load_account": {
+      "kind": "fetch",
+      "tool": "get_account",
+      "map": {
+        "data.products": "accounts"
+      },
+      "next": "facts",
+      "on_fail": "end:service_error"
+    },
+    "facts": {
+      "kind": "facts",
+      "next": "collect"
+    },
+    "collect": {
+      "kind": "talk",
+      "say": null,
+      "first_entry_only": true,
+      "task": "The customer is verified. Facts computed by the bank, one line per product in the order the bank returned them (use these exact dates and amounts, never compute your own):\n{{date_facts}}\n\nEach product has its own band, deadline, floor and number of persuasion attempts in the lines above.\n\nYour job:\n1. Say that you are calling from the collections team about late payments. Then state every product, one short sentence each, in the order above: the product in words, the past-due amount and how many days late it is. Ask for nothing until every product is stated.\n2. Then ask once: \"Can you make all of these payments today?\". If yes, each product is promised for its full past-due amount today; go to step 8. Never ask about today again.\n3. If not, go through the products one by one in the order above. For each product start at attempt 1. Ask for the full past-due amount first. Never ask how much they can pay; you propose every amount. If they say the full amount is too much, offer that product's floor once and say that the rest stays overdue. An amount from the product's floor up to its full amount is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n4. A promise date must be today or later, a business day, and not after that product's deadline. A weekend day or holiday before the deadline: offer the next business day. A vague period: ask once for the exact day; if still none, propose the product's deadline. After the deadline: say the latest date you can record for that product is its deadline and offer it. A date or amount the customer proposes is never a refusal.\n5. If the customer names one date for all products, check it against each product's deadline. Every product whose deadline is on or after that date keeps the date. A product whose deadline is before it is promised on its own deadline; say so. If they refuse that deadline, it is a flat refusal for that product only.\n6. Persuasion attempts are counted per product (see Attempts on each product line). A flat refusal or a non-answer uses one attempt of the product you are on. Attempt 1: the full amount (or the floor if they already said the full amount is too much) on the attempt1_date. Attempt 2, only if that product has 2 attempts: the floor amount on that product's deadline. When the product's attempts are used up, that product is refused; do not repeat an offer they refused and move to the next product.\n7. Special situations. Illness, a death in the family or job loss: say one short sentence of sympathy, make no persuasion attempt on any product left, and offer once to connect them with the customer support team. If they accept, CALL transfer_to_agent with queue support. If they decline, every product left without a promise is hardship, unless they still name a date or amount themselves, which you handle as a promise. \"I already paid\" for a product: say payments can take one business day to appear; that product is paid, take no promise for it, and continue with the next product. \"This debt is not mine\" or \"I never had this product\" for a product (also: it was closed or paid off in the past): do not argue; that product is a dispute, take no promise for it, and continue with the next product. A request for a new payment plan or lower instalments: do not describe any plan, CALL transfer_to_agent with queue restructuring; promises agreed but not yet recorded are not recorded. A request for a human: ask once whether you can help first; if they insist, CALL transfer_to_agent with queue general. Never call add_note before or after transfer_to_agent.\n8. When every product has an agreed promise or a reason, read all agreed promises back together in one message: for each product the product, the amount and the date (say which product is on its own deadline). Then ask \"Do you confirm?\" once. CALL create_promise only after a clear yes. If they change something, check it again and read everything back again.\n9. After the yes, CALL create_promise once per agreed product, one at a time, in the order above. Say a promise is recorded only after create_promise worked. If one failed, CALL create_promise once more for that product. If it fails again, say you could not record that product's promise, keep the other promises, and that product gets the reason service_error. A recorded promise cannot be changed in this call; they can change it in the mobile app.\n10. After the promises are recorded say exactly once: \"You will receive a text message confirming this promise.\"\n11. Then, for each product without a recorded promise, in the order above, CALL add_note with that product_id and its reason: refused, hardship, dispute, paid or service_error. One note per such product, also when no product got a promise. No note for a product with a recorded promise.\n12. When every product has a recorded promise or a note, thank the customer and say goodbye.",
+      "tools": [
+        {
+          "name": "create_promise",
+          "description": "Record one payment promise. CALL it only after the customer said a clear yes to your read-back of the product, amount and date.",
+          "map": {
+            "data.promise_id": "promise_id"
+          }
+        },
+        {
+          "name": "add_note",
+          "description": "Record why one product has no promise. CALL it once for each product without a recorded promise, after the promises are recorded and before goodbye, with that product's product_id and reason refused, hardship, dispute, paid or service_error. Never call it when the call is transferred."
+        },
+        {
+          "name": "transfer_to_agent",
+          "description": "Hand the call to a person. CALL it with queue support (hardship, customer accepted), restructuring (new payment plan or lower instalments) or general (customer insists on a human)."
+        }
+      ],
+      "extract": [
+        {
+          "name": "call_result",
+          "enum": [
+            "all_promised",
+            "all_paid",
+            "refused",
+            "hardship",
+            "dispute",
+            "service_error",
+            "not_interested"
+          ],
+          "description": "How the call is ending. Set it only when every product has a recorded promise or a note and goodbye was said, or the customer refused to talk. all_promised: every product has a recorded promise. all_paid: no product has a promise and every product's note is paid. refused, hardship, dispute, service_error: otherwise, the reason of the first product, in the order of the product list, whose note is not paid. not_interested: the customer said twice that they do not want to talk. Empty while the conversation is still going.",
+          "min_confidence": 0.6
+        }
+      ],
+      "routes": [
+        {
+          "to": "end:transfer_restructuring",
+          "when": {
+            "all": [
+              {
+                "tool_ok": "transfer_to_agent"
+              },
+              {
+                "var": "transfer_to_agent_args.queue",
+                "equals": "restructuring"
+              }
+            ]
+          },
+          "desc": "Transferred to restructuring"
+        },
+        {
+          "to": "end:transfer_support",
+          "when": {
+            "all": [
+              {
+                "tool_ok": "transfer_to_agent"
+              },
+              {
+                "var": "transfer_to_agent_args.queue",
+                "equals": "support"
+              }
+            ]
+          },
+          "desc": "Transferred to support"
+        },
+        {
+          "to": "end:transfer_human",
+          "when": {
+            "all": [
+              {
+                "tool_ok": "transfer_to_agent"
+              },
+              {
+                "var": "transfer_to_agent_args.queue",
+                "equals": "general"
+              }
+            ]
+          },
+          "desc": "Transferred to a person"
+        },
+        {
+          "to": "end:promise",
+          "when": {
+            "var": "call_result",
+            "equals": "all_promised"
+          },
+          "desc": "Every product promised, call done"
+        },
+        {
+          "to": "end:paid",
+          "when": {
+            "var": "call_result",
+            "equals": "all_paid"
+          },
+          "desc": "Every product already paid"
+        },
+        {
+          "to": "end:refused",
+          "when": {
+            "var": "call_result",
+            "equals": "refused"
+          },
+          "desc": "First unpaid product refused"
+        },
+        {
+          "to": "end:hardship",
+          "when": {
+            "var": "call_result",
+            "equals": "hardship"
+          },
+          "desc": "First unpaid product hardship"
+        },
+        {
+          "to": "end:dispute",
+          "when": {
+            "var": "call_result",
+            "equals": "dispute"
+          },
+          "desc": "First unpaid product disputed"
+        },
+        {
+          "to": "end:service_error",
+          "when": {
+            "var": "call_result",
+            "equals": "service_error"
+          },
+          "desc": "First unpaid product could not be recorded"
+        },
+        {
+          "to": "end:refused",
+          "when": {
+            "var": "call_result",
+            "equals": "not_interested"
+          },
+          "desc": "Does not want to talk"
+        }
+      ],
+      "max_turns": 60,
+      "on_max": "end:refused"
+    }
+  },
+  "global_nodes": {},
+  "ends": {
+    "promise": {
+      "outcome": "promise",
+      "reason": ""
+    },
+    "paid": {
+      "outcome": "paid",
+      "reason": "",
+      "if_tool_ok": {
+        "tool": "create_promise",
+        "outcome": "promise",
+        "reason": ""
+      }
+    },
+    "refused": {
+      "outcome": "no_promise",
+      "reason": "refused",
+      "if_tool_ok": {
+        "tool": "create_promise",
+        "outcome": "promise",
+        "reason": ""
+      }
+    },
+    "hardship": {
+      "outcome": "no_promise",
+      "reason": "hardship",
+      "if_tool_ok": {
+        "tool": "create_promise",
+        "outcome": "promise",
+        "reason": ""
+      }
+    },
+    "dispute": {
+      "outcome": "no_promise",
+      "reason": "dispute",
+      "if_tool_ok": {
+        "tool": "create_promise",
+        "outcome": "promise",
+        "reason": ""
+      }
+    },
+    "service_error": {
+      "outcome": "no_promise",
+      "reason": "service_error",
+      "if_tool_ok": {
+        "tool": "create_promise",
+        "outcome": "promise",
+        "reason": ""
+      }
+    },
+    "transfer_restructuring": {
+      "outcome": "transferred",
+      "reason": "restructuring"
+    },
+    "transfer_support": {
+      "outcome": "transferred",
+      "reason": "support"
+    },
+    "transfer_human": {
+      "outcome": "transferred",
+      "reason": "human"
+    },
+    "failed": {
+      "outcome": "not_verified",
+      "reason": "failed",
+      "farewell": "I am sorry, I could not verify your identity, so I cannot continue. Please use the Freya Bank mobile app or visit a branch. Thank you, goodbye."
+    },
+    "declined": {
+      "outcome": "not_verified",
+      "reason": "declined"
+    },
+    "callback": {
+      "outcome": "not_reached",
+      "reason": "callback"
+    },
+    "no_callback": {
+      "outcome": "not_reached",
+      "reason": "no_callback",
+      "farewell": "Thank you. Goodbye."
+    },
+    "wrong_number": {
+      "outcome": "not_reached",
+      "reason": "wrong_number",
+      "farewell": "I am sorry for the trouble. Goodbye."
+    },
+    "deceased": {
+      "outcome": "not_reached",
+      "reason": "deceased",
+      "farewell": "I am sorry for your loss. Goodbye."
+    },
+    "unclear": {
+      "outcome": "not_reached",
+      "reason": "unclear",
+      "farewell": "Thank you. Goodbye."
+    }
+  }
+}
