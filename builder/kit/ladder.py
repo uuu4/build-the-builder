@@ -95,7 +95,9 @@ def build(api, spec, tools, prefix="neg_", max_turns=12, turn_limit_target=None)
                 "\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it." +
                 "\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses."
                 "\n\nTHIS STEP:\n" + s["task"])
-        extract = [g.enum_field(var, list(kinds), "Classify ONLY the customer's last message. " + " ".join(f"{k}: {v}." for k, v in kinds.items()))]
+        # a low threshold on purpose: a dropped classification keeps the call in this step, and there the model was seen
+        # to invent the next offer itself (PUB-12: "refuses" at confidence 0.56, then an offer the car loan's band does not allow)
+        extract = [g.enum_field(var, list(kinds), "Classify ONLY the customer's last message. " + " ".join(f"{k}: {v}." for k, v in kinds.items()), 0.3)]
         if not record_now:
             extract += [{"name": "agreed_amount", "type": "float", "description": "The amount the customer agreed to pay, if they agreed", "min_confidence": 0.6},
                         {"name": "agreed_date", "type": "string", "description": "The date the customer agreed to pay on, if they agreed, in words as "

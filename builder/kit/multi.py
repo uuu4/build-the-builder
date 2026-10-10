@@ -584,7 +584,7 @@ def build(api, spec, ladder_tpl=None):
                               "want to drop a product, or say no. other: a question or anything else.")],
         # llm, not tts: the customer often agrees and asks something in one message ("...the 6th. Am I talking to a robot?")
         on_enter={"type": "llm", "prompt": "If the customer's last message asked a question, first answer it in one sentence, following the rules "
-                  "of the call. Then say this read-back word for word, changing nothing: {{readback}}"},
+                  "of the call. Then copy this read-back exactly as written, every word, amount and date, and add nothing after it: {{readback}}"},
         first_entry_only=False, max_turns=6, max_turn_target="m_fix")
     nodes["m_fix"] = g.conversation(
         "m_fix",

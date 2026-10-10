@@ -2058,7 +2058,7 @@
       "chat"
      ],
      "description": "Classify ONLY the customer's last message. accepts: they say yes to the offer just made, or agree to pay on the offered terms. proposes: they propose their own date or amount, or change the date or amount (a proposal is never a refusal). refuses: a flat no to the offer on the table or to paying, with no date and no amount, or no real answer. too_much: they say the amount is too much or more than they can afford, without proposing another amount. no_talk: they say they do not want to talk. paid: they say they have ALREADY paid this past-due amount. Saying they WILL pay is not this. Chat about their day is never this. dispute: they say the debt is not theirs, they never had the product, or it was closed or paid off in the past. hardship: they mention illness, a death in the family or losing their job. new_plan: they ask for a new payment plan or lower instalments. Asking for a discount or saying the amount is too much is NOT this. human: they ask to speak to a human. question: they ask a question. chat: they talk about something unrelated (their day, traffic, family events).",
-     "min_confidence": 0.6
+     "min_confidence": 0.3
     },
     {
      "name": "agreed_amount",
@@ -2742,7 +2742,7 @@
       "chat"
      ],
      "description": "Classify ONLY the customer's last message. accepts: they say yes to the offer just made, or agree to pay on the offered terms. proposes: they propose their own date or amount, or change the date or amount (a proposal is never a refusal). refuses: a flat no to the offer on the table or to paying, with no date and no amount, or no real answer. too_much: they say the amount is too much or more than they can afford, without proposing another amount. no_talk: they say they do not want to talk. paid: they say they have ALREADY paid this past-due amount. Saying they WILL pay is not this. Chat about their day is never this. dispute: they say the debt is not theirs, they never had the product, or it was closed or paid off in the past. hardship: they mention illness, a death in the family or losing their job. new_plan: they ask for a new payment plan or lower instalments. Asking for a discount or saying the amount is too much is NOT this. human: they ask to speak to a human. question: they ask a question. chat: they talk about something unrelated (their day, traffic, family events).",
-     "min_confidence": 0.6
+     "min_confidence": 0.3
     },
     {
      "name": "agreed_amount",
@@ -3018,7 +3018,7 @@
       "chat"
      ],
      "description": "Classify ONLY the customer's last message. accepts: they say yes to the offer just made, or agree to pay on the offered terms. proposes: they propose their own date or amount, or change the date or amount (a proposal is never a refusal). refuses: a flat no to the offer on the table or to paying, with no date and no amount, or no real answer. too_much: they say the amount is too much or more than they can afford, without proposing another amount. no_talk: they say they do not want to talk. paid: they say they have ALREADY paid this past-due amount. Saying they WILL pay is not this. Chat about their day is never this. dispute: they say the debt is not theirs, they never had the product, or it was closed or paid off in the past. hardship: they mention illness, a death in the family or losing their job. new_plan: they ask for a new payment plan or lower instalments. Asking for a discount or saying the amount is too much is NOT this. human: they ask to speak to a human. question: they ask a question. chat: they talk about something unrelated (their day, traffic, family events).",
-     "min_confidence": 0.6
+     "min_confidence": 0.3
     },
     {
      "name": "agreed_amount",
@@ -3294,7 +3294,7 @@
       "chat"
      ],
      "description": "Classify ONLY the customer's last message. accepts: they say yes to the offer just made, or agree to pay on the offered terms. proposes: they propose their own date or amount, or change the date or amount (a proposal is never a refusal). refuses: a flat no to the offer on the table or to paying, with no date and no amount, or no real answer. too_much: they say the amount is too much or more than they can afford, without proposing another amount. no_talk: they say they do not want to talk. paid: they say they have ALREADY paid this past-due amount. Saying they WILL pay is not this. Chat about their day is never this. dispute: they say the debt is not theirs, they never had the product, or it was closed or paid off in the past. hardship: they mention illness, a death in the family or losing their job. new_plan: they ask for a new payment plan or lower instalments. Asking for a discount or saying the amount is too much is NOT this. human: they ask to speak to a human. question: they ask a question. chat: they talk about something unrelated (their day, traffic, family events).",
-     "min_confidence": 0.6
+     "min_confidence": 0.3
     },
     {
      "name": "agreed_amount",
@@ -3483,7 +3483,7 @@
       "chat"
      ],
      "description": "Classify ONLY the customer's last message. accepts: they say yes to the offer just made, or agree to pay on the offered terms. proposes: they propose their own date or amount, or change the date or amount (a proposal is never a refusal). refuses: a flat no to the offer on the table or to paying, with no date and no amount, or no real answer. too_much: they say the amount is too much or more than they can afford, without proposing another amount. no_talk: they say they do not want to talk. paid: they say they have ALREADY paid this past-due amount. Saying they WILL pay is not this. Chat about their day is never this. dispute: they say the debt is not theirs, they never had the product, or it was closed or paid off in the past. hardship: they mention illness, a death in the family or losing their job. new_plan: they ask for a new payment plan or lower instalments. Asking for a discount or saying the amount is too much is NOT this. human: they ask to speak to a human. question: they ask a question. chat: they talk about something unrelated (their day, traffic, family events).",
-     "min_confidence": 0.6
+     "min_confidence": 0.3
     },
     {
      "name": "agreed_amount",
@@ -3945,7 +3945,7 @@
    ],
    "on_enter": {
     "type": "llm",
-    "prompt": "If the customer's last message asked a question, first answer it in one sentence, following the rules of the call. Then say this read-back word for word, changing nothing: {{readback}}"
+    "prompt": "If the customer's last message asked a question, first answer it in one sentence, following the rules of the call. Then copy this read-back exactly as written, every word, amount and date, and add nothing after it: {{readback}}"
    },
    "on_enter_first_entry_only": false,
    "extraction_schema": [
