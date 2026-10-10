@@ -237,7 +237,8 @@ def build(api, spec, after_verify, prefix=""):
     v_tool = api.tool(
         idn.get("tool", "verify_identity"),
         "Check ONE security answer with the bank. CALL it once for every COMPLETE answer the customer gives, with the field of the question asked. "
-        "Never call it with a partial answer. Never call it twice for the same answer. After the result, speak to the customer.",
+        "Never call it with a partial answer. Never call it twice for the same answer. A complete answer that comes with a question or a "
+        "complaint in the same message is still an answer: call it first. After the result, speak to the customer.",
         descriptions={idn["field_param"]: "Which question was answered. One of: " + ", ".join(q["field"] for q in qs) + ".",
                       idn["answer_param"]: "The customer's complete answer, converted: " + "; ".join(f"{q['field']} as {q['format']}" for q in qs) + "."})
     transfer = api.tool(xfer,
@@ -249,6 +250,11 @@ def build(api, spec, after_verify, prefix=""):
                "- Call " + idn.get("tool", "verify_identity") + " for every complete answer. After every result, speak to the customer: never leave a turn empty.\n"
                "- If the customer gives only part of an answer, or gives it over several turns, ask for the missing part and join the parts. Do not call the tool with a part.\n"
                "- If the customer corrects themselves, use the corrected value.\n"
+               # PUB-03, live run of 10 October: "Twenty one July nineteen ninety. How much do I owe?" was a third wrong
+               # answer; the model answered the question, never checked the date, and the customer passed on a fourth try
+               "- If one message holds a complete answer AND a question or a complaint, call " + idn.get("tool", "verify_identity") + " with the answer FIRST, "
+               "then answer the question after the result. Never skip or re-ask an answer because something else came with it: every complete "
+               "answer is checked, a wrong one too, because the bank counts the wrong answers.\n"
                "- If the customer asks a question back (why you need it, who is calling, is this a robot, is this a scam), answer it in one short sentence, then ask the same question again.\n"
                "- If the customer talks about something else, reply in a few words and ask the same question again.\n"
                "- Never tell the customer a correct answer. Never say anything about the account.\n" + id_rules + "\n"
