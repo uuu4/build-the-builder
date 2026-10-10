@@ -92,3 +92,17 @@ def close(api, name, outcome, reason, farewell, end_node="end"):
     if reason:
         values["reason"] = reason
     return api_request(name, api.pre_action("close_call", values, retries=2), end_node, say=farewell)
+
+
+def close_from_vars(api, name, farewell, outcome_var="final_outcome", reason_var="final_reason", end_node="end"):
+    """Like close(), for an outcome a code node computed. A reason variable that was never set is not sent.
+
+    Give the code node that computes the outcome a first transition `unset(fallback, outcome_var)` to a literal close:
+    if the sandbox dropped the code, the outcome is unset and the call still closes."""
+    values = {"outcome": "{{%s}}" % outcome_var, "reason": "{{%s}}" % reason_var}
+    return api_request(name, api.pre_action("close_call", values, retries=2), end_node, say=farewell)
+
+
+
+def unset(target, var, desc=None):
+    return {"target_node": target, "description": desc or f"{var} is not set", "condition": _grp([{"variable": var, "operator": "is_not_set"}])}
