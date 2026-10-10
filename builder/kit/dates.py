@@ -138,7 +138,7 @@ NAMED_KINDS = ("today", "next_business_day", "nth_business_day",
                "last_business_day_this_week", "last_business_day_next_week")
 CALLBACK_DAYS = ("today", "next_business_day")
 FACTS_OUTPUTS = ("today", "today_text", "now_time", "product_count", "product_ids", "date_facts",
-                 "facts_state", "facts_error")
+                 "facts_state", "facts_error", "holiday_list", "weekend_list")
 CHECK_OUTPUTS = ("date_check", "date_check_next", "date_check_deadline", "amount_check", "callback_check",
                  "check_text", "check_product", "check_state", "check_error")
 NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -741,6 +741,8 @@ try:
         body = ' '.join([out['s' + str(i + 1) + '_line_' + js['line']] for i in range(cnt)])
         out[ovar] = js['prefix'] + body + (js['suffix_one'] if cnt == 1 else js['suffix'])
     out['date_facts'] = facts_text(today, now_min, fl, nds)
+    out['holiday_list'] = ','.join(sorted([iso(h) for h in hol]))       # for later code nodes (multi.py) that check a date
+    out['weekend_list'] = ','.join([str(w) for w in sorted(weekend)])
     out['facts_state'] = 'ok'
     out['facts_error'] = ''
 except Exception as e:

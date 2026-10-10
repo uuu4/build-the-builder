@@ -22,7 +22,11 @@ Flow (K = spec["slots"], the most products a customer can have):
                             (which allows no notes at all) never has one before it.
 
 State the code nodes keep, per product k: st_<k> ('' | 'agreed' | 'noted'), amt_<k>, date_<k>, adj_<k> ('1' when
-the date was moved to the deadline), reason_<k>, rec_ok_<k>. Shared: cur_slot, carry_date, floor_first.
+the date was moved to the deadline), mov_<k> ('1' when a weekend day or holiday was moved to the next business day),
+reason_<k>, rec_ok_<k>. Shared: cur_slot, carry_date, floor_first, fix_count.
+
+Dates the customer says are extracted as text and resolved in code against `today` (the call's `now`), never by the
+platform's `date` extraction: that one resolves "today" and "tomorrow" against the real clock (PUB-01, PUB-12).
 The product facts come from builder/kit/dates.py with `slots`: s<k>_pid, s<k>_label, s<k>_due, s<k>_floor,
 s<k>_deadline (ISO), s<k>_deadline_text, s<k>_attempts, s<k>_line_<name>.
 
@@ -36,7 +40,10 @@ Spec (JSON, every value from the brief; the ladder template is a ladder.py spec 
              too much; a step may carry "offer": {"amount_var": "s{k}_due", "date_var": "end_of_week_iso"}, the
              variables holding the amount and date it proposed, used when the customer just says yes},
   "readback": {"intro": "Let me read back what we agreed. ", "item": "<label>: <amount> on <date>",
-               "adjusted": " (the latest date I can record for it)", "sep": "; ", "ask": " Do you confirm?"},
+               "adjusted": " (the latest date I can record for it)", "moved": " (the day you named is not a business day, ...)", "sep": "; ",
+               "ask": " Do you confirm?"},
+  "next_weekday": "following_week" | "nearest",     optional: what "next Friday" means in the brief (default following_week)
+  "max_fixes": 3,        optional: changes to the read-back before the call ends without a promise
   "hardship": {"say": "...", "task": "..."},          optional, defaults below
   "human": {"ask_first": "..."},
   "reasons": {"refused": "<note reason>", "hardship": "...", "dispute": "...", "paid": "...", "service_error": "..."},
@@ -97,25 +104,160 @@ def _add_retries(nodes):
 # ---------------------------------------------------------------- code node sources
 # Helpers from pycode.CALENDAR are in scope: P, isbiz, nextbiz, say, num, money, get_now, json, datetime, re.
 
+# The customer's date, in their words, turned into a date here and not by the platform's extraction: a `date`
+# extraction resolves "today" and "tomorrow" against the real clock, not against the call's `now` (PUB-01, PUB-12).
+# Vague periods ("next week", "end of the month") give None: the ladder step asks for the exact day.
+_WHEN = r'''
+WDS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+MON_RE = '(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*'
+UNITS = 'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen'.split()
+ORDS = 'zeroth first second third fourth fifth sixth seventh eighth ninth tenth eleventh twelfth thirteenth fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth'.split()
+TENS = dict(twenty=20, thirty=30)
+TENTHS = dict(twentieth=20, thirtieth=30)
+def day_today():
+    try:
+        return datetime.date.fromisoformat(str(vars.get('today') or '')[:10])
+    except Exception:
+        return get_now().date()
+def bizday(d):
+    hol = [x for x in str(vars.get('holiday_list') or '').split(',') if x]
+    wk = [int(x) for x in str(vars.get('weekend_list') or '5,6').split(',') if x.strip().isdigit()]
+    return d.weekday() not in wk and d.isoformat() not in hol
+def words_to_digits(t):
+    toks = t.split()
+    out = []
+    i = 0
+    while i < len(toks):
+        w = toks[i]
+        nx = toks[i + 1] if i + 1 < len(toks) else ''
+        if w in TENS and nx in ORDS[1:10]:
+            out.append(str(TENS[w] + ORDS.index(nx)) + 'th')
+            i = i + 2
+            continue
+        if w in TENS and nx in UNITS[1:10]:
+            out.append(str(TENS[w] + UNITS.index(nx)))
+            i = i + 2
+            continue
+        if w in TENS:
+            out.append(str(TENS[w]))
+        elif w in TENTHS:
+            out.append(str(TENTHS[w]) + 'th')
+        elif w in ORDS[1:]:
+            out.append(str(ORDS.index(w)) + 'th')
+        elif w in UNITS[1:]:
+            out.append(str(UNITS.index(w)))
+        else:
+            out.append(w)
+        i = i + 1
+    return ' '.join(out)
+def make_day(y, m, d):
+    try:
+        return datetime.date(y, m, d)
+    except Exception:
+        return None
+def ahead(m, d, y, today):
+    x = make_day(y if y else today.year, m, d)
+    if x is not None and not y and x < today:
+        x = make_day(today.year + 1, m, d)
+    return x
+def resolve_when(raw):
+    t = str(raw or '').strip().lower()
+    if t == '':
+        return None
+    today = day_today()
+    mo = re.search(r'(\d{4})-(\d{2})-(\d{2})', t)
+    if mo:
+        return make_day(int(mo.group(1)), int(mo.group(2)), int(mo.group(3)))
+    t = ' ' + words_to_digits(re.sub(r'[^a-z0-9/. ]', ' ', t.replace('-', ' '))) + ' '
+    mo = re.search(r' (\d{1,2})[/.](\d{1,2})(?:[/.](\d{2,4}))? ', t)
+    if mo:
+        y = int(mo.group(3)) if mo.group(3) else 0
+        if 0 < y < 100:
+            y = 2000 + y
+        return ahead(int(mo.group(2)), int(mo.group(1)), y, today)
+    mo = re.search(r' (\d{1,2})(?:st|nd|rd|th)?(?: of)? ' + MON_RE + r'(?: (\d{4}))? ', t)
+    if mo:
+        return ahead(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].index(mo.group(2)) + 1, int(mo.group(1)), int(mo.group(3) or 0), today)
+    mo = re.search(' ' + MON_RE + r' (?:the )?(\d{1,2})(?:st|nd|rd|th)?(?: (\d{4}))? ', t)
+    if mo:
+        return ahead(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].index(mo.group(1)) + 1, int(mo.group(2)), int(mo.group(3) or 0), today)
+    if ' day after tomorrow ' in t:
+        return today + datetime.timedelta(days=2)
+    if ' tomorrow ' in t:
+        return today + datetime.timedelta(days=1)
+    if ' today ' in t or ' tonight ' in t:
+        return today
+    mo = re.search(r' (?:the |on )?(\d{1,2})(?:st|nd|rd|th) ', t)      # before weekday names: 'Monday the 26th' is the 26th
+    if mo:
+        n = int(mo.group(1))
+        x = make_day(today.year, today.month, n)
+        if x is None or x < today:
+            y, m = (today.year + 1, 1) if today.month == 12 else (today.year, today.month + 1)
+            x = make_day(y, m, n)
+        return x
+    mo = re.search(r' in (\d{1,2}) days? ', t)
+    if mo:
+        return today + datetime.timedelta(days=int(mo.group(1)))
+    mo = re.search(r' (next |this |coming )?(' + '|'.join(WDS) + ') ', t)
+    if mo:
+        wd = WDS.index(mo.group(2))
+        mon = today - datetime.timedelta(days=today.weekday())
+        q = (mo.group(1) or '').strip()
+        if q == 'next' and P.get('next_weekday', 'following_week') == 'following_week':
+            return mon + datetime.timedelta(days=7 + wd)
+        if q == 'this':
+            x = mon + datetime.timedelta(days=wd)
+            return x if x >= today else None
+        x = today + datetime.timedelta(days=(wd - today.weekday()) % 7)
+        if q in ('next', 'coming') and x == today:
+            x = x + datetime.timedelta(days=7)
+        return x
+    return None
+def settle(k, d):
+    # The date for product k: a past date is no date; a weekend day or a bank holiday moves to the next business day
+    # (mov_k = 1); a date after the product's deadline moves to the deadline (adj_k = 1). Returns the ISO date or ''.
+    today = day_today()
+    if d is None or d < today:
+        return ''
+    mov = ''
+    while not bizday(d):
+        d = d + datetime.timedelta(days=1)
+        mov = '1'
+    s = d.isoformat()
+    dl = str(vars.get('s%d_deadline' % k) or '')
+    adj = ''
+    if dl != '' and s > dl:
+        s = dl
+        adj = '1'
+        mov = ''
+    vars['date_%d' % k] = s
+    vars['adj_%d' % k] = adj
+    vars['mov_%d' % k] = mov
+    return s
+'''
+
 _ENTER = r'''
 try:
     k = P['k']
     n = int(num(vars.get('product_count')))
     vars['cur_slot'] = str(k)
     cd = str(vars.get('carry_date') or '')
+    pw = str(vars.get('m_today_when_%d' % k) or '')
+    pa = num(vars.get('m_today_amount_%d' % k), 0.0)
+    vars['m_today_when_%d' % k] = ''
+    vars['m_today_amount_%d' % k] = ''
+    due = num(vars.get('s%d_due' % k), 0.0)
+    if pa <= 0 or pa > due:
+        pa = due
     if k > n:
         vars[P['rv']] = 'done'
-    elif cd != '':
-        dl = str(vars.get('s%d_deadline' % k) or '')
-        d = cd
-        adj = ''
-        if dl != '' and d > dl:
-            d = dl
-            adj = '1'
+    elif pw != '' and pa >= num(vars.get('s%d_floor' % k), 0.0) and settle(k, resolve_when(pw)) != '':
+        vars['st_%d' % k] = 'agreed'                 # named for this product in the first answer ("the card tomorrow")
+        vars['amt_%d' % k] = money(pa)
+        vars[P['rv']] = 'auto'
+    elif cd != '' and settle(k, resolve_when(cd)) != '':
         vars['st_%d' % k] = 'agreed'
         vars['amt_%d' % k] = money(vars.get('s%d_due' % k))
-        vars['date_%d' % k] = d
-        vars['adj_%d' % k] = adj
         vars[P['rv']] = 'auto'
     elif str(vars.get('floor_first') or '') == '1' and k == 1:
         vars['floor_first'] = ''
@@ -129,26 +271,23 @@ except Exception:
 _SAVE = r'''
 try:
     k = P['k']
-    d = str(vars.get('agreed_date') or '')[:10]
+    said = resolve_when(vars.get('agreed_date'))
+    d = settle(k, said)
     if d == '' and P['offer_date_var'] != '':
-        d = str(vars.get(P['offer_date_var']) or '')[:10]
+        d = settle(k, resolve_when(vars.get(P['offer_date_var'])))
+    if d == '':
+        d = settle(k, resolve_when(vars.get('s%d_deadline' % k)))
+        vars['adj_%d' % k] = '1'
     a = num(vars.get('agreed_amount'), 0.0)
     if a <= 0 and P['offer_amount_var'] != '':
         a = num(vars.get(P['offer_amount_var']), 0.0)
     due = num(vars.get('s%d_due' % k))
     if a <= 0 or a > due:
         a = due
-    dl = str(vars.get('s%d_deadline' % k) or '')
-    adj = ''
-    if dl != '' and d > dl:
-        d = dl
-        adj = '1'
     vars['st_%d' % k] = 'agreed'
     vars['amt_%d' % k] = money(a)
-    vars['date_%d' % k] = d
-    vars['adj_%d' % k] = adj
     if str(vars.get(P['all_var']) or '') == 'yes':
-        vars['carry_date'] = str(vars.get('agreed_date') or '')[:10] or d
+        vars['carry_date'] = said.isoformat() if said is not None else d
     vars['agreed_date'] = ''
     vars['agreed_amount'] = ''
     vars[P['rv']] = 'ok'
@@ -169,23 +308,32 @@ except Exception:
 _ALL_YES = r'''
 try:
     n = int(num(vars.get('product_count')))
-    d0 = str(vars.get('agreed_date') or '')[:10]
-    if d0 == '':
-        d0 = str(vars.get('today') or '')
-    for k in range(1, n + 1):
-        dl = str(vars.get('s%d_deadline' % k) or '')
-        d = d0
-        adj = ''
-        if dl != '' and d > dl:
-            d = dl
-            adj = '1'
-        vars['st_%d' % k] = 'agreed'
-        vars['amt_%d' % k] = money(vars.get('s%d_due' % k))
-        vars['date_%d' % k] = d
-        vars['adj_%d' % k] = adj
+    d0 = resolve_when(vars.get('agreed_date'))
+    if d0 is None and str(vars.get(P['turn_var']) or '') == 'accepts':
+        d0 = day_today()                     # yes to "can you pay all of this today?"
     vars['agreed_date'] = ''
     vars['agreed_amount'] = ''
-    vars[P['rv']] = 'ok'
+    proposed = str(vars.get(P['turn_var']) or '') == 'proposes'
+    if (d0 is None or d0 < day_today()) and proposed:
+        vc = int(num(vars.get('vague_count'), 0.0)) + 1
+        vars['vague_count'] = str(vc)
+        if vc <= 1:
+            vars[P['rv']] = 'ask'                # back to the first step: the model asks once for the exact day
+        else:
+            for k in range(1, n + 1):            # still no day: propose each product's latest date, read back for a yes
+                settle(k, datetime.date.fromisoformat(str(vars.get('s%d_deadline' % k))))
+                vars['adj_%d' % k] = '1'
+                vars['st_%d' % k] = 'agreed'
+                vars['amt_%d' % k] = money(vars.get('s%d_due' % k))
+            vars[P['rv']] = 'ok'
+    elif d0 is None or d0 < day_today():
+        vars[P['rv']] = 'unclear'            # no day yet: the product ladders ask
+    else:
+        for k in range(1, n + 1):
+            settle(k, d0)
+            vars['st_%d' % k] = 'agreed'
+            vars['amt_%d' % k] = money(vars.get('s%d_due' % k))
+        vars[P['rv']] = 'ok'
 except Exception:
     vars[P['rv']] = 'error'
 '''
@@ -219,6 +367,8 @@ try:
         item = R['item'].replace('<label>', str(vars.get('s%d_label' % k))).replace('<amount>', str(vars.get('amt_%d' % k))).replace('<date>', say(d))
         if str(vars.get('adj_%d' % k) or '') == '1':
             item = item + R['adjusted'].replace('<label>', str(vars.get('s%d_label' % k)))
+        elif str(vars.get('mov_%d' % k) or '') == '1':
+            item = item + R.get('moved', ' (the day you named is not a business day, so this is the next business day)')
         parts.append(item)
     if parts:
         vars['readback'] = R['intro'] + R['sep'].join(parts) + '.' + R['ask']
@@ -233,6 +383,8 @@ except Exception:
 _APPLY_FIX = r'''
 try:
     n = int(num(vars.get('product_count')))
+    fc = int(num(vars.get('fix_count'), 0.0)) + 1
+    vars['fix_count'] = str(fc)
     kind = str(vars.get('fix_kind') or '')
     slot = str(vars.get('fix_slot') or '')
     targets = list(range(1, n + 1)) if slot == 'all' else [int(slot)] if slot.isdigit() else []
@@ -244,15 +396,7 @@ try:
             vars['reason_%d' % k] = P['reasons']['refused']
             continue
         due = num(vars.get('s%d_due' % k))
-        fd = str(vars.get('fix_date') or '')[:10]
-        if fd != '':
-            dl = str(vars.get('s%d_deadline' % k) or '')
-            adj = ''
-            if dl != '' and fd > dl:
-                fd = dl
-                adj = '1'
-            vars['date_%d' % k] = fd
-            vars['adj_%d' % k] = adj
+        settle(k, resolve_when(vars.get('fix_date')))
         fa = num(vars.get('fix_amount'), 0.0)
         if fa > 0 and fa <= due:
             vars['amt_%d' % k] = money(fa)
@@ -260,6 +404,18 @@ try:
     vars['fix_slot'] = ''
     vars['fix_date'] = ''
     vars['fix_amount'] = ''
+    vars[P['rv']] = 'stuck' if fc > P['max_fixes'] else 'ok'
+except Exception:
+    vars[P['rv']] = 'error'
+'''
+
+_STUCK = r'''
+try:
+    n = int(num(vars.get('product_count')))
+    for k in range(1, n + 1):
+        if str(vars.get('st_%d' % k) or '') == 'agreed':
+            vars['st_%d' % k] = 'noted'
+            vars['reason_%d' % k] = P['reasons']['refused']
     vars[P['rv']] = 'ok'
 except Exception:
     vars[P['rv']] = 'error'
@@ -333,6 +489,7 @@ def build(api, spec, ladder_tpl=None):
     outcomes = {"promise": closes["promise"]["outcome"], "paid": closes["paid"]["outcome"], "other": closes["other"]["outcome"]}
     queues = spec["queues"]              # logical situation -> queue value
     nodes = {}
+    nw = spec.get("next_weekday", "following_week")    # "next Friday": "following_week" (the Friday of next week) or "nearest"
     base_rules = list(spec.get("today", {}).get("rules") or [])
 
     # --- "can you pay all of them today?"
@@ -344,7 +501,33 @@ def build(api, spec, ladder_tpl=None):
                   "steps": {"today": {"say": t["say"], "task": t["task"],
                                       "on": {"refuses": "enter_1", "too_much": "floor_mark"}}}}
     nodes.update(ladder.build(api, today_spec, [], prefix="m_", max_turns=10, turn_limit_target="enter_1"))
-    nodes["all_yes"] = _code("all_yes", _ALL_YES, "close_error", _eqs("all_route", [("ok", "finish")]))
+    # "yes" and "all of it on the 30th" agree every product at once; anything about only some products goes to the
+    # product ladders at once, so the model never bargains for one product in this step (PUB-12, PUB-13)
+    mt = nodes["m_today"]
+    mt["extraction_schema"].append(g.enum_field("m_today_scope", ["all", "some", "unclear"],
+        "Which products the customer's last message is about. all: every product that was read out, or no product is "
+        "singled out (a plain 'yes', 'I can pay it all', 'both on the 30th', 'everything on Friday'). some: they name "
+        "only some products, or treat the products differently ('the card tomorrow, not the loans'). unclear: they do "
+        "not talk about paying.", 0.6))
+    turn = "m_today_turn"
+    agreed = [i for i, tr in enumerate(mt["transitions"]) if tr["target_node"] == "all_yes"][0]
+    mt["transitions"][agreed:agreed + 1] = [
+        g.and_eq("all_yes", [[(turn, kd), (sc, sv)] for kd in ("accepts", "proposes") for sc, sv in (("m_today_scope", "all"), ("product_count", "1"))],
+                 "agrees or proposes for every product"),
+        g.any_eq("enter_1", turn, ["accepts", "proposes"], "talks about some products: one product at a time")]
+    if K > 1:      # a date (and amount) the first answer gives for one product; enter_<k> agrees that product on it
+        for k in range(1, K + 1):
+            nth = ["first", "second", "third", "fourth", "fifth"][k - 1] if k <= 5 else f"number {k}"
+            mt["extraction_schema"] += [
+                {"name": f"m_today_when_{k}", "type": "string", "min_confidence": 0.6, "description":
+                 f"The payment date the customer named for the {nth} product read out in the statement, in their own words "
+                 "(for example 'tomorrow', 'Friday', 'the 30th'). Empty if they named no date for that product, or if their "
+                 "date is for every product."},
+                {"name": f"m_today_amount_{k}", "type": "float", "min_confidence": 0.6, "description":
+                 f"The amount the customer said they will pay for the {nth} product read out, if they named one for it."}]
+    nodes["all_yes"] = _code("all_yes", _WHEN + _ALL_YES, "close_error",
+                             _eqs("all_route", [("ok", "finish"), ("unclear", "enter_1"), ("ask", "m_today")]),
+                             turn_var=turn, next_weekday=nw)
     nodes["floor_mark"] = _code("floor_mark", _FLOOR_MARK, "close_error", _eqs("floor_route", [("ok", "enter_1")]))
 
     # --- one ladder per product
@@ -368,14 +551,15 @@ def build(api, spec, ladder_tpl=None):
                     tr["target_node"] = f"save_{k}_{step}"
             off = s.get("offer") or {}
             nodes[f"save_{k}_{step}"] = _code(
-                f"save_{k}_{step}", _SAVE, "close_error",
+                f"save_{k}_{step}", _WHEN + _SAVE, "close_error",
                 _eqs("save_route", [("ok", f"enter_{k + 1}" if k < K else "finish")]),
-                k=k, all_var=allvar, offer_date_var=off.get("date_var", ""), offer_amount_var=off.get("amount_var", ""))
+                k=k, all_var=allvar, offer_date_var=off.get("date_var", ""), offer_amount_var=off.get("amount_var", ""), next_weekday=nw)
         nodes.update(built)
         nxt = f"enter_{k + 1}" if k < K else "finish"
         nodes[f"enter_{k}"] = _code(
-            f"enter_{k}", _ENTER, "close_error",
-            _eqs("enter_route", [("ask", f"p{k}_{start}"), ("ask_floor", f"p{k}_{start_floor}"), ("auto", nxt), ("done", "finish")]), k=k)
+            f"enter_{k}", _WHEN + _ENTER, "close_error",
+            _eqs("enter_route", [("ask", f"p{k}_{start}"), ("ask_floor", f"p{k}_{start_floor}"), ("auto", nxt), ("done", "finish")]), k=k,
+            next_weekday=nw)
         for why, nm in (("refused", f"refused_{k}"), ("paid", f"paid_{k}"), ("dispute", f"dispute_{k}")):
             nodes[nm] = _code(nm, _MARK, "close_error", _eqs("mark_route", [("ok", nxt)]), k=k, why=why, reasons=reasons)
             line = (spec.get("situations") or {}).get(why)
@@ -386,31 +570,40 @@ def build(api, spec, ladder_tpl=None):
     nodes["finish"] = _code("finish", _FINISH, "close_error",
                             _eqs("finish_route", [("readback", "m_readback"), ("record", "rg_1")]), readback=spec["readback"])
     rb_kinds = ["confirms", "changes", "other"]
+    rb_rules = ("\n\nRULES OF THE CALL:\n" + "\n".join("- " + r for r in base_rules)) if base_rules else ""
     nodes["m_readback"] = g.conversation(
         "m_readback",
         "You have read back every agreed promise in one message and asked for one confirmation. The customer's identity is verified.\n"
         "- A clear yes is a confirmation. Do not call any tool; the system records the promises.\n"
         "- If they want to change a date or an amount, or drop a product, say nothing about recording: the system asks what to change.\n"
-        "- Never say anything is recorded or booked.",
+        "- If they ask a question (for example whether you are a robot), answer it in one sentence, then ask again whether they confirm.\n"
+        "- Never say anything is recorded or booked." + rb_rules,
         [g.eq("rg_1", "rb_turn", "confirms", "confirmed"), g.eq("m_fix", "rb_turn", "changes", "wants a change")],
         extract=[g.enum_field("rb_turn", rb_kinds,
                               "Classify ONLY the customer's last message. confirms: a clear yes to the read-back. changes: they want a different date or amount, "
                               "want to drop a product, or say no. other: a question or anything else.")],
-        on_enter={"type": "tts", "text": "{{readback}}"}, max_turns=6, max_turn_target="m_fix")
+        # llm, not tts: the customer often agrees and asks something in one message ("...the 6th. Am I talking to a robot?")
+        on_enter={"type": "llm", "prompt": "If the customer's last message asked a question, first answer it in one sentence, following the rules "
+                  "of the call. Then copy this read-back exactly as written, every word, amount and date, and add nothing after it: {{readback}}"},
+        first_entry_only=False, max_turns=6, max_turn_target="m_fix")
     nodes["m_fix"] = g.conversation(
         "m_fix",
         "The customer wants to change something in what you read back. The customer's identity is verified.\n"
         "Find out which product and what: a new date, a new amount, or dropping it. Do not compute dates yourself; just collect what they say. "
-        "Product numbers follow the order of the read-back (1 is the first product read).",
+        "Product numbers follow the order of the read-back (1 is the first product read)." + rb_rules,
         [g.any_eq("apply_fix", "fix_kind", ["change", "drop"], "a change was named"), g.eq("finish", "fix_kind", "none", "no change after all")],
         extract=[g.enum_field("fix_kind", ["change", "drop", "none", "unknown"],
                               "change: they name a new date or amount. drop: they no longer want to promise a product. none: they changed their mind and the read-back is fine. unknown: not yet clear.", 0.7),
                  g.enum_field("fix_slot", ["1", "2", "3", "4", "all", "unknown"],
                               "Which product, by its position in the read-back (1 = first product read). 'all' if they mean every product.", 0.7),
-                 {"name": "fix_date", "type": "date", "description": "The new date, if they named one", "min_confidence": 0.6},
+                 {"name": "fix_date", "type": "string", "description": "The new date, if they named one, in the customer's own words "
+                  "(for example 'tomorrow', 'this Friday', 'the 30th', '30 October'). Copy the words; do not turn them into a date.", "min_confidence": 0.6},
                  {"name": "fix_amount", "type": "float", "description": "The new amount, if they named one", "min_confidence": 0.6}],
-        on_enter={"type": "llm", "prompt": "Ask what they would like to change."}, max_turns=6, max_turn_target="finish")
-    nodes["apply_fix"] = _code("apply_fix", _APPLY_FIX, "close_error", _eqs("fix_route", [("ok", "finish")]), reasons=reasons)
+        on_enter={"type": "llm", "prompt": "Ask what they would like to change."}, first_entry_only=False, max_turns=6, max_turn_target="finish")
+    # a read-back the customer keeps rejecting ends without a promise rather than in a loop to the turn limit (PUB-12)
+    nodes["apply_fix"] = _code("apply_fix", _WHEN + _APPLY_FIX, "close_error", _eqs("fix_route", [("ok", "finish"), ("stuck", "fix_stuck")]),
+                               reasons=reasons, max_fixes=int(spec.get("max_fixes", 3)), next_weekday=nw)
+    nodes["fix_stuck"] = _code("fix_stuck", _STUCK, "close_error", _eqs("stuck_route", [("ok", "finish")]), reasons=reasons)
 
     # --- record stage
     pt, nt = tools["promise"], tools["note"]

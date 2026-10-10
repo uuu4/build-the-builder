@@ -14,7 +14,7 @@ Spec (JSON, from the brief):
   "promise_tool": "name of the promise tool (record now only)",
   "on_recorded": "node after a recorded promise", "record_failures": 2, "on_record_failed": "node after that many failed calls",
   "retry_line": "what is said while the engine repeats a failed promise call (optional; silent if empty)",
-  "on_agreed": "node after an agreement (record defer only; agreed_amount / agreed_date are extracted)",
+  "on_agreed": "node after an agreement (record defer only; agreed_amount / agreed_date are extracted; agreed_date as words, resolved by the caller's code)",
   "situations": {"paid": "node", "dispute": "node", "hardship": "node", "new_plan": "node", "human": "node"},
   "start": "first step",
   "steps": {
@@ -95,10 +95,15 @@ def build(api, spec, tools, prefix="neg_", max_turns=12, turn_limit_target=None)
                 "\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it." +
                 "\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses."
                 "\n\nTHIS STEP:\n" + s["task"])
-        extract = [g.enum_field(var, list(kinds), "Classify ONLY the customer's last message. " + " ".join(f"{k}: {v}." for k, v in kinds.items()))]
+        # a low threshold on purpose: a dropped classification keeps the call in this step, and there the model was seen
+        # to invent the next offer itself (PUB-12: "refuses" at confidence 0.56, then an offer the car loan's band does not allow)
+        extract = [g.enum_field(var, list(kinds), "Classify ONLY the customer's last message. " + " ".join(f"{k}: {v}." for k, v in kinds.items()), 0.3)]
         if not record_now:
             extract += [{"name": "agreed_amount", "type": "float", "description": "The amount the customer agreed to pay, if they agreed", "min_confidence": 0.6},
-                        {"name": "agreed_date", "type": "date", "description": "The date the customer agreed to pay on, if they agreed", "min_confidence": 0.6}]
+                        {"name": "agreed_date", "type": "string", "description": "The date the customer agreed to pay on, if they agreed, in words as "
+                         "said by the customer or as you named it when they said yes (for example 'tomorrow', 'this Friday', 'the 30th', "
+                         "'Thursday 15 October'). Copy the words; do not turn them into a date: code resolves them against the call's date.",
+                         "min_confidence": 0.6}]
         nodes[name] = g.conversation(name, task, trs, tools=tools, extract=extract,
                                      on_enter={"type": "tts", "text": s["say"]} if s.get("say") else {"type": "llm", "prompt": s["task"]},
                                      max_turns=max_turns, max_turn_target=turn_limit_target)

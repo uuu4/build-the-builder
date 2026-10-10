@@ -98,9 +98,24 @@ def run_simulation(agent_id, name, variables_by_persona, max_seconds=420, concur
             if "concurrent simulations" not in str(e): raise
             print("another simulation is running in this workspace, waiting 30 s", flush=True); time.sleep(30)
     sim_id = (sim.get("simulation") or sim)["id"]
+    done_since = None
     while True:
         time.sleep(10)
         s = api("GET", f"/api/v2/simulations/{sim_id}"); s = s.get("simulation") or s
         if s.get("status") in ("completed", "failed", "paused"): break
+        # seen twice on 10 October: every run had its verdict but the simulation stayed "running" for an hour and
+        # blocked the workspace. Two minutes after the last verdict, cancel it and read the verdicts.
+        try:
+            its = api("GET", f"/api/v2/simulations/{sim_id}/iterations"); its = its.get("iterations") or its.get("items") or its
+            runs = get_iteration(sim_id, its[0]["id"])["runs"]
+            if len(runs) >= len(variables_by_persona) and all(r.get("outcome") for r in runs):
+                done_since = done_since or time.time()
+                if time.time() - done_since > 120:
+                    api("POST", f"/api/v2/simulations/{sim_id}/cancel")
+                    print("simulation kept 'running' after every verdict was in: cancelled it", flush=True)
+                    s["status"] = "completed"
+                    break
+        except Exception:
+            pass
     its = api("GET", f"/api/v2/simulations/{sim_id}/iterations"); its = its.get("iterations") or its.get("items") or its
     return sim_id, its[0]["id"], s.get("status")
