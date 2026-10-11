@@ -65,10 +65,11 @@ def main():
     for rep in range(a.reps):
         for attempt in range(1 + a.rerun_if_slow):                   # organisers: a run made while the model was slow is thrown away and repeated
             rows, sim_id, it_id, status, took, med = run_once(a.agent_id, cases, ids)
-            # an outage, not the agent: no customer reached any tool (11 October); never "fix" a workflow after such a run
-            outage = all(not r["tools"] for r in rows) and len(rows) > 1
+            # an outage, not the agent: no customer reached any tool, or every run came back "error" with no transcript
+            # ("No call created within 300s" after calls that did reach the bank, 11 October); never "fix" a workflow after such a run
+            outage = (all(not r["tools"] for r in rows) or all(r["judge"] == "error" for r in rows)) and len(rows) > 1
             if (med <= 10 and not outage) or attempt == a.rerun_if_slow: break
-            why = "no tool call in any call (platform outage)" if outage else f"median slowest turn {med:.0f} s"
+            why = "no tool call or no transcript in any call (platform outage)" if outage else f"median slowest turn {med:.0f} s"
             print(f"-- run discarded: {why}. Waiting 5 minutes, then repeating it.\n", flush=True); time.sleep(300)
         reps.append(rows); total_s += took
         if a.reps > 1: print(f"-- run {rep + 1} of {a.reps}: {sum(r['pass'] for r in rows)} / {len(rows)} passed, {took:.0f} s\n")
@@ -98,7 +99,7 @@ def run_once(agent_id, cases, ids):
         j = judge.get(ids[c["id"]], {})                      # the conversation checks, read from the transcript by the judge model
         if j.get("outcome") != "pass": r["failed"].append("conversation: " + " ".join(str(j.get("reason") or "no verdict").split())[:400])
         r["pass"] = not r["failed"]
-        rows.append({"id": c["id"], "level": c["level"], "family": c["family"], "pass": r["pass"], "failed": r["failed"], "call_id": j.get("callId"), "tools": [x["tool"] for x in led["calls"]], "customer_id": sessions[c["id"]]["customer_id"]})
+        rows.append({"id": c["id"], "level": c["level"], "family": c["family"], "pass": r["pass"], "failed": r["failed"], "call_id": j.get("callId"), "judge": j.get("outcome"), "tools": [x["tool"] for x in led["calls"]], "customer_id": sessions[c["id"]]["customer_id"]})
         print(("PASS" if r["pass"] else "FAIL"), c["id"], f"{c['level']:<6}", f"{c['family']:<14}", "|", " > ".join(x["tool"].replace("verify_identity", "verify").replace("create_promise", "promise") for x in led["calls"]) or "(no tool calls)")
         for f in r["failed"]: print("       -", f[:260])
     # How long the phone agent kept the customer waiting. A call whose customer hung up after long silences says
