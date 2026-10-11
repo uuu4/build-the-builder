@@ -184,6 +184,14 @@ Gerçek görünen kalanlar: A corrects PUB-06 (simüle müşterinin "Thursday, s
 
 - `kit: date/amount extraction thresholds...` içindeki çıkarım açıklaması kuralı ("yarıda kalan düzeltmede boş bırak"): ölçüm kötüleşti, `kit: take the cut-off rule out...` ile kısmen geri alındı (madde 23).
 
+## Kalan işler (17:40 TSİ, Latif'in isteğiyle iş burada bırakıldı)
+
+Bu oturumda yapılmadı, sırayla:
+1. **A normal gerileme kontrolü** (`e2e-a` v12): madde 27/28 (kim sorusu kuralı, merdiven girişinde `_q` kopyası) bütün akışı etkiliyor; yalnız A asks_back (10/10) ve B asks_back ölçüldü. Komut: `python3 tools/run_cases.py 79002a49-19c0-4622-a8fa-a4083cc44da3 --brief A --reps 3 --rerun-if-slow 1`. Kötüleşirse `git revert` ile madde 28'in commit'i (`multi: a question asked with the answer to 'today?'...`) geri alınır. 19:30'dan sonra yapılmaz.
+2. **B'nin diğer stilleri** (pieces, corrects, talkative, in_words) v12'de ölçülmedi.
+3. **Issue #3:** 17:15'teki güncellemeden sonra yapılanlar (madde 27-29, A asks_back 10/10, B asks_back sonucu) issue'ya yazılmadı; özet bu dosyada, Tur 9 ve Tur 10.
+4. Akşam: `docs/teslim.md`. Platform yavaşsa kurulum 20 dk'yı bulabiliyor, erken başlanmalı.
+
 ## Sıradaki adım
 
 Döngü 15:30 TSİ'de durdu. Akşam: `docs/teslim.md`. Takılı kalan A pieces simülasyonu (`12045efa`) 15:05'te iptal edildi; çalışma alanında koşan simülasyon yok.
