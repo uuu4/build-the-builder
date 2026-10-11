@@ -1,6 +1,6 @@
 # Son ölçüm ve doğrulama (11 Ekim 2026)
 
-Görev: `/loop` talimatı (Latif). Gizli brief'ler 20:00 TSİ (17:00 UTC). 19:30 TSİ'den (16:30 UTC) sonra yalnız çökme düzeltmesi. Bu dosya her ölçümden ve değişiklikten sonra güncellenir; yeni bir oturum "Sıradaki adım"dan devam eder.
+Görev: `/loop` talimatı (Latif). **Döngü 15:30 TSİ'de (12:30 UTC) biter** (Latif, 11:30'da): son ölçüm, main fast-forward, issue #3 özeti. Gizli brief'ler 20:00 TSİ (17:00 UTC). 19:30 TSİ'den (16:30 UTC) sonra yalnız çökme düzeltmesi. Bu dosya her ölçümden ve değişiklikten sonra güncellenir; yeni bir oturum "Sıradaki adım"dan devam eder.
 
 Saatler TSİ (konteyner UTC, +3). Not: `docs/olcum-multi.md`'deki "23:00 TSİ" gibi saatler aslında UTC'dir.
 
