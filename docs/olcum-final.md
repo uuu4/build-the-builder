@@ -4,6 +4,27 @@ Görev: `/loop` talimatı (Latif). **Döngü 15:30 TSİ'de (12:30 UTC) biter** (
 
 Saatler TSİ (konteyner UTC, +3). Not: `docs/olcum-multi.md`'deki "23:00 TSİ" gibi saatler aslında UTC'dir.
 
+## Özet (15:05 TSİ, döngü sonu)
+
+Ölçülen ajanlar builder'ın kendi kurduğu ajanlar (`e2e-a`, `e2e-b`, `e2e-r`), her değişiklikten sonra kendi `gen.py`'leriyle yeniden üretildi. Her hücre 3 tekrar, 3/3 kuralı; platform sağlamken alınan en son sonuç.
+
+| | normal | pieces | corrects | talkative | asks_back | in_words |
+|---|---|---|---|---|---|---|
+| A (10) | **10/10** | **10/10** | 7/10 (sonra PUB-02/06/07 kontrolleri 3/3) | 4/10 | **10/10** | **10/10** |
+| B (3) | **3/3** | **3/3** | 1/3 | 0/3 | 2/3 | **3/3** |
+| R (10, rescore) | 9/10 (sonra PUB-04 ve PUB-06 kontrolleri 3/3) | | | | | |
+| R2 | yapısal 12/12 (`e2e-r2`, `alt-r2`) | | | | | |
+
+Kalanların çoğu kitin değil: talkative'de simüle müşteri kimlik cevabı vermiyor ya da cümlesi yarıda kalıyor; corrects'te düzeltme kesik ("Thursday, sorry"); hakemin kimlik sorusu sayımı (B asks_back PUB-12); bir aramada Freya sandbox hatası. 25 kök neden bulundu ve düzeltildi (aşağıda), biri geri alındı.
+
+Madde 2 (builder'ı sıfırdan 3'er kez) başlamadı: madde 1 her yerde 3/3 olmadı. Onun yerine simülasyonsuz iki deneme yapıldı: teslim provası ve alan adları değişmiş araç API'siyle kurulum (ikisi de geçti, kapanıştaki teslim dosyası açığı kapatıldı).
+
+Açık işler (akşam için):
+- Builder'ın Claude hesabı: prova trace'inde `out_of_credits` uyarısı.
+- Yeni alan adlı API'de builder 20 dk sürdü (ajan 15 dk): 30 dk sınırına pay az. Platform yavaşsa kapanış 5-7 dk.
+- `front: example line` (geri soruda kimlik sorusunu tekrarlamama örneği) ölçülmedi.
+- Talkative ve kesik düzeltmeler simüle müşteriden; gizli setteki müşteriler daha düzgün konuşursa bu hücreler yükselir.
+
 ## Ortam
 
 - Bulut konteyneri, bankaya ve Freya'ya erişiyor. `python3 tools/preflight.py`: ALL CHECKS PASSED (03:00).
@@ -144,5 +165,4 @@ Gerçek görünen kalanlar: A corrects PUB-06 (simüle müşterinin "Thursday, s
 
 ## Sıradaki adım
 
-1. Koşuyor (`m9.sh`, 504'lerden A normal ve B kontrolü kayboldu): A pieces/asks_back/in_words, R.
-2. 15:30 TSİ: son durum, main fast-forward (şu an `b201631`), issue #3 özeti, döngü durur.
+Döngü 15:30 TSİ'de durdu. Akşam: `docs/teslim.md`. Takılı kalan A pieces simülasyonu (`12045efa`) 15:05'te iptal edildi; çalışma alanında koşan simülasyon yok.
