@@ -106,7 +106,10 @@ def verify_result_rules(spec):
     if r.get("verified"):
         out.append(f"{r['verified']} is true: that answer passed. Ask the next question that has not passed yet, in this order: {order}.")
         out.append(f"{r['verified']} is false: that answer does not match. Do not say what the right answer is. Say it does not match and ask the same question again.")
-    out.append("The tool call itself fails (an error, no result): say you need a moment and ask for the same answer again. Do not transfer the call because of it.")
+    # A normal PUB-03, 11 October: the bank answered one check with an error page and counted nothing; the customer was asked
+    # again, so three wrong answers reached the bank as two and the call closed as declined instead of failed.
+    out.append("The tool call itself fails (an error, no result): nothing was counted. Call the tool once more at once with the same answer, "
+               "saying nothing. Only if that fails too, say you need a moment and ask for the same answer again. Do not transfer the call because of it.")
     return "Read each result of the check like this:\n" + "\n".join("- " + x for x in out)
 
 
