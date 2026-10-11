@@ -95,6 +95,14 @@ def get_call(call_id):
 AGENT_LLM = {"provider": os.environ.get("FREYA_AGENT_PROVIDER", "experimental-5"), "model": os.environ.get("FREYA_AGENT_MODEL", "experimental-5")}
 SIM_LLM = {"provider": "google", "model": "gemini-3-flash-preview"}        # plays the customer and judges
 
+def _newest_simulation(agent_id, name):
+    """The simulation this agent started under `name`, if the platform has it (for a start that answered 504)."""
+    try:
+        r = api("GET", "/api/v2/simulations", limit=5); sims = r.get("simulations") or r.get("items") or r
+        return next((x for x in sims if x.get("agentId") == agent_id and x.get("name") == name), None)
+    except RuntimeError:
+        return None
+
 def run_simulation(agent_id, name, variables_by_persona, max_seconds=420, concurrency=int(os.environ.get("FREYA_SIM_CONCURRENCY", "5"))):
     """Start a text simulation, wait for it, return (simulation_id, iteration_id)."""
     while True:                      # a workspace runs one simulation at a time: wait for the running one instead of failing
@@ -106,13 +114,23 @@ def run_simulation(agent_id, name, variables_by_persona, max_seconds=420, concur
                 "personaLlmOverride": SIM_LLM, "analysisLlmOverride": SIM_LLM})
             break
         except RuntimeError as e:
+            if "-> 504" in str(e) or "timed out" in str(e):
+                # 11 October: the POST answered 504 but may have started the simulation; adopt it rather than start another
+                time.sleep(15)
+                mine = _newest_simulation(agent_id, name)
+                if mine:
+                    sim = mine; print("the start answered 504 but the simulation is running: following it", flush=True); break
+                print("starting the simulation failed (504), trying again in 30 s", flush=True); time.sleep(30); continue
             if "concurrent simulations" not in str(e): raise
             print("another simulation is running in this workspace, waiting 30 s", flush=True); time.sleep(30)
     sim_id = (sim.get("simulation") or sim)["id"]
     done_since = None
     while True:
         time.sleep(10)
-        s = api("GET", f"/api/v2/simulations/{sim_id}"); s = s.get("simulation") or s
+        try:                         # a 504 on the poll does not stop the simulation on Freya; keep following it
+            s = api("GET", f"/api/v2/simulations/{sim_id}"); s = s.get("simulation") or s
+        except RuntimeError as e:
+            print("polling the simulation failed, trying again:", str(e)[:120], flush=True); time.sleep(20); continue
         if s.get("status") in ("completed", "failed", "paused"): break
         # seen twice on 10 October: every run had its verdict but the simulation stayed "running" for an hour and
         # blocked the workspace. Two minutes after the last verdict, cancel it and read the verdicts.
