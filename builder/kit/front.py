@@ -264,7 +264,8 @@ def build(api, spec, after_verify, prefix=""):
                "answer is checked, a wrong one too, because the bank counts the wrong answers.\n"
                # the judge counts a repeated security question as asking it again (asks_back, talkative PUB-12)
                "- If the customer asks a question back (why you need it, who is calling, is this a robot, is this a scam), answer it in one short sentence "
-               "and end with 'Whenever you are ready.' Do not repeat the security question.\n"
+               "and end with 'Whenever you are ready.' Do not repeat the security question, not even after the second question back "
+               "(for example: 'I can only discuss that once your identity is verified. Whenever you are ready.').\n"
                "- If the customer talks about something else, reply in a few words and wait. Repeat the security question only after two such "
                "messages in a row without an answer.\n"
                "- Never tell the customer a correct answer. Never say anything about the account.\n" + id_rules + "\n"
