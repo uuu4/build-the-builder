@@ -1,0 +1,196 @@
+{
+ "slots": 1,
+ "today": {
+  "say": "Thank you, you have passed security. I am calling from the arrears team about an overdue payment. {{debt_statement}}",
+  "task": "You stated the overdue product and asked whether the customer is able to pay this amount today. If yes, the system reads back and asks for confirmation. If they say no, or give no answer, the system makes the next offer.",
+  "rules": [
+   "Never ask how much the customer can pay. You propose every amount.",
+   "A proposed date is checked against the DATE TABLE in the facts: if allowed accept it; if a weekend day or bank holiday not after the latest date, offer the next business day; if after the latest date, say the latest date that can be recorded and offer it.",
+   "A vague time (next week, when I get paid): ask once for the exact day; if none is given, propose the latest arrangement date.",
+   "\"Next Friday\" is the Friday of the following calendar week; \"this Friday\" is the Friday of the current week. Use the weekday words in the facts.",
+   "A proposed amount from the floor up to the full overdue amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.",
+   "When the floor is agreed instead of the full amount, say that the remainder stays overdue.",
+   "No discounts, waivers, payment plans or any other terms.",
+   "Never say anything was recorded. The system records the arrangement after the read-back.",
+   "Asked whether this is a scam: they can call the number on the back of their card to check. Asked if you are a robot: you are Northwind Bank's automated assistant. Asked something the facts do not tell you: say you do not have that information."
+  ],
+  "facts": "{{date_facts}}"
+ },
+ "ladder": {
+  "rules": [
+   "You are on the product {{s{k}_label}} (overdue {{s{k}_due}}, floor {{s{k}_floor}}, latest date you can record {{s{k}_deadline_text}}).",
+   "Never ask how much the customer can pay. You propose every amount.",
+   "A proposed date is checked against the DATE TABLE in the facts and against the latest date: if allowed accept it; if a weekend day or bank holiday, offer the next business day; if after the latest date, say the latest date that can be recorded and offer it.",
+   "A vague time (next week, when I get paid): ask once for the exact day; if none is given, propose the latest arrangement date.",
+   "A proposed amount from the floor up to the full overdue amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.",
+   "When the floor is agreed instead of the full amount, say that the remainder stays overdue.",
+   "Do not read anything back and do not ask 'Can you confirm?'. The system does that. Never say anything was recorded.",
+   "No discounts, waivers, payment plans or any other terms."
+  ],
+  "facts": "{{date_facts}}",
+  "situations": {
+   "paid": "paid_{k}",
+   "dispute": "dispute_{k}",
+   "hardship": "hardship",
+   "new_plan": "transfer_new_plan",
+   "human": "human_check"
+  },
+  "start": "attempt1_full",
+  "start_floor": "attempt1_floor",
+  "steps": {
+   "attempt1_full": {
+    "say": "{{s{k}_line_a1_full}}",
+    "task": "Attempt 1: you offered the full amount {{s{k}_due}} on the date in your last message. Accept a date or amount the customer proposes (check it). If they say it is too much, the system offers the floor.",
+    "offer": {
+     "amount_var": "s{k}_due",
+     "date_var": "end_of_week"
+    },
+    "on": {
+     "refuses": [
+      {
+       "if": {
+        "s{k}_attempts": "2"
+       },
+       "go": "attempt2"
+      },
+      {
+       "go": "refused_{k}"
+      }
+     ],
+     "too_much": "floor_b"
+    }
+   },
+   "attempt1_floor": {
+    "say": "{{s{k}_line_a1_floor}}",
+    "task": "Attempt 1: you offered the floor {{s{k}_floor}} on the date in your last message; the remainder stays overdue.",
+    "offer": {
+     "amount_var": "s{k}_floor",
+     "date_var": "end_of_week"
+    },
+    "on": {
+     "refuses": [
+      {
+       "if": {
+        "s{k}_attempts": "2"
+       },
+       "go": "attempt2"
+      },
+      {
+       "go": "refused_{k}"
+      }
+     ]
+    }
+   },
+   "floor_b": {
+    "say": "{{s{k}_line_floor_b}}",
+    "task": "You offered the floor {{s{k}_floor}}; the remainder stays overdue. Accept a business-day date the customer gives (check it).",
+    "offer": {
+     "amount_var": "s{k}_floor",
+     "date_var": "end_of_week"
+    },
+    "on": {
+     "refuses": [
+      {
+       "if": {
+        "s{k}_attempts": "2"
+       },
+       "go": "attempt2"
+      },
+      {
+       "go": "refused_{k}"
+      }
+     ]
+    }
+   },
+   "attempt2": {
+    "say": "{{s{k}_line_a2}}",
+    "task": "Attempt 2: the floor {{s{k}_floor}} on the latest date {{s{k}_deadline_text}}. The last offer; make no other offer.",
+    "offer": {
+     "amount_var": "s{k}_floor",
+     "date_var": "s{k}_deadline"
+    },
+    "on": {
+     "refuses": "refused_{k}"
+    }
+   }
+  }
+ },
+ "readback": {
+  "intro": "Let me read that back. ",
+  "item": "For your <label>, <amount> on <date>",
+  "adjusted": " (the latest date that can be recorded)",
+  "sep": "; ",
+  "ask": " Can you confirm?"
+ },
+ "human": {
+  "ask_first": "I understand. Is there anything I can help you with first?"
+ },
+ "situations": {
+  "paid": "Thank you for letting me know. Payments can take up to two business days to show."
+ },
+ "closes": {
+  "promise": {
+   "outcome": "promise",
+   "farewell": "Your arrangement is recorded. You will receive a text message confirming this arrangement. Thank you for your time, {{first_name}}. Goodbye."
+  },
+  "paid": {
+   "outcome": "paid",
+   "farewell": "Thank you for your time, {{first_name}}. Goodbye."
+  },
+  "other": {
+   "outcome": "no_promise",
+   "farewell": "I understand. Thank you for your time, {{first_name}}. Goodbye."
+  },
+  "human": {
+   "outcome": "transferred",
+   "reason": "agent_request",
+   "farewell": "Thank you, I am transferring you to a colleague now. Goodbye."
+  },
+  "error": {
+   "outcome": "no_promise",
+   "reason": "system_error",
+   "farewell": "I am sorry, the arrangement could not be recorded. Thank you for your time. Goodbye."
+  },
+  "new_plan": {
+   "outcome": "transferred",
+   "reason": "restructure",
+   "farewell": "Thank you, I am connecting you with a colleague who can discuss this. Goodbye."
+  },
+  "hardship": {
+   "outcome": "transferred",
+   "reason": "welfare",
+   "farewell": "Thank you, I am connecting you with our customer welfare team now. Goodbye."
+  }
+ },
+ "reasons": {
+  "refused": "refusal",
+  "hardship": "financial_difficulty",
+  "dispute": "disputed",
+  "paid": "paid",
+  "service_error": "system_error"
+ },
+ "queues": {
+  "new_plan": "restructuring",
+  "hardship": "support",
+  "human": "general"
+ },
+ "tools": {
+  "promise": "create_promise",
+  "note": "add_note",
+  "transfer": "transfer_to_agent",
+  "account": "get_account"
+ },
+ "fields": {
+  "product": "product_id",
+  "amount": "amount",
+  "date": "date",
+  "reason": "reason",
+  "queue": "queue"
+ },
+ "notes": false,
+ "next_weekday": "following_week",
+ "hardship": {
+  "say": "Say one short sentence of sympathy. Then ask whether they would like to be connected with our customer welfare team. Do not mention any payment or make any offer.",
+  "task": "The customer's identity is verified. The customer mentioned illness, a bereavement or the loss of a job. Make NO persuasion attempt and offer no payment. If they themselves name a date or an amount, say you will take it; the system handles it."
+ }
+}

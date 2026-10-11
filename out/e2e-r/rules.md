@@ -1,0 +1,17 @@
+# Brief R rules (Northwind). Conflicts: memo 6 Oct 2026 beats mail 2 Oct + policy v4 (1 Sep). Memo: priority deadline 6th biz day; callback 09:00-17:00; paid = "up to two business days".
+- Opening: Northwind Bank automated assistant + call is recorded, first sentence (front)
+- "Am I speaking to {first_name} {last_name}?"; clear yes/speaking/that's me/own name; second unclear -> NR-UC no_confirm (front)
+- Nothing on arrears before security, incl family (front)
+- Robot -> automated assistant; scam -> number on back of card; unknown -> don't have that info (front + back rules)
+- Third party: no reason, ask when reachable; callback today later than now or next biz day 09:00-17:00 (memo); outside once more then NR-NCB cb_none; wrong number NR-WN wrong_no; deceased "My condolences." NR-DC deceased; family no security/no info (front)
+- Security: phone_last4 then date_of_birth, YYYY-MM-DD, numbers = D/M/Y; 3 wrong -> app/branch, NV-F id_fail; hint day_month_swapped -> month as word; refuse: explain once, second -> NV-R id_refused (front)
+- After security: get_account, arrears team, product name, overdue amount, days; "Are you able to pay this amount today?" (back, debt_statement)
+- Bands: 1-10 standard 10th biz day, 1 attempt; 11-45 priority 6th biz day (memo), 2 attempts (dates.json)
+- Holidays 2026-10-20, 2026-11-03, 2026-12-25, 2027-01-01; "next Friday" = following week (next_weekday following_week)
+- Amounts: full first; floor = minimum_payment (card) / instalment_amount (loans); too much -> floor once, remainder overdue; below floor -> floor once
+- Ladder: today(full) -> refuse -> A1 full on end of week (or floor if too much said) -> refuse -> [priority] A2 floor on deadline -> refuse -> NP-REF refusal
+- Hardship: sympathy, welfare transfer queue support -> TRF-WF welfare; decline -> NP-HS financial_difficulty
+- Read back + "Can you confirm?"; create_promise after yes; retry once; fail -> NP-ERR system_error; after ok: "You will receive a text message confirming this arrangement." (closes)
+- Paid -> "up to two business days" PAID; dispute -> NP-DS disputed; new plan -> restructuring TRF-RS restructure; human ask once -> general TRF-AG agent_request
+- add_note not used -> notes:false
+- slots 1 (one product)
