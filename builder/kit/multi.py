@@ -203,6 +203,10 @@ def resolve_when(raw):
         wd = WDS.index(mo.group(2))
         mon = today - datetime.timedelta(days=today.weekday())
         q = (mo.group(1) or '').strip()
+        if ' week after next ' in t:             # "the week after next", then "Monday"
+            return mon + datetime.timedelta(days=14 + wd)
+        if ' next week ' in t and q == '':
+            return mon + datetime.timedelta(days=7 + wd)
         if q == 'next' and P.get('next_weekday', 'following_week') == 'following_week':
             return mon + datetime.timedelta(days=7 + wd)
         if q == 'this':
@@ -284,6 +288,10 @@ try:
     due = num(vars.get('s%d_due' % k))
     if a <= 0 or a > due:
         a = due
+    fl = num(vars.get('s%d_floor' % k), 0.0)
+    if a < fl:                               # below the floor cannot be recorded: the offer on the table, else the floor
+        oa = num(vars.get(P['offer_amount_var']), 0.0) if P['offer_amount_var'] != '' else 0.0
+        a = oa if fl <= oa <= due else fl    # ("six hundred and thirty seven" to an offer of 637.50; a stray "3")
     vars['st_%d' % k] = 'agreed'
     vars['amt_%d' % k] = money(a)
     if str(vars.get(P['all_var']) or '') == 'yes':
@@ -308,7 +316,9 @@ except Exception:
 _ALL_YES = r'''
 try:
     n = int(num(vars.get('product_count')))
-    d0 = resolve_when(vars.get('agreed_date'))
+    said = str(vars.get('agreed_date') or '')
+    vt = str(vars.get('vague_text') or '')
+    d0 = resolve_when((vt + ' ' + said) if vt != '' else said)
     if d0 is None and str(vars.get(P['turn_var']) or '') == 'accepts':
         d0 = day_today()                     # yes to "can you pay all of this today?"
     vars['agreed_date'] = ''
@@ -318,6 +328,7 @@ try:
         vc = int(num(vars.get('vague_count'), 0.0)) + 1
         vars['vague_count'] = str(vc)
         if vc <= 1:
+            vars['vague_text'] = said
             vars[P['rv']] = 'ask'                # back to the first step: the model asks once for the exact day
         else:
             for k in range(1, n + 1):            # still no day: propose each product's latest date, read back for a yes
@@ -370,9 +381,19 @@ try:
         elif str(vars.get('mov_%d' % k) or '') == '1':
             item = item + R.get('moved', ' (the day you named is not a business day, so this is the next business day)')
         parts.append(item)
+    rc = int(num(vars.get('rb_count'), 0.0)) + 1
+    vars['rb_count'] = str(rc)
+    if parts and rc > P['max_readbacks']:    # read back again and again without a yes: no promise, notes, close
+        for k in range(1, n + 1):
+            if str(vars.get('st_%d' % k) or '') == 'agreed':
+                vars['st_%d' % k] = 'noted'
+                vars['reason_%d' % k] = P['refused_reason']
+        parts = []
+    q = str(vars.get('asked_q') or '')
+    vars['asked_q'] = ''
     if parts:
         vars['readback'] = R['intro'] + R['sep'].join(parts) + '.' + R['ask']
-        vars[P['rv']] = 'readback'
+        vars[P['rv']] = 'readback_q' if q == 'yes' else 'readback'
     else:
         vars['readback'] = ''
         vars[P['rv']] = 'record'
@@ -388,6 +409,9 @@ try:
     kind = str(vars.get('fix_kind') or '')
     slot = str(vars.get('fix_slot') or '')
     targets = list(range(1, n + 1)) if slot == 'all' else [int(slot)] if slot.isdigit() else []
+    agreed = [k for k in range(1, n + 1) if str(vars.get('st_%d' % k) or '') == 'agreed']
+    if not targets and len(agreed) == 1:
+        targets = agreed                     # one product read back: the change is for it
     for k in targets:
         if k < 1 or k > n or str(vars.get('st_%d' % k) or '') != 'agreed':
             continue
@@ -398,7 +422,7 @@ try:
         due = num(vars.get('s%d_due' % k))
         settle(k, resolve_when(vars.get('fix_date')))
         fa = num(vars.get('fix_amount'), 0.0)
-        if fa > 0 and fa <= due:
+        if fa >= num(vars.get('s%d_floor' % k), 0.0) and fa > 0 and fa <= due:
             vars['amt_%d' % k] = money(fa)
     vars['fix_kind'] = ''
     vars['fix_slot'] = ''
@@ -473,6 +497,11 @@ except Exception:
 '''
 
 
+_ASKED_Q = g.enum_field("asked_q", ["yes", "no"],
+                        "yes if the customer's last message asks you a question (are you a robot, is this a scam, why, which account), "
+                        "with or without an answer in the same message. Otherwise no.", 0.5)
+
+
 def _eqs(var, mapping):
     return [g.eq(target, var, val, f"{var} is {val}") for val, target in mapping]
 
@@ -510,6 +539,7 @@ def build(api, spec, ladder_tpl=None):
         "only some products, or treat the products differently ('the card tomorrow, not the loans'). unclear: they do "
         "not talk about paying.", 0.6))
     turn = "m_today_turn"
+    mt["extraction_schema"].append(_ASKED_Q)
     agreed = [i for i, tr in enumerate(mt["transitions"]) if tr["target_node"] == "all_yes"][0]
     mt["transitions"][agreed:agreed + 1] = [
         g.and_eq("all_yes", [[(turn, kd), (sc, sv)] for kd in ("accepts", "proposes") for sc, sv in (("m_today_scope", "all"), ("product_count", "1"))],
@@ -541,6 +571,7 @@ def build(api, spec, ladder_tpl=None):
                              turn_limit_target=f"refused_{k}")
         for step, s in steps.items():
             node = built[f"p{k}_{step}"]
+            node["extraction_schema"].append(_ASKED_Q)
             allvar = f"p{k}_{step}_all"
             node["extraction_schema"].append(g.enum_field(
                 allvar, ["yes", "no"],
@@ -568,38 +599,51 @@ def build(api, spec, ladder_tpl=None):
 
     # --- read-back and confirmation
     nodes["finish"] = _code("finish", _FINISH, "close_error",
-                            _eqs("finish_route", [("readback", "m_readback"), ("record", "rg_1")]), readback=spec["readback"])
+                            _eqs("finish_route", [("readback", "m_readback"), ("readback_q", "m_readback_q"), ("record", "rg_1")]),
+                            readback=spec["readback"], max_readbacks=int(spec.get("max_fixes", 3)) + 2, refused_reason=reasons["refused"])
     rb_kinds = ["confirms", "changes", "other"]
     rb_rules = ("\n\nRULES OF THE CALL:\n" + "\n".join("- " + r for r in base_rules)) if base_rules else ""
-    nodes["m_readback"] = g.conversation(
-        "m_readback",
-        "You have read back every agreed promise in one message and asked for one confirmation. The customer's identity is verified.\n"
-        "- A clear yes is a confirmation. Do not call any tool; the system records the promises.\n"
-        "- If they want to change a date or an amount, or drop a product, say nothing about recording: the system asks what to change.\n"
-        "- If they ask a question (for example whether you are a robot), answer it in one sentence, then ask again whether they confirm.\n"
-        "- Never say anything is recorded or booked." + rb_rules,
-        [g.eq("rg_1", "rb_turn", "confirms", "confirmed"), g.eq("m_fix", "rb_turn", "changes", "wants a change")],
-        extract=[g.enum_field("rb_turn", rb_kinds,
-                              "Classify ONLY the customer's last message. confirms: a clear yes to the read-back. changes: they want a different date or amount, "
-                              "want to drop a product, or say no. other: a question or anything else.")],
-        # llm, not tts: the customer often agrees and asks something in one message ("...the 6th. Am I talking to a robot?")
-        on_enter={"type": "llm", "prompt": "If the customer's last message asked a question, first answer it in one sentence, following the rules "
-                  "of the call. Then copy this read-back exactly as written, every word, amount and date, and add nothing after it: {{readback}}"},
+    fix_fields = [g.enum_field("fix_kind", ["change", "drop", "none", "unknown"],
+                               "change: they name a new date or amount, in this message or by saying yes to a date or amount you repeated. "
+                               "drop: they no longer want to promise a product. none: the read-back is fine after all. unknown: not yet clear.", 0.6),
+                  g.enum_field("fix_slot", ["1", "2", "3", "4", "all", "unknown"],
+                               "Which product, by its position in the read-back (1 = first product read). 'all' if they mean every product.", 0.6),
+                  {"name": "fix_date", "type": "string", "description": "The new date, if they named one, in the customer's own words "
+                   "(for example 'tomorrow', 'this Friday', 'the 30th', '30 October', 'Monday the 26th'). Copy the words; do not turn them into a date.",
+                   "min_confidence": 0.6},
+                  {"name": "fix_amount", "type": "float", "description": "The new amount, if they named one", "min_confidence": 0.6}]
+    rb_task = ("You have read back every agreed promise in one message and asked for one confirmation. The customer's identity is verified.\n"
+               "- A clear yes is a confirmation. Do not call any tool; the system records the promises.\n"
+               "- If they want to change a date or an amount, or drop a product, say nothing about recording: the system applies the change.\n"
+               "- If they ask a question (for example whether you are a robot), answer it in one sentence, then ask again whether they confirm.\n"
+               "- Never make an offer, never name a new date or amount yourself, never say anything is recorded, booked or noted." + rb_rules)
+    rb_trs = [g.eq("rg_1", "rb_turn", "confirms", "confirmed"),
+              # the change named in the same message ("No, Monday the twenty sixth") is applied at once (live run, PUB-07)
+              g.and_eq("apply_fix", [[("rb_turn", "changes"), ("fix_kind", "change")], [("rb_turn", "changes"), ("fix_kind", "drop")]],
+                       "names the change"),
+              g.eq("m_fix", "rb_turn", "changes", "wants a change")]
+    rb_extract = [g.enum_field("rb_turn", rb_kinds,
+                               "Classify ONLY the customer's last message. confirms: a clear yes to the read-back. changes: they want a different date or amount, "
+                               "want to drop a product, or say no. other: a question or anything else.")] + fix_fields
+    # a fixed line: an llm entry was seen to invent an offer and to say "recorded" before anything was recorded (PUB-12)
+    nodes["m_readback"] = g.conversation("m_readback", rb_task, rb_trs, extract=rb_extract,
+                                         on_enter={"type": "tts", "text": "{{readback}}"}, first_entry_only=False, max_turns=6, max_turn_target="m_fix")
+    # only when the agreeing message also asked something ("...the 6th. Am I talking to a robot?", PUB-04)
+    nodes["m_readback_q"] = g.conversation(
+        "m_readback_q", rb_task, rb_trs, extract=rb_extract,
+        on_enter={"type": "llm", "prompt": "Answer the customer's question in one sentence, following the rules of the call. Make no offer. "
+                  "Then say this read-back exactly as written, every word, amount and date, and nothing after it: {{readback}}"},
         first_entry_only=False, max_turns=6, max_turn_target="m_fix")
     nodes["m_fix"] = g.conversation(
         "m_fix",
         "The customer wants to change something in what you read back. The customer's identity is verified.\n"
-        "Find out which product and what: a new date, a new amount, or dropping it. Do not compute dates yourself; just collect what they say. "
+        "Ask only which product and what: a new date, a new amount, or dropping it. Do not repeat the change back and do not ask them to confirm it: "
+        "the system applies it and reads everything back. Do not compute dates yourself. Never say anything is recorded, booked or noted. "
         "Product numbers follow the order of the read-back (1 is the first product read)." + rb_rules,
         [g.any_eq("apply_fix", "fix_kind", ["change", "drop"], "a change was named"), g.eq("finish", "fix_kind", "none", "no change after all")],
-        extract=[g.enum_field("fix_kind", ["change", "drop", "none", "unknown"],
-                              "change: they name a new date or amount. drop: they no longer want to promise a product. none: they changed their mind and the read-back is fine. unknown: not yet clear.", 0.7),
-                 g.enum_field("fix_slot", ["1", "2", "3", "4", "all", "unknown"],
-                              "Which product, by its position in the read-back (1 = first product read). 'all' if they mean every product.", 0.7),
-                 {"name": "fix_date", "type": "string", "description": "The new date, if they named one, in the customer's own words "
-                  "(for example 'tomorrow', 'this Friday', 'the 30th', '30 October'). Copy the words; do not turn them into a date.", "min_confidence": 0.6},
-                 {"name": "fix_amount", "type": "float", "description": "The new amount, if they named one", "min_confidence": 0.6}],
-        on_enter={"type": "llm", "prompt": "Ask what they would like to change."}, first_entry_only=False, max_turns=6, max_turn_target="finish")
+        extract=fix_fields,
+        on_enter={"type": "llm", "prompt": "Ask what they would like to change. Do not name any date or amount yourself."},
+        first_entry_only=False, max_turns=6, max_turn_target="finish")
     # a read-back the customer keeps rejecting ends without a promise rather than in a loop to the turn limit (PUB-12)
     nodes["apply_fix"] = _code("apply_fix", _WHEN + _APPLY_FIX, "close_error", _eqs("fix_route", [("ok", "finish"), ("stuck", "fix_stuck")]),
                                reasons=reasons, max_fixes=int(spec.get("max_fixes", 3)), next_weekday=nw)

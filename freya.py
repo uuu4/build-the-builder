@@ -108,9 +108,13 @@ def run_simulation(agent_id, name, variables_by_persona, max_seconds=420, concur
         try:
             its = api("GET", f"/api/v2/simulations/{sim_id}/iterations"); its = its.get("iterations") or its.get("items") or its
             runs = get_iteration(sim_id, its[0]["id"])["runs"]
-            if len(runs) >= len(variables_by_persona) and all(r.get("outcome") for r in runs):
+            # a verdict alone is not enough: on 11 October calls were still talking (promise, close_call to come) when
+            # every run already showed an outcome, and the ledger was read too early. Every call must have ended too.
+            # A call that never started (stuck "initiating", no messages) never ends: then 10 minutes after the verdicts.
+            if len(runs) >= len(variables_by_persona) and all(r.get("outcome") in ("pass", "fail", "inconclusive", "error") for r in runs):
                 done_since = done_since or time.time()
-                if time.time() - done_since > 120:
+                ended = all(r.get("callId") and get_call(r["callId"]).get("endedAt") for r in runs)
+                if (ended and time.time() - done_since > 120) or time.time() - done_since > 600:
                     api("POST", f"/api/v2/simulations/{sim_id}/cancel")
                     print("simulation kept 'running' after every verdict was in: cancelled it", flush=True)
                     s["status"] = "completed"

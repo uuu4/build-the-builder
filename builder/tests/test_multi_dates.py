@@ -182,10 +182,61 @@ class Flow(unittest.TestCase):
         self.assertEqual(run(self.nodes, "apply_fix", v), "note_1")              # the fourth change: no promise, notes, close
         self.assertEqual(v["reason_1"], "refused")
 
-    def test_read_back_is_spoken_on_every_entry(self):
+    def test_read_back_is_a_fixed_line_unless_a_question_came_with_the_agreement(self):   # PUB-12 style run, PUB-04
         self.assertFalse(self.nodes["m_readback"]["on_enter_first_entry_only"])
-        self.assertIn("{{readback}}", self.nodes["m_readback"]["on_enter"]["prompt"])
+        self.assertEqual(self.nodes["m_readback"]["on_enter"], {"type": "tts", "text": "{{readback}}"})
+        self.assertIn("{{readback}}", self.nodes["m_readback_q"]["on_enter"]["prompt"])
         self.assertFalse(self.nodes["m_fix"]["on_enter_first_entry_only"])
+        self.assertIn("asked_q", [f["name"] for f in self.nodes["m_today"]["extraction_schema"]])
+        self.assertIn("asked_q", [f["name"] for f in self.nodes["p1_attempt1_full"]["extraction_schema"]])
+        v = self.start([CARD])
+        v.update(m_today_turn="accepts", agreed_date="", asked_q="yes")
+        self.assertEqual(run(self.nodes, "all_yes", v), "m_readback_q")
+        self.assertEqual(v["asked_q"], "")
+        v.update(fix_kind="change", fix_slot="1", fix_date="tomorrow", fix_amount="")
+        self.assertEqual(run(self.nodes, "apply_fix", v), "m_readback")
+
+    def test_a_change_named_with_the_no_is_applied_at_once(self):                # PUB-07 pieces run
+        v = self.start([dict(LOAN, days_late=5, past_due=540.0, instalment_amount=180.0)])
+        v.update(st_1="agreed", amt_1="540", date_1="2026-10-19", adj_1="", mov_1="")
+        v.update(rb_turn="changes", fix_kind="change", fix_slot="unknown", fix_date="Monday the twenty sixth", fix_amount="")
+        nxt = route(self.nodes["m_readback"], v)
+        self.assertEqual(nxt, "apply_fix")
+        self.assertEqual(run(self.nodes, nxt, v), "m_readback")                     # one product: no slot needed
+        self.assertEqual((v["date_1"], v["mov_1"]), ("2026-10-27", "1"))            # 26 October is a holiday in this calendar
+        v.update(rb_turn="changes", fix_kind="unknown")
+        self.assertEqual(route(self.nodes["m_readback"], v), "m_fix")
+
+    def test_the_week_named_first_and_the_weekday_after(self):                   # PUB-07: "the week after next" ... "Monday"
+        self.assertEqual(resolve("Monday, the week after next"), "2026-10-26")
+        self.assertEqual(resolve("Wednesday next week"), "2026-10-21")
+        v = self.start([dict(LOAN, days_late=5, past_due=540.0, instalment_amount=180.0)])
+        v.update(m_today_turn="proposes", agreed_date="the week after next")
+        self.assertEqual(run(self.nodes, "all_yes", v), "m_today")
+        v.update(m_today_turn="proposes", agreed_date="Monday")
+        self.assertEqual(run(self.nodes, "all_yes", v), "m_readback")
+        self.assertEqual(v["date_1"], "2026-10-27")                                 # Monday 26th, a holiday here: Tuesday
+
+    def test_an_amount_below_the_floor_is_not_recorded(self):                    # PUB-06 "six hundred and thirty seven"; PUB-11 "3"
+        v = self.start([dict(CARD, past_due=2125.10, minimum_payment=637.5, days_late=12)])
+        v["floor_first"] = "1"
+        self.assertEqual(run(self.nodes, "enter_1", v), "p1_attempt1_floor")
+        v.update(agreed_date="", agreed_amount="637", **{"p1_attempt1_floor_all": "no"})
+        run(self.nodes, "save_1_attempt1_floor", v)
+        self.assertEqual(v["amt_1"], "637.50")
+        v = self.start([CARD, LOAN])
+        run(self.nodes, "enter_1", v)
+        v.update(agreed_date="", agreed_amount="3", **{"p1_attempt1_full_all": "no"})
+        run(self.nodes, "save_1_attempt1_full", v)
+        self.assertEqual(v["amt_1"], "300")                                         # the step's offer: the full amount
+
+    def test_endless_read_backs_end_without_a_promise(self):
+        v = self.start([CARD])
+        v.update(st_1="agreed", amt_1="300", date_1="2026-10-16", adj_1="", mov_1="")
+        for _ in range(5):
+            self.assertEqual(run(self.nodes, "finish", v), "m_readback")
+        self.assertEqual(run(self.nodes, "finish", v), "note_1")                  # through rg_1: a note, no promise
+        self.assertEqual((v["st_1"], v["reason_1"]), ("noted", "refused"))
 
     def test_no_date_extraction_is_left(self):
         for name, n in self.nodes.items():

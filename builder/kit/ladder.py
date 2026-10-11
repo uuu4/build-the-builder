@@ -102,7 +102,8 @@ def build(api, spec, tools, prefix="neg_", max_turns=12, turn_limit_target=None)
             extract += [{"name": "agreed_amount", "type": "float", "description": "The amount the customer agreed to pay, if they agreed", "min_confidence": 0.6},
                         {"name": "agreed_date", "type": "string", "description": "The date the customer agreed to pay on, if they agreed, in words as "
                          "said by the customer or as you named it when they said yes (for example 'tomorrow', 'this Friday', 'the 30th', "
-                         "'Thursday 15 October'). Copy the words; do not turn them into a date: code resolves them against the call's date.",
+                         "'Thursday 15 October'). If they named the week earlier and now only a weekday, give both ('Monday, the week after next'). "
+                         "Copy the words; do not turn them into a date: code resolves them against the call's date.",
                          "min_confidence": 0.6}]
         nodes[name] = g.conversation(name, task, trs, tools=tools, extract=extract,
                                      on_enter={"type": "tts", "text": s["say"]} if s.get("say") else {"type": "llm", "prompt": s["task"]},
