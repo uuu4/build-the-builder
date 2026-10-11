@@ -15,7 +15,9 @@ Saatler TSİ (konteyner UTC, +3). Not: `docs/olcum-multi.md`'deki "23:00 TSİ" g
 | Saat | Ne | Sonuç |
 |---|---|---|
 | 02:49 | builder uçtan uca R2 (`e2e-r2`, form komutu, araç API'si konumsal) | 127 sn; 12/12 vakada tarih/sıra/deneme doğru; 14 kapanış kodu doğru |
-| 02:49 | builder uçtan uca A (`e2e-a`) | 287 sn, kendi testi koştu; ölçüm sürüyor |
+| 02:49 | builder uçtan uca A (`e2e-a`, agent 79002a49) | 287 sn, kendi testi koştu; **A 3 tekrar: 10/10** |
+| 03:00 | builder uçtan uca A+B (`e2e-b`, agent 5069d381) | 313 sn; **B 3 tekrar: 2/3**. PUB-12'nin 3. tekrarı Freya'da hiç başlamadı (0 mesaj, simülasyon takıldı, koruma iptal etti): platform, ajan değil. Tek vaka yeniden koşuluyor |
+| 03:10 | `tools/rescore_close.py` | R gibi kodları pratik bankada olmayan brief'ler için puanı `close_call` argümanlarından hesaplar; A koşusunda 10/10 ile aynı sonucu verdi |
 
 ## Sonuçlar
 
@@ -27,5 +29,7 @@ Saatler TSİ (konteyner UTC, +3). Not: `docs/olcum-multi.md`'deki "23:00 TSİ" g
 
 ## Sıradaki adım
 
-1. `e2e-a` 3 tekrar ölçümü ve `e2e-b` kurulumu + ölçümü bitsin (arka plan betiği).
-2. Madde 1: referans ajanlarla A (3 tekrar), B (3 tekrar + 5 stil), R; R2 yapısal.
+Madde 1 için "ajan" = builder'ın güncel kitle kurduğu ajanlar (`e2e-a`, `e2e-b`, `e2e-r`): yarın da builder kuracak, elle yapılmış referanslar değil.
+1. Koşuyor (`m1.sh`): B PUB-12 3 tekrar; B 5 stil × 3 tekrar; A 5 stil × 3 tekrar. Sonuçlar `results/m1-*.log`.
+2. Koşuyor: builder R'yi kuruyor (`e2e-r`). Sonra `run_cases.py <agent> --cases practice/brief-r/cases.json --reps 3` ve `tools/rescore_close.py`.
+3. R2 yapısal: `e2e-r2` 12/12 tarih ve kapanış kodları (yukarıda); `test_brief_r2` yeşil.
