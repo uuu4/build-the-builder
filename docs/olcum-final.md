@@ -17,6 +17,7 @@ Saatler TSİ (konteyner UTC, +3). Not: `docs/olcum-multi.md`'deki "23:00 TSİ" g
 | 02:49 | builder uçtan uca R2 (`e2e-r2`, form komutu, araç API'si konumsal) | 127 sn; 12/12 vakada tarih/sıra/deneme doğru; 14 kapanış kodu doğru |
 | 02:49 | builder uçtan uca A (`e2e-a`, agent 79002a49) | 287 sn, kendi testi koştu; **A 3 tekrar: 10/10** |
 | 03:00 | builder uçtan uca A+B (`e2e-b`, agent 5069d381) | 313 sn; **B 3 tekrar: 2/3**. PUB-12'nin 3. tekrarı Freya'da hiç başlamadı (0 mesaj, simülasyon takıldı, koruma iptal etti): platform, ajan değil. Tek vaka yeniden koşuluyor |
+| 03:11 | builder uçtan uca R (`e2e-r`, agent bcf59d65) | 79 sn; memo kuralları doğru (öncelikli bant 6. iş günü, pencere 17:00, "iki iş günü"); canlı ölçüm stillerden sonra |
 | 03:10 | `tools/rescore_close.py` | R gibi kodları pratik bankada olmayan brief'ler için puanı `close_call` argümanlarından hesaplar; A koşusunda 10/10 ile aynı sonucu verdi |
 
 ## Sonuçlar
