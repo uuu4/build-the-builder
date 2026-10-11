@@ -101,12 +101,25 @@ Talkative'deki kalanların çoğu simüle müşteriden: kimlik hanelerini hiç v
 
 main `248ea34`'e fast-forward edildi (testler yeşil, preflight temiz, ölçümler önceki main'den iyi).
 
+### Tur 6 (10:00-11:00 TSİ), her biri 3 tekrar (platform yavaş: çok sayıda koşu kural gereği atıldı)
+
+| | normal | pieces | corrects | talkative | asks_back | in_words |
+|---|---|---|---|---|---|---|
+| B | **3/3** | **3/3** | 1/3 | 0/3 | 2/3 | **3/3** |
+
+Kontroller: A corrects PUB-02/06 3/3, PUB-07 2/3; R PUB-06 3/3 (22 tuttu).
+
+23. **Gerileme, geri alındı:** 21'de tarih alanına eklenen "düzeltme yarıda kaldıysa boş bırak" cümlesi çıkarımı bitmiş düzeltmelerde de boşalttı ("the twenty-fifth, sorry, I mean the twenty-sixth" → boş); boş tarih ikinci belirsiz cevap sayılıp son tarihler kaydedildi (A corrects PUB-07, B PUB-11 atılan koşuda). Cümle çıkarım açıklamalarından çıkarıldı ("düzeltilmiş günü ver"), adım talimatında kaldı.
+24. İkinci kez günsüz cevap artık son tarihleri kaydetmiyor, ürün merdivenlerine gidiyor.
+25. Geri sorudan sonra kimlik sorusu yine tekrarlandı (ikinci geri soruda): örnek cümle eklendi.
+Bizim olmayan: B corrects PUB-11 sandbox `code_exec` hatası (service_error), talkative'de kimlik cevabı vermeyen simüle müşteri.
+
 ## Geri alınanlar
 
-(yok)
+- `kit: date/amount extraction thresholds...` içindeki çıkarım açıklaması kuralı ("yarıda kalan düzeltmede boş bırak"): ölçüm kötüleşti, `kit: take the cut-off rule out...` ile kısmen geri alındı (madde 23).
 
 ## Sıradaki adım
 
-1. Koşuyor (`m7.sh`): kontroller (A corrects PUB-02/06/07, R PUB-06), B tam. `results/m7-*.log`.
-2. Sonra A corrects ve talkative tam; madde 2'ye (builder'ı sıfırdan 3'er kez) geçiş kararı: talkative'deki simüle müşteri kaynaklı hatalar dışında her şey 3/3 ise.
+1. Koşuyor (`m8.sh`, kit `take the cut-off rule out` ile): kontroller (A corrects PUB-07, B in_words PUB-11), A tam (6), R. `results/m8-*.log`.
+2. Sonra `front: example line...` (madde 25) ile ajanları yeniden üret + deploy, B tam.
 3. R2 yapısal: `e2e-r2` 12/12, `test_brief_r2` yeşil.
