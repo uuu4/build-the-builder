@@ -517,6 +517,11 @@ except Exception:
 '''
 
 
+# A asks_back PUB-04, 11 October: "Am I talking to" (cut off) at the read-back got "the collections team"; the check wants the robot answer
+_WHO = ("A question about who or what you are ('who is this?', 'am I talking to a person?', also when it is cut off, like 'Am I talking to'): "
+        "answer it as the rule for 'are you a robot' says.")
+
+
 _ASKED_Q = g.enum_field("asked_q", ["yes", "no"],
                         "yes if the customer's last message asks you a question (are you a robot, is this a scam, why, which account), "
                         "with or without an answer in the same message. Otherwise no.", 0.5)
@@ -542,7 +547,8 @@ def build(api, spec, ladder_tpl=None):
     queues = spec["queues"]              # logical situation -> queue value
     nodes = {}
     nw = spec.get("next_weekday", "following_week")    # "next Friday": "following_week" (the Friday of next week) or "nearest"
-    base_rules = list(spec.get("today", {}).get("rules") or [])
+    base_rules = list(spec.get("today", {}).get("rules") or []) + [_WHO]
+    tpl.setdefault("rules", []).append(_WHO)
 
     # --- "can you pay all of them today?"
     t = spec["today"]
