@@ -111,6 +111,17 @@ def close(slot, trace):
         return d
     except Exception as e:
         log(trace, "event", kind="close_failed", msg=str(e)[:800]); print("save failed:", e)
+        # 11 October rehearsal: the close's save answered 504 four times and no submission file was written, although
+        # the agent had saved this workflow minutes before. The workflow is the submission: write it from disk.
+        try:
+            ids = json.load(open(ROOT / "out" / slot / "deployed.json")) if (ROOT / "out" / slot / "deployed.json").exists() else {}
+            sub.parent.mkdir(parents=True, exist_ok=True)
+            sub.write_text(json.dumps({"workflow_id": ids.get("workflow_id"), "agent_id": ids.get("agent_id"), "workflow": wf}, indent=1))
+            log(trace, "event", kind="close_fallback_file", submission=str(sub), workflow_id=ids.get("workflow_id"), agent_id=ids.get("agent_id"),
+                msg="platform save failed at the close; submission written from out/<slot>/workflow.json (the agent's last deploy)")
+            print(f"submission written from disk: {sub}")
+        except Exception as e2:
+            log(trace, "event", kind="close_failed", msg="writing the submission from disk failed: " + repr(e2)[:400])
         return None
 
 

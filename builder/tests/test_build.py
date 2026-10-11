@@ -110,6 +110,20 @@ class Flow(unittest.TestCase):
         self.assertIn("close_fallback", trace)
         self.assertIn("agent_retry", trace)
 
+    def test_a_failed_save_at_the_close_still_leaves_the_submission(self):        # rehearsal, 11 October: 504 at the close
+        def failing_deploy(slot, wf, export_to=None):
+            raise RuntimeError("POST /api/v2/workflow -> 504: error code: 504")
+        async def agent(briefs, tool_api, slot, deadline, trace, again=False):
+            self.out.mkdir(parents=True, exist_ok=True)
+            (self.out / "workflow.json").write_text(json.dumps({"nodes": {}, "initial_node": "x"}))
+            (self.out / "deployed.json").write_text(json.dumps({"workflow_id": "w1", "agent_id": "a1"}))
+        self.fake_deploy = failing_deploy
+        self.run_main(agent)
+        sub = json.load(open(ROOT / "submission" / f"{self.slot}.workflow.json"))
+        self.assertEqual((sub["workflow_id"], sub["workflow"]["initial_node"]), ("w1", "x"))
+        trace = next((ROOT / "traces").glob(self.slot + "-*.jsonl")).read_text()
+        self.assertIn("close_fallback_file", trace)
+
     def test_no_second_agent_when_too_little_time_is_left(self):
         async def agent(briefs, tool_api, slot, deadline, trace, again=False):
             self.calls.append(again)
