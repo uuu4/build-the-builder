@@ -243,6 +243,13 @@ class Flow(unittest.TestCase):
         self.assertEqual(run(self.nodes, "all_yes", v), "m_readback")
         self.assertEqual((v["date_1"], v["date_2"], v["adj_2"]), ("2026-10-30", "2026-10-23", "1"))
 
+    def test_a_question_with_the_yes_is_answered_before_recording(self):        # R PUB-04
+        v = {"rb_turn": "confirms", "asked_q": "yes"}
+        self.assertEqual(route(self.nodes["m_readback"], v), "m_answer")
+        self.assertEqual(route(self.nodes["m_answer"], v), "rg_1")
+        v["asked_q"] = "no"
+        self.assertEqual(route(self.nodes["m_readback"], v), "rg_1")
+
     def test_endless_read_backs_end_without_a_promise(self):
         v = self.start([CARD])
         v.update(st_1="agreed", amt_1="300", date_1="2026-10-16", adj_1="", mov_1="")

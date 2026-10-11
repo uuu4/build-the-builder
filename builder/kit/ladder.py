@@ -94,6 +94,9 @@ def build(api, spec, tools, prefix="neg_", max_turns=12, turn_limit_target=None)
                 "\n- If the customer corrects a date or an amount, use the corrected value." "\n- " + how +
                 "\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it." +
                 "\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses."
+                # the judge counts every restatement as another offer or another ask (PUB-06 asks_back, PUB-07 talkative)
+                "\n- After a question or an unrelated remark, answer it in a few words. Do not repeat the offer with its amount or date, and do not "
+                "ask again a question you already asked: at most add 'Would that work for you?'."
                 "\n\nTHIS STEP:\n" + s["task"])
         # a low threshold on purpose: a dropped classification keeps the call in this step, and there the model was seen
         # to invent the next offer itself (PUB-12: "refuses" at confidence 0.56, then an offer the car loan's band does not allow)

@@ -631,7 +631,9 @@ def build(api, spec, ladder_tpl=None):
                "- If they want to change a date or an amount, or drop a product, say nothing about recording: the system applies the change.\n"
                "- If they ask a question (for example whether you are a robot), answer it in one sentence, then ask again whether they confirm.\n"
                "- Never make an offer, never name a new date or amount yourself, never say anything is recorded, booked or noted." + rb_rules)
-    rb_trs = [g.eq("rg_1", "rb_turn", "confirms", "confirmed"),
+    # "Am I talking to a robot? Yes, I confirm." (R PUB-04): the question is answered before anything is recorded
+    rb_trs = [g.and_eq("m_answer", [[("rb_turn", "confirms"), ("asked_q", "yes")]], "confirms and asks something"),
+              g.eq("rg_1", "rb_turn", "confirms", "confirmed"),
               # the change named in the same message ("No, Monday the twenty sixth") is applied at once (live run, PUB-07)
               g.and_eq("apply_fix", [[("rb_turn", "changes"), ("fix_kind", "change")], [("rb_turn", "changes"), ("fix_kind", "drop")]],
                        "names the change"),
@@ -643,6 +645,11 @@ def build(api, spec, ladder_tpl=None):
     # a fixed line: an llm entry was seen to invent an offer and to say "recorded" before anything was recorded (PUB-12)
     nodes["m_readback"] = g.conversation("m_readback", rb_task, rb_trs, extract=rb_extract,
                                          on_enter={"type": "tts", "text": "{{readback}}"}, first_entry_only=False, max_turns=6, max_turn_target="m_fix")
+    nodes["m_answer"] = g.conversation(
+        "m_answer", rb_task, rb_trs[1:], extract=rb_extract,
+        on_enter={"type": "llm", "prompt": "Answer the customer's question in one sentence, following the rules of the call. Make no offer and "
+                  "say nothing is recorded yet. Then ask: \"Shall I go ahead and record it?\""},
+        first_entry_only=False, max_turns=4, max_turn_target="m_fix")
     # only when the agreeing message also asked something ("...the 6th. Am I talking to a robot?", PUB-04)
     nodes["m_readback_q"] = g.conversation(
         "m_readback_q", rb_task, rb_trs, extract=rb_extract,
@@ -696,8 +703,9 @@ def build(api, spec, ladder_tpl=None):
         (hs.get("task") or ("The customer's identity is verified. The customer mentioned illness, a death in the family or job loss. "
                             "Make NO persuasion attempt and offer no payment. If they themselves name a date or an amount, say you will take it; the system handles it."))
         # style "talkative", 11 October: the support team was offered four times while the customer chatted
-        + "\nYou offered the connection to the support team once, in your first message here. Never offer it again and never repeat the sympathy: "
-          "if they talk about something else, reply in a few words and wait for their answer.",
+        + "\nYou offered the connection to the support team once, in your first message here, with one sentence of sympathy. Never offer it again "
+          "and never say anything sympathetic again (no 'sorry', no 'I understand how hard'): if they talk about something else, reply in a few "
+          "neutral words and wait for their answer.",
         [g.eq("transfer_hardship", "hs_turn", "accepts_transfer", "accepts transfer"),
          g.eq("hardship_mark", "hs_turn", "declines_transfer", "declines transfer")]
         + [g.and_eq(f"p{k}_{start}", [[("cur_slot", str(k)), ("hs_turn", "proposes")]], "names a payment") for k in range(1, K + 1)],
