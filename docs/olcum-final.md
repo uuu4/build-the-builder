@@ -114,12 +114,18 @@ Kontroller: A corrects PUB-02/06 3/3, PUB-07 2/3; R PUB-06 3/3 (22 tuttu).
 25. Geri sorudan sonra kimlik sorusu yine tekrarlandı (ikinci geri soruda): örnek cümle eklendi.
 Bizim olmayan: B corrects PUB-11 sandbox `code_exec` hatası (service_error), talkative'de kimlik cevabı vermeyen simüle müşteri.
 
+### Tur 7 (11:15-12:42 TSİ): platform bozuk, sonuçlar değerlendirmeye alınmadı
+
+Kontroller (platform sağlamken): A corrects PUB-07 3/3, B in_words PUB-11 3/3 (madde 23 geri alımı tuttu).
+A normal 6/10 ve A corrects 6/10, ama kalanların çoğunda hakem gerekçesi "All criteria met" ya da "no verdict"/"analysis never arrived": hakem servisi bozuk. Ardından `POST /api/v2/simulations` 503 ("API key validation is temporarily unavailable"), `GET` 504 ve 30 sn üstü cevaplar; A pieces/asks_back/in_words/talkative ve R hiç koşmadı.
+Gerçek görünen kalanlar: A corrects PUB-06 (simüle müşterinin "Thursday, sorry" kesiği), PUB-09 (restructuring öncesi model bir teklif söyledi), PUB-03 (simüle müşteri kimlikte cevap vermedi).
+
 ## Geri alınanlar
 
 - `kit: date/amount extraction thresholds...` içindeki çıkarım açıklaması kuralı ("yarıda kalan düzeltmede boş bırak"): ölçüm kötüleşti, `kit: take the cut-off rule out...` ile kısmen geri alındı (madde 23).
 
 ## Sıradaki adım
 
-1. Koşuyor (`m8.sh`, kit `take the cut-off rule out` ile): kontroller (A corrects PUB-07, B in_words PUB-11), A tam (6), R. `results/m8-*.log`.
-2. Sonra `front: example line...` (madde 25) ile ajanları yeniden üret + deploy, B tam.
-3. R2 yapısal: `e2e-r2` 12/12, `test_brief_r2` yeşil.
+1. 12:45 TSİ: Freya API 503/504 ve zaman aşımı. 15 dk sonra yeniden yokla; düzelmezse dur, issue #3'te Emre'ye sor.
+2. Platform düzelirse: ajanları `front: example line...` (madde 25) ile yeniden üret + deploy; A pieces/asks_back/in_words, R, B asks_back PUB-12 kontrolü.
+3. 15:30 TSİ: son durum, main fast-forward (madde 23 geri alımı main'e girmeli: main `248ea34` hâlâ hatalı kuralı içeriyor), issue #3 özeti.
