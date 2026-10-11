@@ -25,7 +25,7 @@ Açık işler (akşam için):
 - Yeni alan adlı API'de builder 20 dk sürdü (ajan 15 dk): 30 dk sınırına pay az. Platform yavaşsa kapanış 5-7 dk.
   Trace incelendi (15:15): ajanın kendi işi (okuma, dosyalar, gen.py, lint) yalnız 80 sn. Kalan süre platformda: ilk deploy 440 sn (504), ikinci 378 sn, kapanış 293 sn. Builder'da kısaltılacak bir şey yok; platform sağlamken kurulum 2-5 dk.
   Deploy'da POST 504 alınca platform workflow'u yine açmış olabiliyor: alt-r2'de sahipsiz bir kopya kaldı (424a5667). Durum dosyası doğrusunu (e19f88bb) gösteriyor, çalışma alanında 21/200 workflow var: zararsız.
-- `front: example line` (geri soruda kimlik sorusunu tekrarlamama örneği) ölçülmedi.
+- `front: example line` ölçüldü (Tur 8): B asks_back PUB-12'de kalan hata spec'teki amaç cümlesindendi, madde 26 ile düzeltildi.
 - Talkative ve kesik düzeltmeler simüle müşteriden; gizli setteki müşteriler daha düzgün konuşursa bu hücreler yükselir.
 
 ## Ortam
@@ -166,6 +166,10 @@ Gerçek görünen kalanlar: A corrects PUB-06 (simüle müşterinin "Thursday, s
 
 - 1. tekrar geçersiz: üç arama da bankaya ulaştı (araç çağrıları defterde) ama Freya hiçbir mesajı kaydetmedi, üç koşu `error` "No call created within 300s". Hakem değerlendiremedi. `run_cases.py` artık bütün koşular `error` dönerse de kesinti sayıp tekrarlıyor (`run_cases: a run where every call...`).
 - 2. tekrar yavaş (medyan tur 13 sn, extraction 10-25 sn), kural gereği atıldı. İçinde bir platform yan etkisi görüldü: platform izleyemediği aramanın yerine aynı müşteriye ikinci bir arama açmış (PUB-13 defteri: verify > verify > get_account > verify > verify > close_call; kayıttaki konuşmada get_account yok). Banka, tamamen doğrulanmış müşteriye gelen sonraki verify cevaplarında `all_verified` alanını döndürmüyor (pratik bankada denendi), ikinci aramadaki ajan kimlikte takıldı ve not_verified ile kapattı. Gerçek değerlendirmede her vaka yeni oturum: kitte değişiklik yok.
+
+- Kalan geçerli tekrarlar (eski kit): PUB-11 2/2, PUB-13 2/2, PUB-12 1/2. PUB-12'nin kök nedeni (madde 26): müşteri telefon sorusuna "Which account is this about?" dedi; builder'ın spec'indeki amaç cümlesi "and ask the security question again" diyordu (kitin örnek spec'inden kopya), model soruyu tekrarladı, hakem üçüncü telefon sorusu saydı.
+26. **Düzeltme** (`front: ...`): kimlik adımında her geri soru, cevap kuralı ne derse desin ('then continue', 'ask the security question again'), "Whenever you are ready." ile biter, güvenlik sorusu tekrarlanmaz. Örnek spec B'den çelişkili ifade çıktı. Örnek spec taraması: B'nin robot/scam cevapları "then continue" ile bitiyordu (aynı risk, kuralla kapandı); belirsiz tarih kuralı zararsız; A'da çelişki yok. Test: `FrontTest.test_question_back_never_repeats_the_security_question` (düzeltmesiz kodda başarısız).
+- Kontrol (`e2e-b` v10, 16:16-16:55 TSİ, platform çok yavaş: medyan tur 14-33 sn): atılan koşu 3/3, sayılan tekrarlar 1/3, 1/3, 3/3. Başarısızların hepsi platform: müşteri kimlikten hemen sonra, araç çağrısı olmadan kapattı. İlerleyen her aramada PUB-12 geçti (4/4). Genelleştirilmiş kural `e2e-a`/`e2e-b` v11'e deploy edildi.
 
 ## Geri alınanlar
 
