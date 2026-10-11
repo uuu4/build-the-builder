@@ -12,11 +12,22 @@ HEADERS = {"Authorization": "Bearer " + os.environ.get("FREYA_API_KEY", ""), "Co
 def api(method, path, body=None, **params):
     """Call the API and return the `result` part of its {success, data: {message, result}} envelope."""
     q = "?" + urllib.parse.urlencode(params) if params else ""
-    req = urllib.request.Request(URL + path + q, data=json.dumps(body).encode() if body is not None else None, headers=HEADERS, method=method)
-    try:
-        with urllib.request.urlopen(req, timeout=120) as r: out = json.load(r)
-    except urllib.error.HTTPError as e:
-        raise RuntimeError(f"{method} {path} -> {e.code}: {e.read().decode()[:1500]}") from None
+    # 5xx and timeouts are retried: 3 tries, 10 s apart (11 October: 503 "API key validation is temporarily unavailable",
+    # 504 on GET, 30 s answers). A POST is retried only on 502/503, where nothing was processed; a 504 may have been.
+    for attempt in range(3):
+        req = urllib.request.Request(URL + path + q, data=json.dumps(body).encode() if body is not None else None, headers=HEADERS, method=method)
+        try:
+            with urllib.request.urlopen(req, timeout=120) as r: out = json.load(r)
+            break
+        except urllib.error.HTTPError as e:
+            msg = f"{method} {path} -> {e.code}: {e.read().decode()[:1500]}"
+            if attempt < 2 and (e.code in (502, 503) or (e.code == 504 and method == "GET")):
+                time.sleep(10); continue
+            raise RuntimeError(msg) from None
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+            if attempt < 2 and method == "GET":
+                time.sleep(10); continue
+            raise RuntimeError(f"{method} {path} -> {e}") from None
     return out.get("data", {}).get("result", out) if isinstance(out, dict) else out
 
 _ws = None

@@ -65,8 +65,11 @@ def main():
     for rep in range(a.reps):
         for attempt in range(1 + a.rerun_if_slow):                   # organisers: a run made while the model was slow is thrown away and repeated
             rows, sim_id, it_id, status, took, med = run_once(a.agent_id, cases, ids)
-            if med <= 10 or attempt == a.rerun_if_slow: break
-            print(f"-- run discarded: median slowest turn {med:.0f} s. Waiting 5 minutes, then repeating it.\n", flush=True); time.sleep(300)
+            # an outage, not the agent: no customer reached any tool (11 October); never "fix" a workflow after such a run
+            outage = all(not r["tools"] for r in rows) and len(rows) > 1
+            if (med <= 10 and not outage) or attempt == a.rerun_if_slow: break
+            why = "no tool call in any call (platform outage)" if outage else f"median slowest turn {med:.0f} s"
+            print(f"-- run discarded: {why}. Waiting 5 minutes, then repeating it.\n", flush=True); time.sleep(300)
         reps.append(rows); total_s += took
         if a.reps > 1: print(f"-- run {rep + 1} of {a.reps}: {sum(r['pass'] for r in rows)} / {len(rows)} passed, {took:.0f} s\n")
     need = a.reps                                                # a customer counts only when every run passes
