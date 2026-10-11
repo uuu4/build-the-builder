@@ -237,7 +237,7 @@ def build(api, spec, after_verify, prefix=""):
     v_tool = api.tool(
         idn.get("tool", "verify_identity"),
         "Check ONE security answer with the bank. CALL it once for every COMPLETE answer the customer gives, with the field of the question asked. "
-        "Never call it with a partial answer. Never call it twice for the same answer. A complete answer that comes with a question or a "
+        "Never call it with a partial answer; parts given in different messages, joined, are a complete answer. Never call it twice for the same answer. A complete answer that comes with a question or a "
         "complaint in the same message is still an answer: call it first. After the result, speak to the customer.",
         descriptions={idn["field_param"]: "Which question was answered. One of: " + ", ".join(q["field"] for q in qs) + ".",
                       idn["answer_param"]: "The customer's complete answer, converted: " + "; ".join(f"{q['field']} as {q['format']}" for q in qs) + "."})
@@ -249,6 +249,11 @@ def build(api, spec, after_verify, prefix=""):
                "How to handle answers:\n"
                "- Call " + idn.get("tool", "verify_identity") + " for every complete answer. After every result, speak to the customer: never leave a turn empty.\n"
                "- If the customer gives only part of an answer, or gives it over several turns, ask for the missing part and join the parts. Do not call the tool with a part.\n"
+               # style "pieces", 11 October: "19 October" then "1983" was asked for again thirteen times, the tool never called
+               "- Parts said in different messages together ARE a complete answer: a day and month in one message and the year in the next "
+               "(for example '19 October', then '1983') is the date 1983-10-19, two digits then two more digits are the four digits. "
+               "As soon as every part has been said, join them and call the tool at once. Never ask again for a part the customer already gave: "
+               "ask only for the part that is still missing, by name (for example 'And the year?').\n"
                "- If the customer corrects themselves, use the corrected value.\n"
                # PUB-03, live run of 10 October: "Twenty one July nineteen ninety. How much do I owe?" was a third wrong
                # answer; the model answered the question, never checked the date, and the customer passed on a fourth try

@@ -678,8 +678,11 @@ def build(api, spec, ladder_tpl=None):
     hs = spec.get("hardship") or {}
     nodes["hardship"] = g.conversation(
         "hardship",
-        hs.get("task") or ("The customer's identity is verified. The customer mentioned illness, a death in the family or job loss. "
-                           "Make NO persuasion attempt and offer no payment. If they themselves name a date or an amount, say you will take it; the system handles it."),
+        (hs.get("task") or ("The customer's identity is verified. The customer mentioned illness, a death in the family or job loss. "
+                            "Make NO persuasion attempt and offer no payment. If they themselves name a date or an amount, say you will take it; the system handles it."))
+        # style "talkative", 11 October: the support team was offered four times while the customer chatted
+        + "\nYou offered the connection to the support team once, in your first message here. Never offer it again and never repeat the sympathy: "
+          "if they talk about something else, reply in a few words and wait for their answer.",
         [g.eq("transfer_hardship", "hs_turn", "accepts_transfer", "accepts transfer"),
          g.eq("hardship_mark", "hs_turn", "declines_transfer", "declines transfer")]
         + [g.and_eq(f"p{k}_{start}", [[("cur_slot", str(k)), ("hs_turn", "proposes")]], "names a payment") for k in range(1, K + 1)],
