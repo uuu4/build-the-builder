@@ -70,6 +70,19 @@ class FrontTest(unittest.TestCase):
                 self.assertNotIn("post_process_code", t)
                 self.assertNotIn("pre_process_code", t)
 
+    def test_question_back_never_repeats_the_security_question(self):
+        # B asks_back PUB-12: the spec's purpose line said to ask again and the judge counted a third phone question
+        spec = dict(SPEC, purpose_before_verify="Say you can only discuss that once verified, and ask the security question again.",
+                    agent_identity="Say you are the bank's digital assistant, then continue.")
+        nodes = front.build(API, spec, after_verify="next")
+        for name in ("identity", "identity_explain"):
+            task = nodes[name]["task_message"]
+            self.assertIn(spec["purpose_before_verify"], task)
+            self.assertIn("whatever the rule for that question says", task)
+            self.assertIn("do not repeat the security question", task)
+        for ex in (ROOT / "examples").glob("*/front.json"):
+            self.assertNotIn("security question again", ex.read_text(), ex)
+
 
 class NoLeakTest(unittest.TestCase):
     """Builder code and skills must not know a brief. Values of the practice briefs must not appear in them."""

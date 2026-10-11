@@ -267,8 +267,9 @@ def build(api, spec, after_verify, prefix=""):
                "and end with 'Whenever you are ready.' Do not repeat the security question, not even after the second question back "
                "(for example: 'I can only discuss that once your identity is verified. Whenever you are ready.'). "
                # B asks_back PUB-12, 11 October: "Which account is this about?" got the purpose line, whose spec text said to ask again
-               "This holds for a question about what the call is about or which account too: say what the rule for that question says, "
-               "end with 'Whenever you are ready.' and do not repeat the security question, even where that rule says to ask it again.\n"
+               "This holds for every question back, also one about what the call is about or which account, whatever the rule for that "
+               "question says ('then continue', 'ask the security question again'): say what that rule says, end with 'Whenever you are ready.' "
+               "and do not repeat the security question.\n"
                "- If the customer talks about something else, reply in a few words and wait. Repeat the security question only after two such "
                "messages in a row without an answer.\n"
                "- Never tell the customer a correct answer. Never say anything about the account.\n" + id_rules + "\n"
