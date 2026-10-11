@@ -10,8 +10,8 @@ Saatler TSİ (konteyner UTC, +3). Not: `docs/olcum-multi.md`'deki "23:00 TSİ" g
 
 | | normal | pieces | corrects | talkative | asks_back | in_words |
 |---|---|---|---|---|---|---|
-| A (10) | **10/10** | **10/10** | 7/10 (sonra PUB-02/06/07 kontrolleri 3/3) | 4/10 | **10/10** | **10/10** |
-| B (3) | **3/3** | **3/3** | 1/3 | 0/3 | 2/3 | **3/3** |
+| A (10) | **10/10** | **10/10** | 7/10 (sonra PUB-02/06/07 kontrolleri 3/3) | 4/10 | **10/10** (v12, Tur 9) | **10/10** |
+| B (3) | **3/3** | **3/3** | 1/3 | 0/3 | **3/3** (v12, Tur 10) | **3/3** |
 | R (10, rescore) | 9/10 (sonra PUB-04 ve PUB-06 kontrolleri 3/3) | | | | | |
 | R2 | yapısal 12/12 (`e2e-r2`, `alt-r2`) | | | | | |
 
@@ -184,12 +184,16 @@ Gerçek görünen kalanlar: A corrects PUB-06 (simüle müşterinin "Thursday, s
 
 - `kit: date/amount extraction thresholds...` içindeki çıkarım açıklaması kuralı ("yarıda kalan düzeltmede boş bırak"): ölçüm kötüleşti, `kit: take the cut-off rule out...` ile kısmen geri alındı (madde 23).
 
+### Tur 10 (17:35-17:46 TSİ): B asks_back (`e2e-b` v12)
+
+**3/3** (PUB-11, PUB-12, PUB-13 hepsi 3/3; iki yavaş koşu kural gereği atıldı). Bugünkü önceki B asks_back sonuçları 2/3 ve 1/2 (PUB-12) idi: madde 26 tuttu.
+
 ## Kalan işler (17:40 TSİ, Latif'in isteğiyle iş burada bırakıldı)
 
 Bu oturumda yapılmadı, sırayla:
 1. **A normal gerileme kontrolü** (`e2e-a` v12): madde 27/28 (kim sorusu kuralı, merdiven girişinde `_q` kopyası) bütün akışı etkiliyor; yalnız A asks_back (10/10) ve B asks_back ölçüldü. Komut: `python3 tools/run_cases.py 79002a49-19c0-4622-a8fa-a4083cc44da3 --brief A --reps 3 --rerun-if-slow 1`. Kötüleşirse `git revert` ile madde 28'in commit'i (`multi: a question asked with the answer to 'today?'...`) geri alınır. 19:30'dan sonra yapılmaz.
 2. **B'nin diğer stilleri** (pieces, corrects, talkative, in_words) v12'de ölçülmedi.
-3. **Issue #3:** 17:15'teki güncellemeden sonra yapılanlar (madde 27-29, A asks_back 10/10, B asks_back sonucu) issue'ya yazılmadı; özet bu dosyada, Tur 9 ve Tur 10.
+3. **Issue #3:** 17:15'teki güncellemeden sonra yapılanlar (madde 27-29, A asks_back 10/10, B asks_back 3/3) issue'ya yazılmadı; özet bu dosyada, Tur 9 ve Tur 10.
 4. Akşam: `docs/teslim.md`. Platform yavaşsa kurulum 20 dk'yı bulabiliyor, erken başlanmalı.
 
 ## Sıradaki adım
