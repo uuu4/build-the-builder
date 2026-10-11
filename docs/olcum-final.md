@@ -171,6 +171,15 @@ Gerçek görünen kalanlar: A corrects PUB-06 (simüle müşterinin "Thursday, s
 26. **Düzeltme** (`front: ...`): kimlik adımında her geri soru, cevap kuralı ne derse desin ('then continue', 'ask the security question again'), "Whenever you are ready." ile biter, güvenlik sorusu tekrarlanmaz. Örnek spec B'den çelişkili ifade çıktı. Örnek spec taraması: B'nin robot/scam cevapları "then continue" ile bitiyordu (aynı risk, kuralla kapandı); belirsiz tarih kuralı zararsız; A'da çelişki yok. Test: `FrontTest.test_question_back_never_repeats_the_security_question` (düzeltmesiz kodda başarısız).
 - Kontrol (`e2e-b` v10, 16:16-16:55 TSİ, platform çok yavaş: medyan tur 14-33 sn): atılan koşu 3/3, sayılan tekrarlar 1/3, 1/3, 3/3. Başarısızların hepsi platform: müşteri kimlikten hemen sonra, araç çağrısı olmadan kapattı. İlerleyen her aramada PUB-12 geçti (4/4). Genelleştirilmiş kural `e2e-a`/`e2e-b` v11'e deploy edildi.
 
+### Tur 9 (17:05-17:30 TSİ): A asks_back, taze R2 kurulumu
+
+- **A asks_back** (`e2e-a` v11, madde 26 ile): 9/10, PUB-04 1/3; kimlik adımı her aramada doğru (geri soruya cevap, soru tekrarı yok). PUB-04'ün iki kök nedeni:
+27. Okumada yarıda kalan "Am I talking to" sorusuna "the collections team" dendi; kontrol "dijital asistan" istiyor. Kural (`multi`): kim/ne olduğunuza dair her soru, kesik de olsa, robot sorusunun kuralıyla cevaplanır.
+28. "I cannot pay today. Am I talking to a robot?" ilk teklife gitti; ilk teklif sabit satır, soru cevapsız kaldı. `enter_k` soru varsa adımın `_q` kopyasına gider (önce cevap, sonra satır birebir; `m_readback_q` kalıbı); `asked_q` girişte sıfırlanır. Test: `Flow.test_a_question_with_the_refusal_is_answered_before_the_first_offer`.
+- **A asks_back** (`e2e-a` v12): **10/10, 30/30** (medyan tur 5-7 sn).
+- **Taze R2 kurulumu** (`fresh-r2`, 93 sn): temiz, ama kapanış kodları ile not nedenleri ayrımı için kitte yol yoktu: önceki iki kurulum `gen.py`'de kit kodunu yamamıştı, bu kurulum brief kodlarını not nedenlerine yazdı (not aracının enum'u bunları almıyor).
+29. `multi.json`'a isteğe bağlı `close_reasons` (mantıksal neden -> kapanış kodu); notlar `reasons`'ta kalır. Skill satırı ve test. Yeniden kurulum (`fresh-r2b`, 94 sn): ajan alanı kendiliğinden kullandı, yama yok, kapanışlar declined/welfare/tech_fault, tarih hesabı 12/12.
+
 ## Geri alınanlar
 
 - `kit: date/amount extraction thresholds...` içindeki çıkarım açıklaması kuralı ("yarıda kalan düzeltmede boş bırak"): ölçüm kötüleşti, `kit: take the cut-off rule out...` ile kısmen geri alındı (madde 23).
