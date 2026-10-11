@@ -22,7 +22,22 @@ Saatler TSİ (konteyner UTC, +3). Not: `docs/olcum-multi.md`'deki "23:00 TSİ" g
 
 ## Sonuçlar
 
-(doldurulacak)
+### Tur 1 (04:00, builder ajanları `e2e-a`/`e2e-b`, kit `e560e61`), her biri 3 tekrar
+
+| | normal | pieces | corrects | talkative | asks_back | in_words |
+|---|---|---|---|---|---|---|
+| A | 10/10 | 7/10 | 6/10 | 5/10 | 10/10 | 9/10 |
+| B | 2/3 (PUB-12 platform) | 1/3 | 2/3 | 1/3 | 2/3 | 1/3 |
+
+Kök nedenler (konuşmalar okundu):
+1. **Ölçüm hatası:** `freya.run_simulation` koruması takılan simülasyonu aramalar hâlâ sürerken iptal ediyordu; banka kaydı erken okundu ("get_account'tan sonra kapanmadı" hatalarının hepsi). Düzeltildi: bütün aramaların bitmesi beklenir, en çok 10 dk.
+2. **Okuma LLM girişi:** model okuma yerine bandın izin vermediği bir teklif uydurdu ve kayıttan önce "recorded" dedi (B PUB-12). Okuma yeniden sabit satır; LLM girişi yalnız uzlaşma mesajında soru varsa (`asked_q`).
+3. **Okuma döngüsü:** "No, Monday the twenty sixth" `m_fix`'e gitti, model değişikliği tekrarlayıp onay aldı, `none` sayıldı (A PUB-07). Okuma adımı değişikliği kendisi çıkarıp uyguluyor; tek ürün için ürün numarası gerekmiyor; okuma sayısı sınırlı.
+4. **Taban altı tutar:** 637,50 teklifine 637 kaydedildi (A PUB-06), krediye 3 (B PUB-11). Tabanın altı kaydedilmiyor: teklif ya da taban.
+5. **Haftalı gün:** "the week after next", sonra "Monday" önümüzdeki Pazartesi okundu. Belirsiz kelimeler saklanıyor, çözücü günü haftasıyla okuyor.
+6. **Parçalı kimlik cevabı:** "19 October" + "1983" 13 kez yeniden soruldu, araç hiç çağrılmadı (B pieces). Parçaların birleşik hâli tam cevaptır kuralı.
+7. **Destek teklifi tekrarı:** hardship adımı teklifi dört kez yaptı (A talkative PUB-05). Bir kez kuralı.
+8. Simüle müşteri kaynaklı (bizim değil): A talkative PUB-09 cümleler yarıda, anlamsız karakter, telefon hanesi hiç verilmiyor.
 
 ## Geri alınanlar
 
@@ -31,6 +46,7 @@ Saatler TSİ (konteyner UTC, +3). Not: `docs/olcum-multi.md`'deki "23:00 TSİ" g
 ## Sıradaki adım
 
 Madde 1 için "ajan" = builder'ın güncel kitle kurduğu ajanlar (`e2e-a`, `e2e-b`, `e2e-r`): yarın da builder kuracak, elle yapılmış referanslar değil.
-1. Koşuyor (`m1.sh`): B PUB-12 3 tekrar; B 5 stil × 3 tekrar; A 5 stil × 3 tekrar. Sonuçlar `results/m1-*.log`.
-2. Koşuyor: builder R'yi kuruyor (`e2e-r`). Sonra `run_cases.py <agent> --cases practice/brief-r/cases.json --reps 3` ve `tools/rescore_close.py`.
-3. R2 yapısal: `e2e-r2` 12/12 tarih ve kapanış kodları (yukarıda); `test_brief_r2` yeşil.
+1. Koşuyor (`m2.sh`): 2-5 numaralı düzeltmelerin tek vaka kontrolü (`5fe96d7` öncesi ajan): A pieces PUB-07, PUB-06; B in_words PUB-12; B talkative PUB-11.
+2. Sonra `out/e2e-a|b/gen.py` yeniden üret + deploy (kit `5fe96d7`), A ve B: normal + 5 stil, 3 tekrar.
+3. R: `run_cases.py bcf59d65-1179-483b-afd4-4df8e73a6b4a --cases practice/brief-r/cases.json --reps 3` (önce `e2e-r` yeniden üret + deploy), sonra `tools/rescore_close.py`.
+4. R2 yapısal: `e2e-r2` 12/12 tarih ve kapanış kodları; `test_brief_r2` yeşil.
