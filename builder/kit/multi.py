@@ -249,7 +249,7 @@ try:
     pw = str(vars.get('m_today_when_%d' % k) or '')
     pa = num(vars.get('m_today_amount_%d' % k), 0.0)
     vars['m_today_when_%d' % k] = ''
-    vars['m_today_amount_%d' % k] = ''
+    vars['m_today_amount_%d' % k] = 0
     due = num(vars.get('s%d_due' % k), 0.0)
     if pa <= 0 or pa > due:
         pa = due
@@ -297,7 +297,7 @@ try:
     if str(vars.get(P['all_var']) or '') == 'yes':
         vars['carry_date'] = said.isoformat() if said is not None else d
     vars['agreed_date'] = ''
-    vars['agreed_amount'] = ''
+    vars['agreed_amount'] = 0          # a float variable: the platform ignores '' (stale 220 on the next product, PUB-11)
     vars[P['rv']] = 'ok'
 except Exception:
     vars[P['rv']] = 'error'
@@ -322,7 +322,7 @@ try:
     if d0 is None and str(vars.get(P['turn_var']) or '') == 'accepts':
         d0 = day_today()                     # yes to "can you pay all of this today?"
     vars['agreed_date'] = ''
-    vars['agreed_amount'] = ''
+    vars['agreed_amount'] = 0          # a float variable: the platform ignores '' (stale 220 on the next product, PUB-11)
     proposed = str(vars.get(P['turn_var']) or '') == 'proposes'
     if (d0 is None or d0 < day_today()) and proposed:
         vc = int(num(vars.get('vague_count'), 0.0)) + 1
@@ -427,7 +427,7 @@ try:
     vars['fix_kind'] = ''
     vars['fix_slot'] = ''
     vars['fix_date'] = ''
-    vars['fix_amount'] = ''
+    vars['fix_amount'] = 0
     vars[P['rv']] = 'stuck' if fc > P['max_fixes'] else 'ok'
 except Exception:
     vars[P['rv']] = 'error'
