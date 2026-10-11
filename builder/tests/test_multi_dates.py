@@ -250,6 +250,18 @@ class Flow(unittest.TestCase):
         v["asked_q"] = "no"
         self.assertEqual(route(self.nodes["m_readback"], v), "rg_1")
 
+    def test_a_proposal_with_a_day_is_an_agreement(self):                        # PUB-13 talkative: "both on the thirtieth of October"
+        v = self.start([CARD, LOAN])
+        run(self.nodes, "enter_1", v)
+        v.update(p1_attempt1_full_turn="proposes")
+        self.assertEqual(route(self.nodes["p1_attempt1_full"], v), "prop_1_attempt1_full")
+        v.update(agreed_date="when I get paid", agreed_amount=0)
+        self.assertEqual(run(self.nodes, "prop_1_attempt1_full", v), "p1_attempt1_full")   # no day: back, the model asks
+        self.assertEqual(v.get("st_1", ""), "")
+        v.update(agreed_date="both on the thirtieth of October", agreed_amount=0, **{"p1_attempt1_full_all": "yes"})
+        self.assertEqual(run(self.nodes, "prop_1_attempt1_full", v), "m_readback")
+        self.assertEqual((v["date_1"], v["date_2"], v["adj_2"]), ("2026-10-30", "2026-10-23", "1"))
+
     def test_endless_read_backs_end_without_a_promise(self):
         v = self.start([CARD])
         v.update(st_1="agreed", amt_1="300", date_1="2026-10-16", adj_1="", mov_1="")

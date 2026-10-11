@@ -281,9 +281,13 @@ except Exception:
 '''
 
 _SAVE = r'''
+class Back(Exception):
+    pass
 try:
     k = P['k']
     said = resolve_when(vars.get('agreed_date'))
+    if P.get('require_date') and (said is None or said < day_today()):
+        raise Back()                         # a proposal without a day: back to the step, the model asks for it
     d = settle(k, said)
     if d == '' and P['offer_date_var'] != '':
         d = settle(k, resolve_when(vars.get(P['offer_date_var'])))
@@ -307,6 +311,8 @@ try:
     vars['agreed_date'] = ''
     vars['agreed_amount'] = 0          # a float variable: the platform ignores '' (stale 220 on the next product, PUB-11)
     vars[P['rv']] = 'ok'
+except Back:
+    vars[P['rv']] = 'back'
 except Exception:
     vars[P['rv']] = 'error'
 '''
@@ -595,6 +601,15 @@ def build(api, spec, ladder_tpl=None):
                 if tr["target_node"] == f"save_{k}":
                     tr["target_node"] = f"save_{k}_{step}"
             off = s.get("offer") or {}
+            # a proposal inside the rules is an agreement: "both on the thirtieth of October" was answered "That is fine"
+            # and never recorded, then the step ran out of turns (PUB-13 talkative). Code checks the day; none -> back
+            turn = f"p{k}_{step}_turn"
+            node["transitions"].insert(1, g.eq(f"prop_{k}_{step}", turn, "proposes", "proposes a day (and amount)"))
+            nodes[f"prop_{k}_{step}"] = _code(
+                f"prop_{k}_{step}", _WHEN + _SAVE, "close_error",
+                _eqs("prop_route", [("ok", f"enter_{k + 1}" if k < K else "finish"), ("back", f"p{k}_{step}")]),
+                k=k, all_var=allvar, offer_date_var=off.get("date_var", ""), offer_amount_var=off.get("amount_var", ""), next_weekday=nw,
+                require_date=True)
             nodes[f"save_{k}_{step}"] = _code(
                 f"save_{k}_{step}", _WHEN + _SAVE, "close_error",
                 _eqs("save_route", [("ok", f"enter_{k + 1}" if k < K else "finish")]),
