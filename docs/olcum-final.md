@@ -55,12 +55,28 @@ Yeni kök nedenler (düzeltildi, `kit: digits joined...`):
 14. Konuşkan müşteride adımın tur sınırı doldu (B talkative PUB-13): merdiven 12→18, ilk adım 10→16.
 Kalan, bizim olmayan: kimlik adımında simüle müşterinin hiç cevap vermediği talkative aramaları (B PUB-11), hakemin kimlik sorusu sayımı (asks_back: "geri soru"dan sonra aynı soruyu tekrar sormak "yeniden sormak" sayılıyor).
 
+### Tur 3, 1. kısım (07:00-07:50 TSİ), her biri 3 tekrar
+
+| | sonuç | kalanlar |
+|---|---|---|
+| B pieces PUB-12/13 (kontrol) | 2/2 | |
+| A corrects PUB-04/06 (kontrol) | 1/2 | PUB-06 taban iki kez |
+| A talkative | 6/10 | PUB-05 sempati tekrarı, PUB-07 soru tekrarı, PUB-09/10 simüle müşteri kimlikte cevap vermiyor |
+| A asks_back | 9/10 | PUB-06 taban iki kez |
+| A in_words | **10/10** | |
+| R (rescore) | 7/10 | PUB-04 onayla gelen robot sorusu, PUB-06 taban iki kez, PUB-07 müşteri 10 sn'de kapattı |
+
+Kök nedenler (düzeltildi, `kit: no repeated offer...`):
+15. Soru ya da araya giren lafa cevaptan sonra teklif tutar ve tarihiyle tekrar ediliyordu; hakem ikinci teklif sayıyor. Merdiven kuralı: tekrar yok, en fazla "Would that work for you?".
+16. Hardship'te her laf arasına sempati cümlesi: tek cümle kuralı, sonra nötr.
+17. "Am I talking to a robot? Yes, I..." onayla gelen soru cevapsız kaydedildi: `m_answer` önce cevaplar, sonra kayıt için izin ister.
+
 ## Geri alınanlar
 
 (yok)
 
 ## Sıradaki adım
 
-1. Koşuyor (`m4.sh`, ajanlar yeni kitle yeniden üretildi): tek vaka kontrolleri (B pieces PUB-12/13, A corrects PUB-04/06), A talkative/asks_back/in_words, R (+ `rescore_close.py`). `results/m4-*.log`.
-2. Sonra tur 3 tam: B normal + 5 stil, A normal + pieces + corrects (2 saatlik sınır yüzünden ayrı iş).
+1. Koşuyor (`m5.sh`, ajanlar yeni kitle): kontroller (A asks_back PUB-06, A talkative PUB-05/07, R PUB-04), sonra B tam (normal + 5 stil). `results/m5-*.log`.
+2. Sonra ayrı iş: A tam (normal + 5 stil) ve R tam.
 3. R2 yapısal: `e2e-r2` 12/12, `test_brief_r2` yeşil.
