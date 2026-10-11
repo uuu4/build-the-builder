@@ -27,6 +27,9 @@ step's `refuses` route when they are not named, because the briefs count them as
 """
 from . import graph as g
 
+CUT = (" If they began to correct themselves and the correction is cut off (the message ends with 'sorry', 'I mean' or 'no'), "
+       "leave this empty.")
+
 REPLY_KINDS = {
     "accepts": "they say yes to the offer just made, or agree to pay on the offered terms",
     "proposes": "they propose their own date or amount, or change the date or amount (a proposal is never a refusal)",
@@ -95,19 +98,22 @@ def build(api, spec, tools, prefix="neg_", max_turns=12, turn_limit_target=None)
                 "\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it." +
                 "\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses."
                 # the judge counts every restatement as another offer or another ask (PUB-06 asks_back, PUB-07 talkative)
+                "\n- If the customer starts to correct a date or an amount and does not finish ('Thursday, sorry'), ask which one they meant."
                 "\n- After a question or an unrelated remark, answer it in a few words. Do not repeat the offer with its amount or date, and do not "
-                "ask again a question you already asked: at most add 'Would that work for you?'."
+                "ask again a question you already asked: at most add 'Would that work for you?'. If they ask 'You tell me' or 'How much?', "
+                "say 'It is the amount I just mentioned. Would that work for you?' without the amount or the date."
                 "\n\nTHIS STEP:\n" + s["task"])
         # a low threshold on purpose: a dropped classification keeps the call in this step, and there the model was seen
         # to invent the next offer itself (PUB-12: "refuses" at confidence 0.56, then an offer the car loan's band does not allow)
         extract = [g.enum_field(var, list(kinds), "Classify ONLY the customer's last message. " + " ".join(f"{k}: {v}." for k, v in kinds.items()), 0.3)]
         if not record_now:
-            extract += [{"name": "agreed_amount", "type": "float", "description": "The amount the customer agreed to pay, if they agreed", "min_confidence": 0.6},
+            # thresholds low on purpose: code checks every value (resolver, floor, due); "Monday the twenty-sixth" came at 0.53 and was dropped
+            extract += [{"name": "agreed_amount", "type": "float", "description": "The amount the customer agreed to pay, if they agreed." + CUT, "min_confidence": 0.4},
                         {"name": "agreed_date", "type": "string", "description": "The date the customer agreed to pay on, if they agreed, in words as "
                          "said by the customer or as you named it when they said yes (for example 'tomorrow', 'this Friday', 'the 30th', "
                          "'Thursday 15 October'). If they named the week earlier and now only a weekday, give both ('Monday, the week after next'). "
-                         "Copy the words; do not turn them into a date: code resolves them against the call's date.",
-                         "min_confidence": 0.6}]
+                         "Copy the words; do not turn them into a date: code resolves them against the call's date." + CUT,
+                         "min_confidence": 0.3}]
         nodes[name] = g.conversation(name, task, trs, tools=tools, extract=extract,
                                      on_enter={"type": "tts", "text": s["say"]} if s.get("say") else {"type": "llm", "prompt": s["task"]},
                                      max_turns=max_turns, max_turn_target=turn_limit_target)

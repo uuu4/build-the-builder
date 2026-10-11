@@ -569,11 +569,11 @@ def build(api, spec, ladder_tpl=None):
         for k in range(1, K + 1):
             nth = ["first", "second", "third", "fourth", "fifth"][k - 1] if k <= 5 else f"number {k}"
             mt["extraction_schema"] += [
-                {"name": f"m_today_when_{k}", "type": "string", "min_confidence": 0.6, "description":
+                {"name": f"m_today_when_{k}", "type": "string", "min_confidence": 0.3, "description":
                  f"The payment date the customer named for the {nth} product read out in the statement, in their own words "
                  "(for example 'tomorrow', 'Friday', 'the 30th'). Empty if they named no date for that product, or if their "
-                 "date is for every product."},
-                {"name": f"m_today_amount_{k}", "type": "float", "min_confidence": 0.6, "description":
+                 "date is for every product." + ladder.CUT},
+                {"name": f"m_today_amount_{k}", "type": "float", "min_confidence": 0.4, "description":
                  f"The amount the customer said they will pay for the {nth} product read out, if they named one for it."}]
     nodes["all_yes"] = _code("all_yes", _WHEN + _ALL_YES, "close_error",
                              _eqs("all_route", [("ok", "finish"), ("unclear", "enter_1"), ("ask", "m_today")]),
@@ -638,9 +638,9 @@ def build(api, spec, ladder_tpl=None):
                   g.enum_field("fix_slot", ["1", "2", "3", "4", "all", "unknown"],
                                "Which product, by its position in the read-back (1 = first product read). 'all' if they mean every product.", 0.6),
                   {"name": "fix_date", "type": "string", "description": "The new date, if they named one, in the customer's own words "
-                   "(for example 'tomorrow', 'this Friday', 'the 30th', '30 October', 'Monday the 26th'). Copy the words; do not turn them into a date.",
-                   "min_confidence": 0.6},
-                  {"name": "fix_amount", "type": "float", "description": "The new amount, if they named one", "min_confidence": 0.6}]
+                   "(for example 'tomorrow', 'this Friday', 'the 30th', '30 October', 'Monday the 26th'). Copy the words; do not turn them into a date."
+                   + ladder.CUT, "min_confidence": 0.3},
+                  {"name": "fix_amount", "type": "float", "description": "The new amount, if they named one." + ladder.CUT, "min_confidence": 0.4}]
     rb_task = ("You have read back every agreed promise in one message and asked for one confirmation. The customer's identity is verified.\n"
                "- A clear yes is a confirmation. Do not call any tool; the system records the promises.\n"
                "- If they want to change a date or an amount, or drop a product, say nothing about recording: the system applies the change.\n"

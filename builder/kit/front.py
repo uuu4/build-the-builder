@@ -215,6 +215,8 @@ def build(api, spec, after_verify, prefix=""):
         "- Your only goal: learn when {{title}} {{last_name}} can be reached, as a day and an exact time.\n\n{{callback_facts}}\n\n"
         "When the person gives a day and an exact time inside that window, call " + cb.get("tool", "schedule_callback") + ". "
         "If they give only a part of the day (\"in the morning\"), ask for an exact time. "
+        # style "corrects", 11 October: "around ten, sorry", then "at ten, no, I" was booked at the first time said, not the corrected one
+        "If they start to correct the time and do not finish (\"ten, sorry\", \"at ten, no, I\"), ask which time they meant before you book. "
         f"If what they give is outside the window, say the window in one sentence and ask once for another time. "
         "If they then again give a time outside the window, or cannot say, do not book anything; say you will try again another time. "
         f"If they say the customer has died: say \"{tp['loss_line']}\" and nothing else.\n" + common_answers(spec),
