@@ -108,6 +108,7 @@ def close(slot, trace):
         if d.get("version") is None:
             d = deploy(slot, wf, export_to=sub)
         log(trace, "event", kind="created", slot=slot, submission=str(sub), **d, **shape(wf)); print(f"submitted {sub}: {d}")
+        smoke(d.get("workflow_id"), wf.get("test_variables") or {}, trace)
         return d
     except Exception as e:
         log(trace, "event", kind="close_failed", msg=str(e)[:800]); print("save failed:", e)
@@ -123,6 +124,38 @@ def close(slot, trace):
         except Exception as e2:
             log(trace, "event", kind="close_failed", msg="writing the submission from disk failed: " + repr(e2)[:400])
         return None
+
+
+SMOKE_TURNS = ("Hello?", "Yes, speaking.")
+
+
+def smoke(workflow_id, variables, trace):
+    """Two chat turns against the submitted workflow (the FAQ's check for a brief with no practice customers): does it
+    start a call, open, and answer a yes. Only logged: nothing is changed because of it. Never raises."""
+    said, call = [], None
+    try:
+        import freya
+        for msg in SMOKE_TURNS:
+            body = {"workflowId": workflow_id, "message": msg, "customerVariables": variables}
+            if call:
+                body["callId"] = call
+            r = freya.api("POST", "/api/v2/chat/message", body)
+            r = r.get("result", r)
+            call = call or r.get("callId")
+            said.append((r.get("response") or "").strip())
+        ok = all(said)
+        log(trace, "event", kind="test", test="chat smoke test (2 turns: opening, then 'Yes, speaking.')", passed=ok,
+            agent_said=[s[:200] for s in said])
+        print(f"chat smoke test: {'PASS' if ok else 'FAIL'}: {said}")
+    except Exception as e:
+        log(trace, "event", kind="test", test="chat smoke test", passed=False, agent_said=said, error=repr(e)[:300])
+        print("chat smoke test: FAIL:", e)
+    finally:
+        if call:
+            try:
+                freya.api("POST", "/api/v2/chat/end", {"callId": call})
+            except Exception:
+                pass
 
 
 def shape(wf):
