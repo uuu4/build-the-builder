@@ -1,0 +1,8 @@
+# cloudflare-mock\example\example-response.json  (original: C:\Users\Latif\final-case\v4\Build the Builder - Final Case\cloudflare-mock\example\example-response.json)
+
+{
+  "kod": "A1",
+  "ad": "Örnek kayıt",
+  "tutar": 1250.5,
+  "tarih": "15.11.2026"
+}
