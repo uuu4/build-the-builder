@@ -38,6 +38,23 @@ class Inputs(unittest.TestCase):
         self.assertEqual(build.split_inputs([str(p)], None), ([str(p)], API))
 
 
+class Trace(unittest.TestCase):
+    def test_one_model_response_is_one_call_and_the_close_counts_steps_and_tools(self):
+        d = pathlib.Path(tempfile.mkdtemp())
+        rows = [{"t": "1", "type": "AssistantMessage", "message_id": "m1", "model": "x", "content": [{"thinking": ""}]},
+                {"t": "2", "type": "AssistantMessage", "message_id": "m1", "model": "x", "content": [{"name": "Bash", "input": "ls"}]},
+                {"t": "3", "type": "AssistantMessage", "message_id": "m2", "model": "x", "content": [{"text": "done"}]},
+                {"t": "4", "type": "event", "kind": "created", **build.shape(json.load(open(ROOT / "examples/base-agent.json")))}]
+        (d / "t.jsonl").write_text("\n".join(json.dumps(r) for r in rows))
+        build.summary(d / "t.jsonl", d / "t.log")
+        text = (d / "t.log").read_text()
+        self.assertIn("model calls 2", text)
+        self.assertIn("model call 1 (x): Bash: ls", text)
+        self.assertNotIn("(thinking)", text)
+        self.assertIn('"steps": ', text)
+        self.assertIn('"tools": 4', text)                  # the kit README: two steps, four tools
+
+
 class Flow(unittest.TestCase):
     """main() with a fake agent and a fake deploy."""
 

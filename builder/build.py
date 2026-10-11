@@ -107,7 +107,7 @@ def close(slot, trace):
         d = deploy(slot, wf, export_to=sub)
         if d.get("version") is None:
             d = deploy(slot, wf, export_to=sub)
-        log(trace, "event", kind="created", slot=slot, submission=str(sub), **d); print(f"submitted {sub}: {d}")
+        log(trace, "event", kind="created", slot=slot, submission=str(sub), **d, **shape(wf)); print(f"submitted {sub}: {d}")
         return d
     except Exception as e:
         log(trace, "event", kind="close_failed", msg=str(e)[:800]); print("save failed:", e)
@@ -125,19 +125,36 @@ def close(slot, trace):
         return None
 
 
+def shape(wf):
+    """Steps and the bank tools the workflow calls, for the trace (the rules ask for the number of steps and tools)."""
+    nodes = wf.get("nodes") or {}
+    tools = sorted({f["function"].get("name") for n in nodes.values() for k in ("tools", "pre_actions", "post_actions")
+                    for f in n.get(k) or [] if isinstance(f, dict) and "function" in f} - {"code_exec", None})
+    return {"steps": len(nodes), "tools": len(tools), "tool_names": tools}
+
+
 def summary(trace, out):
     """The plain-text trace the rules ask for: times, model calls with a purpose, what was created, tests run."""
-    lines, start, end, calls = [], None, None, 0
+    lines, start, end, calls, seen = [], None, None, 0, {}
     for raw in open(trace):
         e = json.loads(raw)
         start = start or e["t"]; end = e["t"]
         if e["type"] == "start":
             lines.append(f"start {e['t']}  briefs {', '.join(e['briefs'])}  tool api {e['tool_api']}  builder model {e['model']}")
         elif e["type"] == "AssistantMessage":
-            calls += 1
+            # The SDK splits one model response into several messages (thinking, then text or a tool use) with one message_id.
             what = [c.get("text", "")[:100].replace("\n", " ") for c in e.get("content", []) if c.get("text")] or \
                    [f"{c.get('name')}: {str(c.get('input'))[:100]}" for c in e.get("content", []) if c.get("name")]
-            lines.append(f"{e['t']} model call {calls} ({e.get('model') or 'builder model'}): {(what or ['(no text)'])[0]}")
+            mid = e.get("message_id")
+            if mid and mid in seen:
+                i = seen[mid]
+                if what and lines[i].endswith("(thinking)"):
+                    lines[i] = lines[i][:-len("(thinking)")] + what[0]
+                continue
+            calls += 1
+            if mid:
+                seen[mid] = len(lines)
+            lines.append(f"{e['t']} model call {calls} ({e.get('model') or 'builder model'}): {(what or ['(thinking)'])[0]}")
         elif e["type"] == "event":
             lines.append(f"{e['t']} {e['kind']}: " + json.dumps({k: v for k, v in e.items() if k not in ('t', 'type', 'kind')})[:400])
         elif e["type"] == "ResultMessage":
