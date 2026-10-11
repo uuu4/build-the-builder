@@ -1,0 +1,86 @@
+{
+ "now_var": "now",
+ "slots": 3,
+ "products_fallback_vars": [
+  "fetch_account_response.data.products"
+ ],
+ "holidays": [
+  "2026-10-19",
+  "2026-10-29",
+  "2026-11-16",
+  "2026-12-25",
+  "2027-01-01"
+ ],
+ "weekend": [
+  5,
+  6
+ ],
+ "bands": [
+  {
+   "name": "first",
+   "days_late_min": null,
+   "days_late_max": 5,
+   "deadline": {
+    "kind": "calendar_days",
+    "n": 15,
+    "roll": "back"
+   },
+   "attempts": 1
+  },
+  {
+   "name": "second",
+   "days_late_min": 6,
+   "days_late_max": 20,
+   "deadline": {
+    "kind": "business_days",
+    "n": 6
+   },
+   "attempts": 2
+  },
+  {
+   "name": "final",
+   "days_late_min": 21,
+   "days_late_max": null,
+   "deadline": {
+    "kind": "business_days",
+    "n": 3
+   },
+   "attempts": 2
+  }
+ ],
+ "floor_field_by_type": {
+  "credit_card": "minimum_payment",
+  "personal_loan": "instalment_amount",
+  "car_loan": "instalment_amount"
+ },
+ "product_label": {
+  "credit_card": "card ending <card_last4>",
+  "personal_loan": "personal loan",
+  "car_loan": "car loan"
+ },
+ "named_dates": [
+  {
+   "name": "end_of_week",
+   "kind": "last_business_day_this_week",
+   "if_today_use_next_week": true
+  }
+ ],
+ "lines": {
+  "state": "Your <label> has an overdue amount of <due> and is <days_late> days overdue.",
+  "a1_full": "I understand. Could you pay the full overdue amount of <due> for your <label> on <end_of_week>?",
+  "a1_floor": "I understand. Could you pay <floor> for your <label> on <end_of_week>? The remainder stays overdue.",
+  "floor_b": "I understand. The lowest amount that can be recorded for your <label> is <floor>, and the remainder stays overdue. Could you pay <floor>?",
+  "a2": "I understand. As a last option, could you pay <floor> for your <label> on <deadline>? The remainder stays overdue."
+ },
+ "joined_lines": {
+  "debt_statement": {
+   "line": "state",
+   "suffix": " Are you able to pay all of this today?",
+   "suffix_one": " Are you able to pay all of this today?"
+  }
+ },
+ "order_by": {
+  "field": "past_due",
+  "descending": true
+ }
+}

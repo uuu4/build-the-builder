@@ -16,7 +16,7 @@ import argparse, asyncio, dataclasses, json, os, pathlib, subprocess, sys, time
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 MODEL = os.environ.get("BUILDER_MODEL", "claude-opus-5-5")
-CLOSE_MINUTES = 4            # kept for the close: lint, save, export, trace
+CLOSE_MINUTES = 8            # kept for the close: lint, save, export, trace (rehearsal of 11 October: 7 min on a slow platform)
 RETRY_MINUTES = 10           # an agent that crashed or left no workflow is started once more if this much time is left
 FALLBACK = ROOT / "examples" / "base-agent.json"     # the kit's base agent: submitted only when nothing else exists
 

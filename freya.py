@@ -17,7 +17,7 @@ def api(method, path, body=None, **params):
     for attempt in range(3):
         req = urllib.request.Request(URL + path + q, data=json.dumps(body).encode() if body is not None else None, headers=HEADERS, method=method)
         try:
-            with urllib.request.urlopen(req, timeout=120) as r: out = json.load(r)
+            with urllib.request.urlopen(req, timeout=60) as r: out = json.load(r)     # 60, not 120: with the retries a slow GET cost minutes at the build's close
             break
         except urllib.error.HTTPError as e:
             msg = f"{method} {path} -> {e.code}: {e.read().decode()[:1500]}"
