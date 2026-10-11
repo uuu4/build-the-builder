@@ -25,6 +25,8 @@ def with_close_args(led):
 
 def rescore(run, cases):
     by_id = {c["id"]: c for c in cases}
+    ran = {r["id"] for r in run["all_rows"][0]}
+    cases = [c for c in cases if c["id"] in ran]          # a run with --only holds some of the cases
     finals = []
     for k, c in enumerate(cases):
         passes = 0
