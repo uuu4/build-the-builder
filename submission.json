@@ -8,6 +8,6 @@
   "commit": "63ac3b6",
   "run_command": "python3 builder/build.py {case_folder} {mock_url}",
   "workflow": "submission/final.workflow.json",
-  "trace": "traces/final.log",
+  "trace": "traces/final.claude-session.jsonl",
   "mock_url": "https://btb-bank-mock.latif-akgun1907.workers.dev"
 }
