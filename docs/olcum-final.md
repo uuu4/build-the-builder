@@ -128,12 +128,21 @@ Gerçek görünen kalanlar: A corrects PUB-06 (simüle müşterinin "Thursday, s
 - Takılan simülasyon `POST /api/v2/simulations/{id}/cancel` ile durdurulur (`freya.run_simulation` bunu kararlar ve aramalar bittiğinde kendisi yapıyor).
 - 13:05'te: API 0,7 sn'de 200, çalışma alanında koşan simülasyon yok.
 
+### Paralel işler (13:45-14:10 TSİ, simülasyonsuz)
+
+**Teslim provası** (R2 `hidden-1` olarak, form komutu, araç API'si konumsal, slot `rehearsal-1`): ajan 457 sn, kapanış 7 dk (yavaş platformda iç içe tekrar denemeler), toplam 895 sn; `preflight.py hidden-1=rehearsal-1`: ALL CHECKS PASSED (160 düğüm, trace'in dört bölümü). Düzeltme: kapanış payı 4→8 dk, istek zaman aşımı 120→60 sn (`a420804`).
+
+**Alan adları değişmiş araç API'si** (`practice/alt-api/openapi-alt.json`: araç adları aynı; `client_id`, `account_ref`, `overdue`, `late_days`, `min_due`, `rate`, `card_tail`, `success`, `all_passed`, `dob`, `mobile_tail`, ürün tipleri): builder R2'yi kurdu (`alt-r2`). Eski ad kalmadı, 11 yeni adın hepsi kullanıldı, yeni adlarla gelen ürünlerde tarih/sıra/deneme 12/12, kapanışlar yeni alanlarla (`result`, `why`). Toplam 1206 sn (ajan 911).
+**Ama kapanışta kayıt 504 aldı ve teslim dosyası yazılmadı.** Düzeltme (`b201631`): kapanış kaydedemezse teslim dosyası `out/<slot>/workflow.json`'dan (ajanın son deploy'u) yazılır; test eklendi. main'e alındı.
+
+**Platform:** `freya.api` 5xx/zaman aşımı tekrarı; başlatma 504'ünde açılmış simülasyonu bulup izler, durum sorgusu hatasında çökmez (`961ed1a`).
+**Claude kredisi:** prova trace'inde `overage_status: rejected, out_of_credits` (kullanım hâlâ "allowed"). Akşam builder'ın Claude hesabı kontrol edilmeli.
+
 ## Geri alınanlar
 
 - `kit: date/amount extraction thresholds...` içindeki çıkarım açıklaması kuralı ("yarıda kalan düzeltmede boş bırak"): ölçüm kötüleşti, `kit: take the cut-off rule out...` ile kısmen geri alındı (madde 23).
 
 ## Sıradaki adım
 
-1. Koşuyor (`m9.sh`, ajanlar `front: example line` ile): B asks_back PUB-12 kontrol, A normal/pieces/asks_back/in_words, R. `results/m9-*.log`.
-2. Zaman kalırsa: A corrects/talkative, B tam.
-3. 15:30 TSİ: son durum, main fast-forward, issue #3 özeti, döngü durur.
+1. Koşuyor (`m9.sh`, 504'lerden A normal ve B kontrolü kayboldu): A pieces/asks_back/in_words, R.
+2. 15:30 TSİ: son durum, main fast-forward (şu an `b201631`), issue #3 özeti, döngü durur.
