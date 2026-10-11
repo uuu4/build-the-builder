@@ -1,0 +1,452 @@
+{
+ "openapi": "3.0.3",
+ "info": {
+  "title": "Freya Bank services",
+  "version": "1"
+ },
+ "servers": [
+  {
+   "url": "https://freya-bank-mock.freyavoice.workers.dev/v1"
+  }
+ ],
+ "paths": {
+  "/verify_identity": {
+   "post": {
+    "operationId": "verify_identity",
+    "summary": "Check one security answer. Three wrong answers in total end the check.",
+    "description": "Check one security answer. Three wrong answers in total end the check.",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "customer_id": {
+          "type": "string"
+         },
+         "field": {
+          "type": "string",
+          "enum": [
+           "date_of_birth",
+           "phone_last4"
+          ]
+         },
+         "answer": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "customer_id",
+         "field",
+         "answer"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "ok",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "ok": {
+           "type": "boolean"
+          },
+          "error": {
+           "type": "string"
+          },
+          "verified": {
+           "type": "boolean"
+          },
+          "wrong_answers_left": {
+           "type": "integer"
+          },
+          "all_verified": {
+           "type": "boolean"
+          },
+          "hint": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/get_account": {
+   "post": {
+    "operationId": "get_account",
+    "summary": "The late products. Refused until both questions are passed.",
+    "description": "The late products. Refused until both questions are passed.",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "customer_id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "customer_id"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "ok",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "ok": {
+           "type": "boolean"
+          },
+          "error": {
+           "type": "string"
+          },
+          "products": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "product_id": {
+              "type": "string"
+             },
+             "type": {
+              "type": "string",
+              "enum": [
+               "credit_card",
+               "personal_loan",
+               "car_loan"
+              ]
+             },
+             "card_last4": {
+              "type": "string"
+             },
+             "past_due": {
+              "type": "number"
+             },
+             "days_late": {
+              "type": "integer"
+             },
+             "minimum_payment": {
+              "type": "number"
+             },
+             "instalment_amount": {
+              "type": "number"
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/create_promise": {
+   "post": {
+    "operationId": "create_promise",
+    "summary": "Record a payment promise. One per product.",
+    "description": "Record a payment promise. One per product.",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "customer_id": {
+          "type": "string"
+         },
+         "product_id": {
+          "type": "string"
+         },
+         "amount": {
+          "type": "number"
+         },
+         "date": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "customer_id",
+         "product_id",
+         "amount",
+         "date"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "ok",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "ok": {
+           "type": "boolean"
+          },
+          "error": {
+           "type": "string"
+          },
+          "promise_id": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/add_note": {
+   "post": {
+    "operationId": "add_note",
+    "summary": "Brief B: record why a product ended without a promise.",
+    "description": "Brief B: record why a product ended without a promise.",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "customer_id": {
+          "type": "string"
+         },
+         "product_id": {
+          "type": "string"
+         },
+         "reason": {
+          "type": "string",
+          "enum": [
+           "refused",
+           "hardship",
+           "dispute",
+           "paid",
+           "service_error"
+          ]
+         },
+         "text": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "customer_id",
+         "product_id",
+         "text"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "ok",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "ok": {
+           "type": "boolean"
+          },
+          "error": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/schedule_callback": {
+   "post": {
+    "operationId": "schedule_callback",
+    "summary": "Book a callback.",
+    "description": "Book a callback.",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "customer_id": {
+          "type": "string"
+         },
+         "date": {
+          "type": "string"
+         },
+         "time": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "customer_id",
+         "date",
+         "time"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "ok",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "ok": {
+           "type": "boolean"
+          },
+          "error": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/transfer_to_agent": {
+   "post": {
+    "operationId": "transfer_to_agent",
+    "summary": "Hand the call to a person.",
+    "description": "Hand the call to a person.",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "customer_id": {
+          "type": "string"
+         },
+         "queue": {
+          "type": "string",
+          "enum": [
+           "restructuring",
+           "general",
+           "support"
+          ]
+         }
+        },
+        "required": [
+         "customer_id",
+         "queue"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "ok",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "ok": {
+           "type": "boolean"
+          },
+          "error": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/close_call": {
+   "post": {
+    "operationId": "close_call",
+    "summary": "End the call. Always the last tool call. Nothing is accepted after it.",
+    "description": "End the call. Always the last tool call. Nothing is accepted after it.",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "customer_id": {
+          "type": "string"
+         },
+         "outcome": {
+          "type": "string",
+          "enum": [
+           "promise",
+           "paid",
+           "transferred",
+           "no_promise",
+           "not_verified",
+           "not_reached"
+          ]
+         },
+         "reason": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "customer_id",
+         "outcome"
+        ]
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "ok",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "ok": {
+           "type": "boolean"
+          },
+          "error": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

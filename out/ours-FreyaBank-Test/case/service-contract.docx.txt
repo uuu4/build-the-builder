@@ -1,0 +1,52 @@
+# service-contract.docx  (original: C:\Users\Latif\AppData\Local\Temp\fakecase\FreyaBank-Test\service-contract.docx)
+
+Freya Bank service contract
+All services are HTTPS POST with a JSON body, at the base URL of the bank's service host. Every request carries customer_id.
+verify_identity
+Check one security answer. Three wrong answers in total end the check.
+Response fields: ok (boolean), error (string), verified (boolean), wrong_answers_left (integer), all_verified (boolean), hint (string)
+get_account
+The late products. Refused until both questions are passed.
+Response fields: ok (boolean), error (string), products (array)
+create_promise
+Record a payment promise. One per product.
+Response fields: ok (boolean), error (string), promise_id (string)
+add_note
+Brief B: record why a product ended without a promise.
+Response fields: ok (boolean), error (string)
+schedule_callback
+Book a callback.
+Response fields: ok (boolean), error (string)
+transfer_to_agent
+Hand the call to a person.
+Response fields: ok (boolean), error (string)
+close_call
+End the call. Always the last tool call. Nothing is accepted after it.
+Response fields: ok (boolean), error (string)
+request field | type | values
+customer_id | string | 
+field | string | date_of_birth, phone_last4
+answer | string | 
+request field | type | values
+customer_id | string | 
+request field | type | values
+customer_id | string | 
+product_id | string | 
+amount | number | 
+date | string | 
+request field | type | values
+customer_id | string | 
+product_id | string | 
+reason | string | refused, hardship, dispute, paid, service_error
+text | string | 
+request field | type | values
+customer_id | string | 
+date | string | 
+time | string | 
+request field | type | values
+customer_id | string | 
+queue | string | restructuring, general, support
+request field | type | values
+customer_id | string | 
+outcome | string | promise, paid, transferred, no_promise, not_verified, not_reached
+reason | string | 

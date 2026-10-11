@@ -1,0 +1,5 @@
+# test-customers.xlsx  (original: C:\Users\Latif\AppData\Local\Temp\fakecase\FreyaBank-Test\test-customers.xlsx)
+
+## sheet Sheet
+customer_id	first_name	last_name	date_of_birth	phone_last4
+c_demo	Daniel	Reyes	1988-03-14	4471

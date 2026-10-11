@@ -1,0 +1,69 @@
+{
+ "now_var": "now",
+ "slots": 1,
+ "products_fallback_vars": [
+  "fetch_account_response.data.products"
+ ],
+ "holidays": [
+  "2026-10-26",
+  "2026-11-11",
+  "2026-11-26",
+  "2026-12-25",
+  "2027-01-01"
+ ],
+ "weekend": [
+  5,
+  6
+ ],
+ "bands": [
+  {
+   "name": "early",
+   "days_late_min": null,
+   "days_late_max": 7,
+   "deadline": {
+    "kind": "business_days",
+    "n": 12
+   },
+   "attempts": 1
+  },
+  {
+   "name": "late",
+   "days_late_min": 8,
+   "days_late_max": null,
+   "deadline": {
+    "kind": "business_days",
+    "n": 7
+   },
+   "attempts": 2
+  }
+ ],
+ "floor_field_by_type": {
+  "credit_card": "minimum_payment",
+  "personal_loan": "instalment_amount",
+  "car_loan": "instalment_amount"
+ },
+ "product_label": {
+  "credit_card": "credit card ending <card_last4>"
+ },
+ "named_dates": [
+  {
+   "name": "end_of_week",
+   "kind": "last_business_day_this_week",
+   "if_today_use_next_week": true
+  }
+ ],
+ "lines": {
+  "state": "Your <label> has a past-due amount of <due> and is <days_late> days late.",
+  "a1_full": "I understand. Could you pay the full past-due amount of <due> on <end_of_week>?",
+  "a1_floor": "I understand. Could you pay <floor> on <end_of_week>? The rest stays overdue.",
+  "floor_b": "I understand. The lowest amount I can record is <floor>. The rest stays overdue. Could you pay <floor> on <end_of_week>?",
+  "a2": "I understand. As a last option, could you pay <floor> on <deadline>? The rest stays overdue."
+ },
+ "joined_lines": {
+  "debt_statement": {
+   "line": "state",
+   "suffix": " Can you pay all of them today?",
+   "suffix_one": " Can you make this payment today?"
+  }
+ }
+}
