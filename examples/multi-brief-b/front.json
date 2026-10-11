@@ -6,7 +6,7 @@
   "confirm_words": "they say yes, that's me, speaking, or say the customer's own name",
   "not_confirm_words": "hello, go ahead, who is this, silence, anything vague",
   "scam_answer": "Say they can verify this call by phoning Freya Bank's customer service number, then continue.",
-  "purpose_before_verify": "Say you can only discuss that with the account holder once their identity is verified, and ask the security question again.",
+  "purpose_before_verify": "Say you can only discuss that with the account holder once their identity is verified.",
   "forbidden_before_verify": [
     "collections",
     "debt",

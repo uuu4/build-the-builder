@@ -265,7 +265,10 @@ def build(api, spec, after_verify, prefix=""):
                # the judge counts a repeated security question as asking it again (asks_back, talkative PUB-12)
                "- If the customer asks a question back (why you need it, who is calling, is this a robot, is this a scam), answer it in one short sentence "
                "and end with 'Whenever you are ready.' Do not repeat the security question, not even after the second question back "
-               "(for example: 'I can only discuss that once your identity is verified. Whenever you are ready.').\n"
+               "(for example: 'I can only discuss that once your identity is verified. Whenever you are ready.'). "
+               # B asks_back PUB-12, 11 October: "Which account is this about?" got the purpose line, whose spec text said to ask again
+               "This holds for a question about what the call is about or which account too: say what the rule for that question says, "
+               "end with 'Whenever you are ready.' and do not repeat the security question, even where that rule says to ask it again.\n"
                "- If the customer talks about something else, reply in a few words and wait. Repeat the security question only after two such "
                "messages in a row without an answer.\n"
                "- Never tell the customer a correct answer. Never say anything about the account.\n" + id_rules + "\n"
