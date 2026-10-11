@@ -1,0 +1,1245 @@
+{
+ "openapi": "3.0.3",
+ "info": {
+  "title": "Freya Bank voice statement/debt services",
+  "version": "2026-10-01"
+ },
+ "servers": [
+  {
+   "url": "https://btb-bank-mock.latif-akgun1907.workers.dev/voice/v1"
+  }
+ ],
+ "paths": {
+  "/cards.list": {
+   "post": {
+    "operationId": "cards.list",
+    "summary": "The customer's eligible cards. 404 FB_IVR_CHANNEL_102 = no valid card.",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "data"
+        ],
+        "properties": {
+         "data": {
+          "type": "object",
+          "required": [
+           "customerNo"
+          ],
+          "properties": {
+           "customerNo": {
+            "type": "string"
+           },
+           "aiFlow": {
+            "type": "string",
+            "default": "CardOps"
+           }
+          }
+         },
+         "call": {
+          "type": "object",
+          "properties": {
+           "ani": {
+            "type": "string"
+           },
+           "lang": {
+            "type": "string",
+            "default": "tr"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Success (result.returnCode '1')",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "cards": {
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "cardNumber": {
+                "type": "string"
+               },
+               "cardNumberLast4": {
+                "type": "string"
+               },
+               "productName": {
+                "type": "string"
+               },
+               "status": {
+                "type": "string",
+                "enum": [
+                 "A"
+                ]
+               },
+               "isMainCard": {
+                "type": "boolean"
+               }
+              }
+             }
+            },
+            "validCardsCount": {
+             "type": "integer"
+            },
+            "exitState": {
+             "type": "string",
+             "enum": [
+              "1_CARD",
+              "MULTI_CARD"
+             ]
+            }
+           }
+          },
+          "result": {
+           "type": "object",
+           "properties": {
+            "guid": {
+             "type": "string"
+            },
+            "returnCode": {
+             "type": "string",
+             "description": "'1' = success; otherwise an error code (INVALID_ARGUMENTS_ERROR, FB_IVR_CHANNEL_102, FB_IVR_CHANNEL_120, FB_IVR_CHANNEL_121, FB_IVR_CHANNEL_107, FBE00099)"
+            },
+            "messageText": {
+             "type": "string"
+            },
+            "code": {
+             "type": "string"
+            },
+            "message": {
+             "type": "string"
+            },
+            "type": {
+             "type": "string",
+             "enum": [
+              "ERROR",
+              "WARNING"
+             ],
+             "nullable": true
+            },
+            "details": {
+             "type": "object",
+             "properties": {
+              "guid": {
+               "type": "string"
+              },
+              "rootCause": {
+               "type": "string"
+              },
+              "errorOrigin": {
+               "type": "string"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "INVALID_ARGUMENTS_ERROR"
+     },
+     "404": {
+      "description": "WARNING not found code"
+     },
+     "500": {
+      "description": "FBE00099 technical error"
+     }
+    }
+   }
+  },
+  "/cards.balance": {
+   "post": {
+    "operationId": "cards.balance",
+    "summary": "Statement and due dates, debt per currency. 404 FB_IVR_CHANNEL_120 = card not found.",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "data"
+        ],
+        "properties": {
+         "data": {
+          "type": "object",
+          "required": [
+           "cardNumber"
+          ],
+          "properties": {
+           "cardNumber": {
+            "type": "string"
+           }
+          }
+         },
+         "call": {
+          "type": "object",
+          "properties": {
+           "ani": {
+            "type": "string"
+           },
+           "lang": {
+            "type": "string",
+            "default": "tr"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Success (result.returnCode '1')",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "cardNumber": {
+             "type": "string"
+            },
+            "cardNumberLast4": {
+             "type": "string"
+            },
+            "productName": {
+             "type": "string"
+            },
+            "statementDate": {
+             "type": "string",
+             "description": "dd.MM.yyyy"
+            },
+            "lastPayDate": {
+             "type": "string"
+            },
+            "nextStatementDate": {
+             "type": "string"
+            },
+            "nextLastPayDate": {
+             "type": "string"
+            },
+            "debtTL": {
+             "type": "object",
+             "properties": {
+              "statementPaymentStatus": {
+               "type": "string",
+               "enum": [
+                "HAS_DEBT",
+                "NO_DEBT"
+               ]
+              },
+              "transferAmount": {
+               "type": "number"
+              },
+              "statementDebt": {
+               "type": "number"
+              },
+              "minPayment": {
+               "type": "number"
+              },
+              "remainingDebt": {
+               "type": "number"
+              },
+              "remainingMinPayment": {
+               "type": "number"
+              },
+              "currentPeriodExpense": {
+               "type": "number"
+              },
+              "totalDebt": {
+               "type": "number"
+              },
+              "totalDebtPaymentStatus": {
+               "type": "string",
+               "enum": [
+                "HAS_DEBT",
+                "NO_DEBT"
+               ]
+              },
+              "remainAutomaticPaymentAmount": {
+               "type": "number"
+              }
+             }
+            },
+            "debtUSD": {
+             "type": "object",
+             "properties": {
+              "statementPaymentStatus": {
+               "type": "string",
+               "enum": [
+                "HAS_DEBT",
+                "NO_DEBT"
+               ]
+              },
+              "transferAmount": {
+               "type": "number"
+              },
+              "statementDebt": {
+               "type": "number"
+              },
+              "minPayment": {
+               "type": "number"
+              },
+              "remainingDebt": {
+               "type": "number"
+              },
+              "remainingMinPayment": {
+               "type": "number"
+              },
+              "currentPeriodExpense": {
+               "type": "number"
+              },
+              "totalDebt": {
+               "type": "number"
+              },
+              "totalDebtPaymentStatus": {
+               "type": "string",
+               "enum": [
+                "HAS_DEBT",
+                "NO_DEBT"
+               ]
+              },
+              "remainAutomaticPaymentAmount": {
+               "type": "number"
+              }
+             }
+            },
+            "debtEUR": {
+             "type": "object",
+             "properties": {
+              "statementPaymentStatus": {
+               "type": "string",
+               "enum": [
+                "HAS_DEBT",
+                "NO_DEBT"
+               ]
+              },
+              "transferAmount": {
+               "type": "number"
+              },
+              "statementDebt": {
+               "type": "number"
+              },
+              "minPayment": {
+               "type": "number"
+              },
+              "remainingDebt": {
+               "type": "number"
+              },
+              "remainingMinPayment": {
+               "type": "number"
+              },
+              "currentPeriodExpense": {
+               "type": "number"
+              },
+              "totalDebt": {
+               "type": "number"
+              },
+              "totalDebtPaymentStatus": {
+               "type": "string",
+               "enum": [
+                "HAS_DEBT",
+                "NO_DEBT"
+               ]
+              },
+              "remainAutomaticPaymentAmount": {
+               "type": "number"
+              }
+             }
+            },
+            "debtGBP": {
+             "type": "object",
+             "properties": {
+              "statementPaymentStatus": {
+               "type": "string",
+               "enum": [
+                "HAS_DEBT",
+                "NO_DEBT"
+               ]
+              },
+              "transferAmount": {
+               "type": "number"
+              },
+              "statementDebt": {
+               "type": "number"
+              },
+              "minPayment": {
+               "type": "number"
+              },
+              "remainingDebt": {
+               "type": "number"
+              },
+              "remainingMinPayment": {
+               "type": "number"
+              },
+              "currentPeriodExpense": {
+               "type": "number"
+              },
+              "totalDebt": {
+               "type": "number"
+              },
+              "totalDebtPaymentStatus": {
+               "type": "string",
+               "enum": [
+                "HAS_DEBT",
+                "NO_DEBT"
+               ]
+              },
+              "remainAutomaticPaymentAmount": {
+               "type": "number"
+              }
+             }
+            },
+            "statementPaymentStatus": {
+             "type": "string",
+             "enum": [
+              "HAS_DEBT",
+              "NO_DEBT"
+             ]
+            },
+            "totalDebtPaymentStatus": {
+             "type": "string",
+             "enum": [
+              "HAS_DEBT",
+              "NO_DEBT"
+             ]
+            },
+            "automaticPaymentFlag": {
+             "type": "string",
+             "enum": [
+              "Y",
+              "N"
+             ]
+            }
+           }
+          },
+          "result": {
+           "type": "object",
+           "properties": {
+            "guid": {
+             "type": "string"
+            },
+            "returnCode": {
+             "type": "string",
+             "description": "'1' = success; otherwise an error code (INVALID_ARGUMENTS_ERROR, FB_IVR_CHANNEL_102, FB_IVR_CHANNEL_120, FB_IVR_CHANNEL_121, FB_IVR_CHANNEL_107, FBE00099)"
+            },
+            "messageText": {
+             "type": "string"
+            },
+            "code": {
+             "type": "string"
+            },
+            "message": {
+             "type": "string"
+            },
+            "type": {
+             "type": "string",
+             "enum": [
+              "ERROR",
+              "WARNING"
+             ],
+             "nullable": true
+            },
+            "details": {
+             "type": "object",
+             "properties": {
+              "guid": {
+               "type": "string"
+              },
+              "rootCause": {
+               "type": "string"
+              },
+              "errorOrigin": {
+               "type": "string"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "INVALID_ARGUMENTS_ERROR"
+     },
+     "404": {
+      "description": "WARNING not found code"
+     },
+     "500": {
+      "description": "FBE00099 technical error"
+     }
+    }
+   }
+  },
+  "/statement.week.get": {
+   "post": {
+    "operationId": "statement.week.get",
+    "summary": "Current statement week/day and joint statement info. 404 FB_IVR_CHANNEL_121.",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "data"
+        ],
+        "properties": {
+         "data": {
+          "type": "object",
+          "required": [
+           "cardNumber"
+          ],
+          "properties": {
+           "cardNumber": {
+            "type": "string"
+           }
+          }
+         },
+         "call": {
+          "type": "object",
+          "properties": {
+           "ani": {
+            "type": "string"
+           },
+           "lang": {
+            "type": "string",
+            "default": "tr"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Success (result.returnCode '1')",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "cardNumber": {
+             "type": "string"
+            },
+            "cardNumberLast4": {
+             "type": "string"
+            },
+            "productName": {
+             "type": "string"
+            },
+            "statementWeek": {
+             "type": "integer"
+            },
+            "statementDay": {
+             "type": "integer"
+            },
+            "statementDate": {
+             "type": "string"
+            },
+            "lastPayDate": {
+             "type": "string"
+            },
+            "nextStatementDate": {
+             "type": "string"
+            },
+            "nextLastPayDate": {
+             "type": "string"
+            },
+            "relationType": {
+             "type": "string",
+             "enum": [
+              "",
+              "M",
+              "C"
+             ]
+            },
+            "relatedCardNumber": {
+             "type": "string"
+            },
+            "relatedCardProductName": {
+             "type": "string"
+            }
+           }
+          },
+          "result": {
+           "type": "object",
+           "properties": {
+            "guid": {
+             "type": "string"
+            },
+            "returnCode": {
+             "type": "string",
+             "description": "'1' = success; otherwise an error code (INVALID_ARGUMENTS_ERROR, FB_IVR_CHANNEL_102, FB_IVR_CHANNEL_120, FB_IVR_CHANNEL_121, FB_IVR_CHANNEL_107, FBE00099)"
+            },
+            "messageText": {
+             "type": "string"
+            },
+            "code": {
+             "type": "string"
+            },
+            "message": {
+             "type": "string"
+            },
+            "type": {
+             "type": "string",
+             "enum": [
+              "ERROR",
+              "WARNING"
+             ],
+             "nullable": true
+            },
+            "details": {
+             "type": "object",
+             "properties": {
+              "guid": {
+               "type": "string"
+              },
+              "rootCause": {
+               "type": "string"
+              },
+              "errorOrigin": {
+               "type": "string"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "INVALID_ARGUMENTS_ERROR"
+     },
+     "404": {
+      "description": "WARNING not found code"
+     },
+     "500": {
+      "description": "FBE00099 technical error"
+     }
+    }
+   }
+  },
+  "/statement.week.decide": {
+   "post": {
+    "operationId": "statement.week.decide",
+    "summary": "Preview of dates for a requested week; changes nothing.",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "data"
+        ],
+        "properties": {
+         "data": {
+          "type": "object",
+          "required": [
+           "cardNumber",
+           "newStatementWeek",
+           "statementDay"
+          ],
+          "properties": {
+           "cardNumber": {
+            "type": "string"
+           },
+           "newStatementWeek": {
+            "type": "integer",
+            "enum": [
+             1,
+             2,
+             3,
+             4
+            ]
+           },
+           "statementDay": {
+            "type": "integer"
+           }
+          }
+         },
+         "call": {
+          "type": "object",
+          "properties": {
+           "ani": {
+            "type": "string"
+           },
+           "lang": {
+            "type": "string",
+            "default": "tr"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Success (result.returnCode '1')",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "statementDate": {
+             "type": "string"
+            },
+            "statementDueDate": {
+             "type": "string"
+            },
+            "statementDay": {
+             "type": "integer"
+            },
+            "responseCode": {
+             "type": "integer"
+            },
+            "responseMessage": {
+             "type": "string"
+            }
+           }
+          },
+          "result": {
+           "type": "object",
+           "properties": {
+            "guid": {
+             "type": "string"
+            },
+            "returnCode": {
+             "type": "string",
+             "description": "'1' = success; otherwise an error code (INVALID_ARGUMENTS_ERROR, FB_IVR_CHANNEL_102, FB_IVR_CHANNEL_120, FB_IVR_CHANNEL_121, FB_IVR_CHANNEL_107, FBE00099)"
+            },
+            "messageText": {
+             "type": "string"
+            },
+            "code": {
+             "type": "string"
+            },
+            "message": {
+             "type": "string"
+            },
+            "type": {
+             "type": "string",
+             "enum": [
+              "ERROR",
+              "WARNING"
+             ],
+             "nullable": true
+            },
+            "details": {
+             "type": "object",
+             "properties": {
+              "guid": {
+               "type": "string"
+              },
+              "rootCause": {
+               "type": "string"
+              },
+              "errorOrigin": {
+               "type": "string"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "INVALID_ARGUMENTS_ERROR"
+     },
+     "404": {
+      "description": "WARNING not found code"
+     },
+     "500": {
+      "description": "FBE00099 technical error"
+     }
+    }
+   }
+  },
+  "/statement.week.change": {
+   "post": {
+    "operationId": "statement.week.change",
+    "summary": "Changes the statement week. Success = exitState OK and responseCode 0.",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "data"
+        ],
+        "properties": {
+         "data": {
+          "type": "object",
+          "required": [
+           "cardNumber",
+           "newStatementWeek",
+           "statementDay"
+          ],
+          "properties": {
+           "cardNumber": {
+            "type": "string"
+           },
+           "newStatementWeek": {
+            "type": "integer",
+            "enum": [
+             1,
+             2,
+             3,
+             4
+            ]
+           },
+           "statementDay": {
+            "type": "integer"
+           }
+          }
+         },
+         "call": {
+          "type": "object",
+          "properties": {
+           "ani": {
+            "type": "string"
+           },
+           "lang": {
+            "type": "string",
+            "default": "tr"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Success (result.returnCode '1')",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "responseCode": {
+             "type": "integer"
+            },
+            "responseMessage": {
+             "type": "string"
+            },
+            "statementWeek": {
+             "type": "string"
+            },
+            "statementDay": {
+             "type": "string"
+            },
+            "exitState": {
+             "type": "string",
+             "enum": [
+              "OK"
+             ]
+            }
+           }
+          },
+          "result": {
+           "type": "object",
+           "properties": {
+            "guid": {
+             "type": "string"
+            },
+            "returnCode": {
+             "type": "string",
+             "description": "'1' = success; otherwise an error code (INVALID_ARGUMENTS_ERROR, FB_IVR_CHANNEL_102, FB_IVR_CHANNEL_120, FB_IVR_CHANNEL_121, FB_IVR_CHANNEL_107, FBE00099)"
+            },
+            "messageText": {
+             "type": "string"
+            },
+            "code": {
+             "type": "string"
+            },
+            "message": {
+             "type": "string"
+            },
+            "type": {
+             "type": "string",
+             "enum": [
+              "ERROR",
+              "WARNING"
+             ],
+             "nullable": true
+            },
+            "details": {
+             "type": "object",
+             "properties": {
+              "guid": {
+               "type": "string"
+              },
+              "rootCause": {
+               "type": "string"
+              },
+              "errorOrigin": {
+               "type": "string"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "INVALID_ARGUMENTS_ERROR"
+     },
+     "404": {
+      "description": "WARNING not found code"
+     },
+     "500": {
+      "description": "FBE00099 technical error"
+     }
+    }
+   }
+  },
+  "/contact.email.get": {
+   "post": {
+    "operationId": "contact.email.get",
+    "summary": "Registered e-mail / phone.",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "data"
+        ],
+        "properties": {
+         "data": {
+          "type": "object",
+          "required": [
+           "customerNo",
+           "intAddressInfoType"
+          ],
+          "properties": {
+           "customerNo": {
+            "type": "string"
+           },
+           "intAddressInfoType": {
+            "type": "string",
+            "enum": [
+             "E",
+             "P",
+             "B"
+            ]
+           }
+          }
+         },
+         "call": {
+          "type": "object",
+          "properties": {
+           "ani": {
+            "type": "string"
+           },
+           "lang": {
+            "type": "string",
+            "default": "tr"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Success (result.returnCode '1')",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "communicationType": {
+             "type": "string",
+             "enum": [
+              "Both",
+              "Phone",
+              "Email"
+             ]
+            },
+            "ibanCountryCode": {
+             "type": "string"
+            },
+            "ibanAreaCode": {
+             "type": "string"
+            },
+            "ibanPhoneNum": {
+             "type": "string"
+            },
+            "ibanEmail": {
+             "type": "string"
+            },
+            "ttsEmail": {
+             "type": "string"
+            },
+            "commGramType": {
+             "type": "string"
+            },
+            "exitState": {
+             "type": "string",
+             "enum": [
+              "Done"
+             ]
+            }
+           }
+          },
+          "result": {
+           "type": "object",
+           "properties": {
+            "guid": {
+             "type": "string"
+            },
+            "returnCode": {
+             "type": "string",
+             "description": "'1' = success; otherwise an error code (INVALID_ARGUMENTS_ERROR, FB_IVR_CHANNEL_102, FB_IVR_CHANNEL_120, FB_IVR_CHANNEL_121, FB_IVR_CHANNEL_107, FBE00099)"
+            },
+            "messageText": {
+             "type": "string"
+            },
+            "code": {
+             "type": "string"
+            },
+            "message": {
+             "type": "string"
+            },
+            "type": {
+             "type": "string",
+             "enum": [
+              "ERROR",
+              "WARNING"
+             ],
+             "nullable": true
+            },
+            "details": {
+             "type": "object",
+             "properties": {
+              "guid": {
+               "type": "string"
+              },
+              "rootCause": {
+               "type": "string"
+              },
+              "errorOrigin": {
+               "type": "string"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "INVALID_ARGUMENTS_ERROR"
+     },
+     "404": {
+      "description": "WARNING not found code"
+     },
+     "500": {
+      "description": "FBE00099 technical error"
+     }
+    }
+   }
+  },
+  "/statement.pdf.send": {
+   "post": {
+    "operationId": "statement.pdf.send",
+    "summary": "Sends the statement PDF by e-mail. 404 FB_IVR_CHANNEL_107 = no PDF.",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "type": "object",
+        "required": [
+         "data"
+        ],
+        "properties": {
+         "data": {
+          "type": "object",
+          "required": [
+           "customerNo",
+           "cardNumber",
+           "currencyType",
+           "statementDate",
+           "emailAddress"
+          ],
+          "properties": {
+           "customerNo": {
+            "type": "string"
+           },
+           "cardNumber": {
+            "type": "string"
+           },
+           "currencyType": {
+            "type": "string",
+            "enum": [
+             "TL",
+             "USD",
+             "EUR",
+             "GBP"
+            ]
+           },
+           "statementDate": {
+            "type": "string"
+           },
+           "emailAddress": {
+            "type": "string"
+           }
+          }
+         },
+         "call": {
+          "type": "object",
+          "properties": {
+           "ani": {
+            "type": "string"
+           },
+           "lang": {
+            "type": "string",
+            "default": "tr"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Success (result.returnCode '1')",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "exitState": {
+             "type": "string",
+             "enum": [
+              "DONE"
+             ]
+            }
+           }
+          },
+          "result": {
+           "type": "object",
+           "properties": {
+            "guid": {
+             "type": "string"
+            },
+            "returnCode": {
+             "type": "string",
+             "description": "'1' = success; otherwise an error code (INVALID_ARGUMENTS_ERROR, FB_IVR_CHANNEL_102, FB_IVR_CHANNEL_120, FB_IVR_CHANNEL_121, FB_IVR_CHANNEL_107, FBE00099)"
+            },
+            "messageText": {
+             "type": "string"
+            },
+            "code": {
+             "type": "string"
+            },
+            "message": {
+             "type": "string"
+            },
+            "type": {
+             "type": "string",
+             "enum": [
+              "ERROR",
+              "WARNING"
+             ],
+             "nullable": true
+            },
+            "details": {
+             "type": "object",
+             "properties": {
+              "guid": {
+               "type": "string"
+              },
+              "rootCause": {
+               "type": "string"
+              },
+              "errorOrigin": {
+               "type": "string"
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "INVALID_ARGUMENTS_ERROR"
+     },
+     "404": {
+      "description": "WARNING not found code"
+     },
+     "500": {
+      "description": "FBE00099 technical error"
+     }
+    }
+   }
+  }
+ }
+}
