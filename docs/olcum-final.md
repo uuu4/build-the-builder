@@ -37,7 +37,8 @@ Kök nedenler (konuşmalar okundu):
 5. **Haftalı gün:** "the week after next", sonra "Monday" önümüzdeki Pazartesi okundu. Belirsiz kelimeler saklanıyor, çözücü günü haftasıyla okuyor.
 6. **Parçalı kimlik cevabı:** "19 October" + "1983" 13 kez yeniden soruldu, araç hiç çağrılmadı (B pieces). Parçaların birleşik hâli tam cevaptır kuralı.
 7. **Destek teklifi tekrarı:** hardship adımı teklifi dört kez yaptı (A talkative PUB-05). Bir kez kuralı.
-8. Simüle müşteri kaynaklı (bizim değil): A talkative PUB-09 cümleler yarıda, anlamsız karakter, telefon hanesi hiç verilmiyor.
+8. **Sayı değişkeni temizlenmiyordu:** platform float değişkene yazılan `''`yi yok sayıyor; kartın 220'si krediye taşındı (B talkative PUB-11). Sayılar 0 ile temizleniyor (`multi.py`).
+9. Simüle müşteri kaynaklı (bizim değil): A talkative PUB-09 cümleler yarıda, anlamsız karakter, telefon hanesi hiç verilmiyor.
 
 ## Geri alınanlar
 
@@ -46,7 +47,7 @@ Kök nedenler (konuşmalar okundu):
 ## Sıradaki adım
 
 Madde 1 için "ajan" = builder'ın güncel kitle kurduğu ajanlar (`e2e-a`, `e2e-b`, `e2e-r`): yarın da builder kuracak, elle yapılmış referanslar değil.
-1. Koşuyor (`m2.sh`): 2-5 numaralı düzeltmelerin tek vaka kontrolü (`5fe96d7` öncesi ajan): A pieces PUB-07, PUB-06; B in_words PUB-12; B talkative PUB-11.
-2. Sonra `out/e2e-a|b/gen.py` yeniden üret + deploy (kit `5fe96d7`), A ve B: normal + 5 stil, 3 tekrar.
-3. R: `run_cases.py bcf59d65-1179-483b-afd4-4df8e73a6b4a --cases practice/brief-r/cases.json --reps 3` (önce `e2e-r` yeniden üret + deploy), sonra `tools/rescore_close.py`.
+Tek vaka kontrolü (`m2.sh`): A pieces PUB-07 3/3, A pieces PUB-06 3/3 (düzeltmeler tuttu); B talkative PUB-11 0/3 (madde 8'i buldurdu); B in_words PUB-12 simülasyon 502 ile açılmadı.
+
+1. Koşuyor (`m3.sh`, kit `cc` sonrası, ajanlar e2e-a v4, e2e-b v3, e2e-r v2): önce 3 tek vaka kontrolü, sonra tur 2: B ve A normal + 5 stil, R; her biri 3 tekrar. Sonuçlar `results/m3-*.log`, R için `results/m3-r-rescored.log`.
 4. R2 yapısal: `e2e-r2` 12/12 tarih ve kapanış kodları; `test_brief_r2` yeşil.
