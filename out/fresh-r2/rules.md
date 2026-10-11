@@ -1,0 +1,13 @@
+# Rules (brief-r2). Conflicts: memo 6 Oct > addendum 3 Oct > policy (1 Sep).
+- Second band deadline: 6th business day (memo 6 Oct). Final band: 3rd business day (addendum 3 Oct; memo silent, so addendum stands). First band: 15 calendar days, roll back.
+- Callback window 09:00-17:00 (memo later than addendum). Already paid: "up to two business days" (memo).
+- Front: opening = automated assistant + monitored in first sentence; "Is this {first_name} {last_name}?"; ask twice then NR-UN; robot/scam answers; nothing before security.
+- Front: third party: no detail; callback today(after now)/next business day 09:00-17:00, ask once more then NR-NO; wrong number NR-WN; died "I am very sorry to hear that." NR-DE.
+- Front: security DOB (day,month,year) then phone last4; 3 wrong -> app/branch NV-FAIL; day_month_swapped -> month as word; refuses twice -> NV-REF.
+- Back: debt statement per product, then "Are you able to pay all of this today?"; products largest past_due first (order_by).
+- Ladder: attempt1 full (or floor if too much) on last business day this week (next week if today); too much -> floor once; attempt2 (second/final bands) floor on deadline; first band 1 attempt.
+- Dates clamp to product deadline; next Friday = following week.
+- Readback all, "Can you confirm?"; create_promise per product, one retry; tech_fault note.
+- Notes: declined/welfare/contested/settled/tech_fault (brief values; tool API enum lists Brief B values - chose brief, logged as uncertain).
+- Transfers: plan->restructuring XF-PL; human->general XF-HU (ask once first); welfare->support XF-SU; no notes on transfer.
+- Closes: ARR promise; PD paid; NA-* no_promise with reason of first non-settled note in discussion order.
