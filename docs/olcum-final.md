@@ -84,12 +84,29 @@ Kök nedenler (düzeltildi, `multi: a proposal with a day...`):
 19. Hakem kimlik sorusunun her tekrarını "yeniden sorma" sayıyor (B asks_back/talkative PUB-12): geri soruya cevaptan sonra soru tekrar edilmez ("Whenever you are ready."); laftan sonra ancak iki mesaj cevapsız kalırsa.
 Bizim olmayan: B corrects PUB-12 simüle müşteri "on Friday, sorry, I" diye kesiyor, düzeltme hiç söylenmiyor.
 
+### Tur 5 (08:50-09:50 TSİ), her biri 3 tekrar
+
+| | normal | pieces | corrects | talkative | asks_back | in_words |
+|---|---|---|---|---|---|---|
+| A | **10/10** | **10/10** | 7/10 | 4/10 | **10/10** | **10/10** |
+| R (rescore) | **9/10** | | | | | |
+
+Kontroller: B talkative PUB-13 3/3 (18 tuttu); B asks_back PUB-12 1/3 (hakem hâlâ kimlik sorusu sayımı).
+
+Kök nedenler (düzeltildi, `kit: date/amount extraction thresholds...`):
+20. "Monday the twenty-sixth" 0,53 güvenle atıldı (eşik 0,6): tarih ve tutar metin alanlarının eşiği 0,3/0,4 (kod her değeri denetliyor).
+21. Simüle müşteri düzeltmesini yarıda kesiyor ("ten, sorry", "Thursday, sorry"): ilk değer alınmıyor, hangisi kastedildiği soruluyor (merdiven, geri arama).
+22. "You tell me." karşısında teklif tutar ve tarihle tekrarlandı (R PUB-06): örnek cümleli kural.
+Talkative'deki kalanların çoğu simüle müşteriden: kimlik hanelerini hiç vermiyor, cümleler yarıda (A PUB-02, 03, 06, 10).
+
+main `248ea34`'e fast-forward edildi (testler yeşil, preflight temiz, ölçümler önceki main'den iyi).
+
 ## Geri alınanlar
 
 (yok)
 
 ## Sıradaki adım
 
-1. Koşuyor (`m6.sh`): kontroller (B talkative PUB-13, B asks_back PUB-12), A tam (normal + 5 stil), R tam. `results/m6-*.log`.
-2. Sonra B tam yeniden (yeni kitle).
+1. Koşuyor (`m7.sh`): kontroller (A corrects PUB-02/06/07, R PUB-06), B tam. `results/m7-*.log`.
+2. Sonra A corrects ve talkative tam; madde 2'ye (builder'ı sıfırdan 3'er kez) geçiş kararı: talkative'deki simüle müşteri kaynaklı hatalar dışında her şey 3/3 ise.
 3. R2 yapısal: `e2e-r2` 12/12, `test_brief_r2` yeşil.
