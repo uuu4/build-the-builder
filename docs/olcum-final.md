@@ -71,12 +71,25 @@ Kök nedenler (düzeltildi, `kit: no repeated offer...`):
 16. Hardship'te her laf arasına sempati cümlesi: tek cümle kuralı, sonra nötr.
 17. "Am I talking to a robot? Yes, I..." onayla gelen soru cevapsız kaydedildi: `m_answer` önce cevaplar, sonra kayıt için izin ister.
 
+### Tur 4 (08:00-08:45 TSİ), her biri 3 tekrar
+
+| | normal | pieces | corrects | talkative | asks_back | in_words |
+|---|---|---|---|---|---|---|
+| B | **3/3** | **3/3** | 2/3 | 1/3 | 2/3 | **3/3** |
+
+Kontroller: A asks_back PUB-06 3/3, R PUB-04 3/3 (15 ve 17 tuttu); A talkative PUB-05 hakem cevabı gelmedi, PUB-07 simüle müşteri kimlikte cevap vermedi.
+
+Kök nedenler (düzeltildi, `multi: a proposal with a day...`):
+18. Önerilen gün bir anlaşmadır: "both on the thirtieth of October" "That is fine" ile cevaplandı ama yalnız `accepts` kaydı başlatıyordu; model aynı adımda krediyi konuştu, tur bitti (B talkative PUB-13). `prop_k_step` kod düğümü günü çözer; gün yoksa adıma geri döner.
+19. Hakem kimlik sorusunun her tekrarını "yeniden sorma" sayıyor (B asks_back/talkative PUB-12): geri soruya cevaptan sonra soru tekrar edilmez ("Whenever you are ready."); laftan sonra ancak iki mesaj cevapsız kalırsa.
+Bizim olmayan: B corrects PUB-12 simüle müşteri "on Friday, sorry, I" diye kesiyor, düzeltme hiç söylenmiyor.
+
 ## Geri alınanlar
 
 (yok)
 
 ## Sıradaki adım
 
-1. Koşuyor (`m5.sh`, ajanlar yeni kitle): kontroller (A asks_back PUB-06, A talkative PUB-05/07, R PUB-04), sonra B tam (normal + 5 stil). `results/m5-*.log`.
-2. Sonra ayrı iş: A tam (normal + 5 stil) ve R tam.
+1. Koşuyor (`m6.sh`): kontroller (B talkative PUB-13, B asks_back PUB-12), A tam (normal + 5 stil), R tam. `results/m6-*.log`.
+2. Sonra B tam yeniden (yeni kitle).
 3. R2 yapısal: `e2e-r2` 12/12, `test_brief_r2` yeşil.
