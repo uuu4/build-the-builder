@@ -27,6 +27,7 @@ step's `refuses` route when they are not named, because the briefs count them as
 """
 from . import graph as g
 
+# Not put into extraction descriptions: there the extractor dropped finished corrections too ("the 25th, sorry, I mean the 26th").
 CUT = (" If they began to correct themselves and the correction is cut off (the message ends with 'sorry', 'I mean' or 'no'), "
        "leave this empty.")
 
@@ -108,11 +109,12 @@ def build(api, spec, tools, prefix="neg_", max_turns=12, turn_limit_target=None)
         extract = [g.enum_field(var, list(kinds), "Classify ONLY the customer's last message. " + " ".join(f"{k}: {v}." for k, v in kinds.items()), 0.3)]
         if not record_now:
             # thresholds low on purpose: code checks every value (resolver, floor, due); "Monday the twenty-sixth" came at 0.53 and was dropped
-            extract += [{"name": "agreed_amount", "type": "float", "description": "The amount the customer agreed to pay, if they agreed." + CUT, "min_confidence": 0.4},
+            extract += [{"name": "agreed_amount", "type": "float", "description": "The amount the customer agreed to pay, if they agreed.", "min_confidence": 0.4},
                         {"name": "agreed_date", "type": "string", "description": "The date the customer agreed to pay on, if they agreed, in words as "
                          "said by the customer or as you named it when they said yes (for example 'tomorrow', 'this Friday', 'the 30th', "
                          "'Thursday 15 October'). If they named the week earlier and now only a weekday, give both ('Monday, the week after next'). "
-                         "Copy the words; do not turn them into a date: code resolves them against the call's date." + CUT,
+                         "Copy the words; do not turn them into a date: code resolves them against the call's date. When they correct themselves, "
+                         "give the corrected day.",
                          "min_confidence": 0.3}]
         nodes[name] = g.conversation(name, task, trs, tools=tools, extract=extract,
                                      on_enter={"type": "tts", "text": s["say"]} if s.get("say") else {"type": "llm", "prompt": s["task"]},

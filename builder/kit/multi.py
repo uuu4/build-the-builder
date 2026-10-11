@@ -351,12 +351,9 @@ try:
             vars['vague_text'] = said
             vars[P['rv']] = 'ask'                # back to the first step: the model asks once for the exact day
         else:
-            for k in range(1, n + 1):            # still no day: propose each product's latest date, read back for a yes
-                settle(k, datetime.date.fromisoformat(str(vars.get('s%d_deadline' % k))))
-                vars['adj_%d' % k] = '1'
-                vars['st_%d' % k] = 'agreed'
-                vars['amt_%d' % k] = money(vars.get('s%d_due' % k))
-            vars[P['rv']] = 'ok'
+            # still no day read: the product ladders make their offers. Agreeing every product on its deadline here
+            # recorded deadlines when only the extraction had missed a day the customer said (PUB-07, PUB-11)
+            vars[P['rv']] = 'unclear'
     elif d0 is None or d0 < day_today():
         vars[P['rv']] = 'unclear'            # no day yet: the product ladders ask
     else:
@@ -572,7 +569,7 @@ def build(api, spec, ladder_tpl=None):
                 {"name": f"m_today_when_{k}", "type": "string", "min_confidence": 0.3, "description":
                  f"The payment date the customer named for the {nth} product read out in the statement, in their own words "
                  "(for example 'tomorrow', 'Friday', 'the 30th'). Empty if they named no date for that product, or if their "
-                 "date is for every product." + ladder.CUT},
+                 "date is for every product. When they correct themselves, give the corrected day."},
                 {"name": f"m_today_amount_{k}", "type": "float", "min_confidence": 0.4, "description":
                  f"The amount the customer said they will pay for the {nth} product read out, if they named one for it."}]
     nodes["all_yes"] = _code("all_yes", _WHEN + _ALL_YES, "close_error",
@@ -638,9 +635,9 @@ def build(api, spec, ladder_tpl=None):
                   g.enum_field("fix_slot", ["1", "2", "3", "4", "all", "unknown"],
                                "Which product, by its position in the read-back (1 = first product read). 'all' if they mean every product.", 0.6),
                   {"name": "fix_date", "type": "string", "description": "The new date, if they named one, in the customer's own words "
-                   "(for example 'tomorrow', 'this Friday', 'the 30th', '30 October', 'Monday the 26th'). Copy the words; do not turn them into a date."
-                   + ladder.CUT, "min_confidence": 0.3},
-                  {"name": "fix_amount", "type": "float", "description": "The new amount, if they named one." + ladder.CUT, "min_confidence": 0.4}]
+                   "(for example 'tomorrow', 'this Friday', 'the 30th', '30 October', 'Monday the 26th'). Copy the words; do not turn them into a date. "
+                   "When they correct themselves, give the corrected day.", "min_confidence": 0.3},
+                  {"name": "fix_amount", "type": "float", "description": "The new amount, if they named one.", "min_confidence": 0.4}]
     rb_task = ("You have read back every agreed promise in one message and asked for one confirmation. The customer's identity is verified.\n"
                "- A clear yes is a confirmation. Do not call any tool; the system records the promises.\n"
                "- If they want to change a date or an amount, or drop a product, say nothing about recording: the system applies the change.\n"

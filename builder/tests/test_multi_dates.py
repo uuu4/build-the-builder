@@ -125,8 +125,7 @@ class Flow(unittest.TestCase):
         for _ in range(2):
             v.update(m_today_turn="proposes", m_today_scope="all", agreed_date="")
             r = run(self.nodes, "all_yes", v)
-        self.assertEqual(r, "m_readback")                                         # second vague answer: the latest dates
-        self.assertEqual((v["date_1"], v["adj_1"], v["date_2"], v["adj_2"]), (v["s1_deadline"], "1", v["s2_deadline"], "1"))
+        self.assertEqual(r, "p1_attempt1_full")                                   # second answer without a day: the ladders offer
 
     def test_no_to_today_goes_to_the_ladders(self):
         v = self.start([CARD, LOAN])
