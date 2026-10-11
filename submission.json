@@ -5,9 +5,9 @@
     {"name": "Ali Emre Aydın", "email": "aliemreaydin111@gmail.com"}
   ],
   "repo": "https://github.com/uuu4/build-the-builder",
-  "commit": "<filled after the final run>",
+  "commit": "63ac3b6",
   "run_command": "python3 builder/build.py {case_folder} {mock_url}",
-  "workflow": "submission/<final>.workflow.json",
-  "trace": "traces/<final>.log",
+  "workflow": "submission/final.workflow.json",
+  "trace": "traces/final.log",
   "mock_url": "https://btb-bank-mock.latif-akgun1907.workers.dev"
 }
