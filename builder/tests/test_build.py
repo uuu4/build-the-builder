@@ -54,6 +54,27 @@ class Trace(unittest.TestCase):
         self.assertIn('"steps": ', text)
         self.assertIn('"tools": 4', text)                  # the kit README: two steps, four tools
 
+    def test_chat_smoke_test_is_logged_and_ends_the_chat(self):
+        import freya
+        d = pathlib.Path(tempfile.mkdtemp()); trace = d / "t.jsonl"
+        sent = []
+
+        def fake_api(method, path, body=None, **kw):
+            sent.append((path, body))
+            return {"callId": "c1", "ended": True} if path.endswith("/end") else {"response": "Hello, is this Daniel?", "callId": "c1"}
+        with mock.patch.object(freya, "api", fake_api):
+            build.smoke("w1", {"first_name": "Daniel"}, trace)
+        e = json.loads(trace.read_text())
+        self.assertEqual((e["kind"], e["passed"]), ("test", True))
+        self.assertEqual([p for p, _ in sent], ["/api/v2/chat/message"] * 2 + ["/api/v2/chat/end"])
+        self.assertEqual(sent[1][1]["callId"], "c1")
+
+        def down(method, path, body=None, **kw):       # a workflow that cannot start a call: logged as a failed test, no raise
+            raise RuntimeError("POST /api/v2/chat/message -> 500")
+        with mock.patch.object(freya, "api", down):
+            build.smoke("w1", {}, trace)
+        self.assertFalse(json.loads(trace.read_text().splitlines()[-1])["passed"])
+
 
 class Flow(unittest.TestCase):
     """main() with a fake agent and a fake deploy."""
@@ -82,7 +103,7 @@ class Flow(unittest.TestCase):
         argv = ["build.py", "briefs/brief-a.md", API, "--slot", self.slot, "--minutes", "30"]
         # main() sets TRACE_PATH, TOOL_API in os.environ; restored here so later tests do not write into this trace
         with mock.patch.dict(os.environ), mock.patch.object(sys, "argv", argv), mock.patch.object(build, "run_agent", agent), \
-                mock.patch("builder.kit.deploy.deploy", self.fake_deploy):
+                mock.patch("builder.kit.deploy.deploy", self.fake_deploy), mock.patch.object(build, "smoke", lambda *a: None):
             build.main()
 
     def test_tool_api_from_the_form_reaches_the_agent(self):
