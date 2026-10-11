@@ -164,6 +164,14 @@ def resolve_when(raw):
     t = str(raw or '').strip().lower()
     if t == '':
         return None
+    # "the 15th, sorry, I mean the 16th": the part after the last correction wins when it holds a date
+    parts = re.split(r'\b(?:sorry|i mean|i meant|actually|correction|rather|no wait)\b', t)
+    if len(parts) > 1 and parts[-1].strip() != '':
+        last = resolve_one(parts[-1])
+        if last is not None:
+            return last
+    return resolve_one(t)
+def resolve_one(t):
     today = day_today()
     mo = re.search(r'(\d{4})-(\d{2})-(\d{2})', t)
     if mo:
@@ -317,6 +325,12 @@ _ALL_YES = r'''
 try:
     n = int(num(vars.get('product_count')))
     said = str(vars.get('agreed_date') or '')
+    if said == '':                           # "the thirtieth" landed in m_today_when_1 only (PUB-13 pieces)
+        for k in range(1, n + 1):
+            w = str(vars.get('m_today_when_%d' % k) or '')
+            if w != '':
+                said = w
+                break
     vt = str(vars.get('vague_text') or '')
     d0 = resolve_when((vt + ' ' + said) if vt != '' else said)
     if d0 is None and str(vars.get(P['turn_var']) or '') == 'accepts':
@@ -529,7 +543,7 @@ def build(api, spec, ladder_tpl=None):
                   "start": "today",
                   "steps": {"today": {"say": t["say"], "task": t["task"],
                                       "on": {"refuses": "enter_1", "too_much": "floor_mark"}}}}
-    nodes.update(ladder.build(api, today_spec, [], prefix="m_", max_turns=10, turn_limit_target="enter_1"))
+    nodes.update(ladder.build(api, today_spec, [], prefix="m_", max_turns=16, turn_limit_target="enter_1"))
     # "yes" and "all of it on the 30th" agree every product at once; anything about only some products goes to the
     # product ladders at once, so the model never bargains for one product in this step (PUB-12, PUB-13)
     mt = nodes["m_today"]
@@ -567,7 +581,7 @@ def build(api, spec, ladder_tpl=None):
         lk["record"] = "defer"
         lk["on_agreed"] = f"save_{k}"
         steps = lk["steps"]
-        built = ladder.build(api, {kk: vv for kk, vv in lk.items() if kk != "start_floor"}, [], prefix=f"p{k}_", max_turns=12,
+        built = ladder.build(api, {kk: vv for kk, vv in lk.items() if kk != "start_floor"}, [], prefix=f"p{k}_", max_turns=18,
                              turn_limit_target=f"refused_{k}")
         for step, s in steps.items():
             node = built[f"p{k}_{step}"]
@@ -624,7 +638,8 @@ def build(api, spec, ladder_tpl=None):
               g.eq("m_fix", "rb_turn", "changes", "wants a change")]
     rb_extract = [g.enum_field("rb_turn", rb_kinds,
                                "Classify ONLY the customer's last message. confirms: a clear yes to the read-back. changes: they want a different date or amount, "
-                               "want to drop a product, or say no. other: a question or anything else.")] + fix_fields
+                               "want to drop a product, or say no. other: a question or anything else.")] + fix_fields + [_ASKED_Q]
+    # "Are you a robot? I can pay on..." at the read-back (PUB-04 corrects): the next read-back answers it first
     # a fixed line: an llm entry was seen to invent an offer and to say "recorded" before anything was recorded (PUB-12)
     nodes["m_readback"] = g.conversation("m_readback", rb_task, rb_trs, extract=rb_extract,
                                          on_enter={"type": "tts", "text": "{{readback}}"}, first_entry_only=False, max_turns=6, max_turn_target="m_fix")
@@ -641,7 +656,7 @@ def build(api, spec, ladder_tpl=None):
         "the system applies it and reads everything back. Do not compute dates yourself. Never say anything is recorded, booked or noted. "
         "Product numbers follow the order of the read-back (1 is the first product read)." + rb_rules,
         [g.any_eq("apply_fix", "fix_kind", ["change", "drop"], "a change was named"), g.eq("finish", "fix_kind", "none", "no change after all")],
-        extract=fix_fields,
+        extract=fix_fields + [_ASKED_Q],
         on_enter={"type": "llm", "prompt": "Ask what they would like to change. Do not name any date or amount yourself."},
         first_entry_only=False, max_turns=6, max_turn_target="finish")
     # a read-back the customer keeps rejecting ends without a promise rather than in a loop to the turn limit (PUB-12)

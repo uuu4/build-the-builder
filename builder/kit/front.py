@@ -251,7 +251,7 @@ def build(api, spec, after_verify, prefix=""):
                "- If the customer gives only part of an answer, or gives it over several turns, ask for the missing part and join the parts. Do not call the tool with a part.\n"
                # style "pieces", 11 October: "19 October" then "1983" was asked for again thirteen times, the tool never called
                "- Parts said in different messages together ARE a complete answer: a day and month in one message and the year in the next "
-               "(for example '19 October', then '1983') is the date 1983-10-19, two digits then two more digits are the four digits. "
+               "(for example '19 October', then '1983') is the date 1983-10-19. Digits are joined in the order they were said: 'forty-four', then 'zero one' is 4401 (never 0144); 'four four', then 'one zero' is 4410. "
                "As soon as every part has been said, join them and call the tool at once. Never ask again for a part the customer already gave: "
                "ask only for the part that is still missing, by name (for example 'And the year?').\n"
                "- If the customer corrects themselves, use the corrected value.\n"

@@ -58,6 +58,11 @@ class Resolve(unittest.TestCase):
         self.assertEqual(resolve("the 5th"), "2026-11-05")                      # passed this month: next month
         self.assertEqual(resolve("5 January"), "2027-01-05")
 
+    def test_a_corrected_date_wins(self):                                       # style "corrects", PUB-06
+        self.assertEqual(resolve("the 15th, sorry, I mean the 16th"), "2026-10-16")
+        self.assertEqual(resolve("Thursday, actually Friday"), "2026-10-16")
+        self.assertEqual(resolve("the 30th, sorry"), "2026-10-30")                # nothing after the correction: the date before it
+
     def test_vague_or_empty_is_no_date(self):
         for said in ("", "next week", "when I get paid", "end of the month", "soon", "yes"):
             self.assertEqual(resolve(said), "", said)
@@ -189,6 +194,8 @@ class Flow(unittest.TestCase):
         self.assertFalse(self.nodes["m_fix"]["on_enter_first_entry_only"])
         self.assertIn("asked_q", [f["name"] for f in self.nodes["m_today"]["extraction_schema"]])
         self.assertIn("asked_q", [f["name"] for f in self.nodes["p1_attempt1_full"]["extraction_schema"]])
+        for n in ("m_readback", "m_readback_q", "m_fix"):
+            self.assertIn("asked_q", [f["name"] for f in self.nodes[n]["extraction_schema"]], n)
         v = self.start([CARD])
         v.update(m_today_turn="accepts", agreed_date="", asked_q="yes")
         self.assertEqual(run(self.nodes, "all_yes", v), "m_readback_q")
@@ -229,6 +236,12 @@ class Flow(unittest.TestCase):
         v.update(agreed_date="", agreed_amount="3", **{"p1_attempt1_full_all": "no"})
         run(self.nodes, "save_1_attempt1_full", v)
         self.assertEqual(v["amt_1"], "300")                                         # the step's offer: the full amount
+
+    def test_a_date_only_in_the_per_product_field_counts_for_all(self):          # PUB-13 pieces: "the thirtieth"
+        v = self.start([CARD, LOAN])
+        v.update(m_today_turn="proposes", m_today_scope="all", agreed_date="", m_today_when_1="the thirtieth")
+        self.assertEqual(run(self.nodes, "all_yes", v), "m_readback")
+        self.assertEqual((v["date_1"], v["date_2"], v["adj_2"]), ("2026-10-30", "2026-10-23", "1"))
 
     def test_endless_read_backs_end_without_a_promise(self):
         v = self.start([CARD])
