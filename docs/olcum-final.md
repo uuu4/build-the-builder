@@ -120,12 +120,20 @@ Kontroller (platform sağlamken): A corrects PUB-07 3/3, B in_words PUB-11 3/3 (
 A normal 6/10 ve A corrects 6/10, ama kalanların çoğunda hakem gerekçesi "All criteria met" ya da "no verdict"/"analysis never arrived": hakem servisi bozuk. Ardından `POST /api/v2/simulations` 503 ("API key validation is temporarily unavailable"), `GET` 504 ve 30 sn üstü cevaplar; A pieces/asks_back/in_words/talkative ve R hiç koşmadı.
 Gerçek görünen kalanlar: A corrects PUB-06 (simüle müşterinin "Thursday, sorry" kesiği), PUB-09 (restructuring öncesi model bir teklif söyledi), PUB-03 (simüle müşteri kimlikte cevap vermedi).
 
+### Platform hataları için (Latif'in notları, 13:00 TSİ)
+
+- `freya.api` 5xx ve zaman aşımında 10 sn arayla 3 kez dener (POST yalnız 502/503'te; 504'te istek işlenmiş olabilir).
+- `run_cases.py`: hiçbir aramada araç çağrısı yoksa koşu kesinti sayılır, puanlanmaz, 5 dk sonra tekrarlanır. Böyle bir testten sonra workflow değiştirilmez.
+- `run_cases.py` yerelde durdurulmaz (simülasyon Freya'da sürer, sonraki test onu bekler); arka plan işleri 2 saat sınırının altında tutuluyor.
+- Takılan simülasyon `POST /api/v2/simulations/{id}/cancel` ile durdurulur (`freya.run_simulation` bunu kararlar ve aramalar bittiğinde kendisi yapıyor).
+- 13:05'te: API 0,7 sn'de 200, çalışma alanında koşan simülasyon yok.
+
 ## Geri alınanlar
 
 - `kit: date/amount extraction thresholds...` içindeki çıkarım açıklaması kuralı ("yarıda kalan düzeltmede boş bırak"): ölçüm kötüleşti, `kit: take the cut-off rule out...` ile kısmen geri alındı (madde 23).
 
 ## Sıradaki adım
 
-1. 12:45 TSİ: Freya API 503/504 ve zaman aşımı. 15 dk sonra yeniden yokla; düzelmezse dur, issue #3'te Emre'ye sor.
-2. Platform düzelirse: ajanları `front: example line...` (madde 25) ile yeniden üret + deploy; A pieces/asks_back/in_words, R, B asks_back PUB-12 kontrolü.
-3. 15:30 TSİ: son durum, main fast-forward (madde 23 geri alımı main'e girmeli: main `248ea34` hâlâ hatalı kuralı içeriyor), issue #3 özeti.
+1. Koşuyor (`m9.sh`, ajanlar `front: example line` ile): B asks_back PUB-12 kontrol, A normal/pieces/asks_back/in_words, R. `results/m9-*.log`.
+2. Zaman kalırsa: A corrects/talkative, B tam.
+3. 15:30 TSİ: son durum, main fast-forward, issue #3 özeti, döngü durur.
