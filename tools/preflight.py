@@ -186,7 +186,7 @@ def main(argv):
     secrets()
     head = git_state()
     form = {"team": "<team name>", "repo": sh("git", "remote", "get-url", "origin").stdout.strip().removesuffix(".git"), "commit": head,
-            "run_command": "python3 builder/build.py {brief_path} --tools {tool_api_path}", "workflows": {}, "traces": {}}
+            "run_command": "python3 builder/build.py {brief_path} {tool_api_path}", "workflows": {}, "traces": {}}
     for name, slot in pairs:
         r = submission(name, slot)
         if "workflow" in r:

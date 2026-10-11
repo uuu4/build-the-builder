@@ -1,5 +1,20 @@
 # Build the Builder
 
+## Our builder: how to run it
+
+```bash
+pip install -r requirements.txt           # claude-agent-sdk; Python 3.10+
+cp env.example env.sh && source env.sh    # FREYA_API_KEY, FREYA_BANK_TEAM_KEY
+# plus a Claude login (the SDK uses the claude CLI) or ANTHROPIC_API_KEY; BUILDER_MODEL defaults to claude-opus-5-5
+python3 builder/build.py {brief_path} {tool_api_path}
+```
+
+One command, no manual step. Output: `submission/<slot>.workflow.json` (exported with `freya.export_workflow`) and the trace `traces/<slot>-<time>.log` (`.jsonl` has every message). The slot defaults to `ours-<brief name>`; `--slot` names it. How it works: `docs/interfaces.md`. Pre-run check: `python3 tools/preflight.py`.
+
+The rest of this file is the kit's README.
+
+---
+
 **Kit version 3** (10 October 2026). The file `VERSION` holds the number. When we update the kit, the number goes up and the changes are listed here.
 
 - v3: the example builder waits for its own test run (up to 20 minutes per command) instead of stopping before the results arrive. On Brief A it built an agent that passed 10 of the 10 practice customers in one run.

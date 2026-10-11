@@ -18,7 +18,7 @@ Brief dosyalarını olduğu gibi `briefs/hidden-1.md` ve `briefs/hidden-1.openap
 ```bash
 cd build-the-builder && git pull && source env.sh
 python3 tools/preflight.py                    # koşmadan önce
-python3 builder/build.py briefs/hidden-1.md --tools briefs/hidden-1.openapi.json --slot hidden-1 2>&1 | tee traces/hidden-1.console.txt
+python3 builder/build.py briefs/hidden-1.md briefs/hidden-1.openapi.json --slot hidden-1 2>&1 | tee traces/hidden-1.console.txt
 ```
 
 Araç API dosyası `--tools` ile ya da formdaki gibi ikinci konumsal dosya olarak verilebilir (`build.py brief.md brief.openapi.json`): builder konumsal bir OpenAPI dosyasını araç API'si sayar. İkisi de yoksa kit'in eski `tools/openapi.json`'unu kullanır (gizli API'nin alanları farklı olabilir). Her gizli brief kendi araç API dosyasıyla gelir. Bir brief başka bir dosyanın üstüne kuruluyorsa (halka açık B, A'nın üstüne kuruluydu) dosyalar sırayla verilir: eski önce, değiştiren sonra (`build.py a.md b.md --tools ...`).
@@ -43,7 +43,7 @@ git add submission traces briefs out && git commit -m "hidden run: submission an
 python3 tools/preflight.py hidden-1=hidden-1 hidden-2=hidden-2     # tekrar: HEAD itildi mi
 ```
 
-- [ ] Form: `team`, `repo`, **itilen commit**, `run_command` = `python3 builder/build.py {brief_path} --tools {tool_api_path}`, `workflows` ve `traces` (preflight basar). Kit e-postasındaki adrese **23:00'den önce** gönder.
+- [ ] Form: `team`, `repo`, **itilen commit**, `run_command` = `python3 builder/build.py {brief_path} {tool_api_path}` (sayfadaki biçim), `workflows` ve `traces` (preflight basar). Kit e-postasındaki adrese **23:00'den önce** gönder.
 - [ ] Repo organizatör için erişilebilir mi (private ise erişim verildi mi)? Soru organizatöre iletildi, yanıt bekleniyordu, **doğrula**.
 - [ ] Commit'te gizli brief'ten hiçbir şey **koda, skill'e, kit'e** girmedi (yalnızca `briefs/hidden-*`, `out/`, `submission/`, `traces/` yeni; bu klasörler brief girdisi ve çıktısıdır). `git diff <koşu öncesi commit> HEAD --stat -- builder .claude` boş ya da yalnızca çökme düzeltmesi.
 - [ ] Anahtar yok: preflight "no key found".
