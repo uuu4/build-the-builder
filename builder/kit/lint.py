@@ -1,6 +1,8 @@
 """Local checks on a workflow before it goes to the platform. Returns a list of problems; empty means clean."""
 import json
 
+PROMISE_OP = "create_promise"      # the seven tool names stay the same in every brief (hackathon page)
+
 
 def _has_null(o):
     """A real null in the structure. The word null inside a code string is fine."""
@@ -70,6 +72,14 @@ def lint(wf, api=None):
                     allowed = api.enum(api.close_op, api.close_outcome)
                     if allowed and out not in allowed and not str(out).startswith("{{"):
                         errs.append(f"{k}: {api.close_op} outcome {out!r} not in the tool API ({', '.join(allowed)})")
+                # A promise the bank did not take must not end where a recorded one does: the customer would hear it was
+                # recorded (honesty). Seen on 11 October: a hand-added second instalment went to the promise close either way.
+                if a["function"]["name"] == PROMISE_OP and n.get("node_type") == "api_request":
+                    ok_targets = {tr.get("target_node") for tr in n.get("transitions", []) if f"{k}_response" in json.dumps(tr.get("condition"))}
+                    fail = n.get("passthrough_default_transition")
+                    if fail in ok_targets:
+                        errs.append(f"{k}: a failed {PROMISE_OP} goes to {fail!r}, the same step as a recorded one; "
+                                    "the failure path must retry or say what could not be recorded")
     reach, todo = set(), [wf.get("initial_node")]
     while todo:
         k = todo.pop()

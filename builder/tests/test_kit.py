@@ -84,6 +84,20 @@ class FrontTest(unittest.TestCase):
             self.assertNotIn("security question again", ex.read_text(), ex)
 
 
+class PromiseFailureLintTest(unittest.TestCase):
+    def wf(self, fail_to):
+        nodes = {"rec": g.api_request("rec", API.pre_action("create_promise", {"product_id": "p1", "amount": 1, "date": "2026-10-16"}),
+                                      fail_to, transitions=[g.is_true("ok_close", "rec_response.data.ok", "recorded")]),
+                 "ok_close": g.close(API, "ok_close", "promise", None, "Bye."),
+                 "fail_close": g.close(API, "fail_close", "no_promise", "service_error", "I could not record it. Bye."),
+                 "end": g.end()}
+        return {"initial_node": "rec", "nodes": nodes}
+
+    def test_a_failed_promise_may_not_end_where_a_recorded_one_does(self):
+        self.assertTrue(any("same step as a recorded one" in e for e in lint(self.wf("ok_close"), API)))
+        self.assertFalse(any("same step as a recorded one" in e for e in lint(self.wf("fail_close"), API)))
+
+
 class NoLeakTest(unittest.TestCase):
     """Builder code and skills must not know a brief. Values of the practice briefs must not appear in them."""
     BANNED = [r"20\d\d-\d\d-\d\d", r"\bdate_of_birth\b", r"\bphone_last4\b", r"\bminimum_payment\b", r"\binstalment_amount\b",
