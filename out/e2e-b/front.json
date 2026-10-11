@@ -1,0 +1,139 @@
+{
+  "bank": "Freya Bank",
+  "agent_identity": "Say that you are Freya Bank's digital assistant, then continue.",
+  "opening_line": "Hello, I am a digital assistant calling from Freya Bank, and we are recording this call. Am I speaking with {{title}} {{last_name}}?",
+  "confirm_question": "Am I speaking with {{title}} {{last_name}}?",
+  "confirm_words": "they say yes, that's me, speaking, or say the customer's own name",
+  "not_confirm_words": "hello, go ahead, who is this, silence, anything vague",
+  "scam_answer": "Say they can verify this call by phoning Freya Bank's customer service number, then continue.",
+  "purpose_before_verify": "Say you can only discuss that with the account holder once their identity is verified, and ask the security question again.",
+  "forbidden_before_verify": [
+    "collections",
+    "debt",
+    "payment",
+    "the product",
+    "the account",
+    "amounts"
+  ],
+  "identity": {
+    "tool": "verify_identity",
+    "field_param": "field",
+    "answer_param": "answer",
+    "questions": [
+      {
+        "field": "date_of_birth",
+        "ask": "Could you please tell me your date of birth?",
+        "format": "YYYY-MM-DD",
+        "complete_when": "day, month and year"
+      },
+      {
+        "field": "phone_last4",
+        "ask": "Could you please tell me the last four digits of the phone number we have on file?",
+        "format": "four digits",
+        "complete_when": "four digits"
+      }
+    ],
+    "rules": [
+      "Read a date given only as numbers as day, then month, then year.",
+      "Three wrong answers in total end the check, whichever question they were on."
+    ],
+    "result": {
+      "all_verified": "all_verified",
+      "left": "wrong_answers_left",
+      "verified": "verified",
+      "ok": "ok",
+      "hint": "hint"
+    },
+    "hints": {
+      "day_month_swapped": "Ask the customer to say their date of birth again with the month said as a word."
+    },
+    "explain_line": "These questions protect your account, so I can only continue once they are answered.",
+    "decline_kinds": [
+      "refuses",
+      "asks_purpose",
+      "no_talk"
+    ],
+    "declines_to_close": 2
+  },
+  "human": {
+    "ask_first": "Before I transfer you, is there anything I can help you with?",
+    "queue": "general",
+    "tool": "transfer_to_agent",
+    "queue_param": "queue"
+  },
+  "third_party": {
+    "rules": [
+      "Do not say why you are calling and say nothing beyond the opening sentence.",
+      "A relative may not answer security questions and may not be told anything about the account, even if they offer to pay."
+    ],
+    "callback": {
+      "tool": "schedule_callback",
+      "days": [
+        "today",
+        "next_business_day"
+      ],
+      "from": "10:00",
+      "to": "19:00",
+      "after_now": true,
+      "date_param": "date",
+      "time_param": "time",
+      "outside_asks": 2
+    },
+    "loss_line": "I am sorry for your loss."
+  },
+  "calendar": {
+    "holidays": [
+      "2026-10-26",
+      "2026-11-11",
+      "2026-11-26",
+      "2026-12-25",
+      "2027-01-01"
+    ],
+    "weekend_days": [
+      5,
+      6
+    ]
+  },
+  "closes": {
+    "unclear": {
+      "outcome": "not_reached",
+      "reason": "unclear",
+      "farewell": "Thank you for your time. Goodbye."
+    },
+    "callback": {
+      "outcome": "not_reached",
+      "reason": "callback",
+      "farewell": "Thank you, we will call back then. Goodbye."
+    },
+    "no_callback": {
+      "outcome": "not_reached",
+      "reason": "no_callback",
+      "farewell": "Thank you, we will try again another time. Goodbye."
+    },
+    "wrong_number": {
+      "outcome": "not_reached",
+      "reason": "wrong_number",
+      "farewell": "Thank you, and sorry for the trouble. Goodbye."
+    },
+    "deceased": {
+      "outcome": "not_reached",
+      "reason": "deceased",
+      "farewell": "Thank you. Goodbye."
+    },
+    "failed": {
+      "outcome": "not_verified",
+      "reason": "failed",
+      "farewell": "I am sorry, I could not verify your identity. Please use the Freya Bank mobile app or visit a branch. Thank you, goodbye."
+    },
+    "declined": {
+      "outcome": "not_verified",
+      "reason": "declined",
+      "farewell": "I understand. Thank you for your time. Goodbye."
+    },
+    "human": {
+      "outcome": "transferred",
+      "reason": "human",
+      "farewell": "Thank you, I am transferring you now. Goodbye."
+    }
+  }
+}

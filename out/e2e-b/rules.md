@@ -1,0 +1,20 @@
+# Rules (Brief A + Brief B; B wins where it replaces A). No dated conflicting documents: B amends A.
+- A1 opening: digital assistant from Freya Bank, "we are recording this call"; no collections/debt/payment/product before verify -> front opening_line, forbidden_before_verify
+- A2-3 confirm question, only yes/that's me/speaking/own name; ask twice then not_reached/unclear -> front confirm_words, closes.unclear
+- A4 robot/AI -> front agent_identity; A43 scam -> front scam_answer
+- A5-10 third party: say nothing, callback today/next business day 10:00-19:00 after now, one re-ask, no_callback, wrong_number, deceased "I am sorry for your loss." -> front third_party, closes
+- A11-15 identity: DOB YYYY-MM-DD (day/month/year), phone_last4, 3 wrong total -> failed (app/branch), hint day_month_swapped -> ask month as word, decline explain once then declined -> front identity
+- A16-17 get_account, debt statement per product (B2: every product, one sentence each) -> dates lines.state + joined debt_statement
+- A18-23 dates: bands early 1-7 (12th biz day, 1 attempt) / late 8-45 (7th biz day, 2 attempts), holidays, weekend->next biz day, vague->ask once then deadline, next <weekday>=following week, after deadline->offer deadline -> dates.json bands, multi next_weekday, ladder rules
+- A24-27 amounts: full first, floor min_payment/instalment_amount, too much->floor once, below floor->offer floor -> ladder
+- A28-31 ladder state machine: today? (B4: once for all) -> per product attempt1 (full or floor, end of week / next week if today is last) -> refusal: late band attempt2 floor on deadline, else refused; too_much -> floor_b -> refusal -> attempt2 if late else refused
+- A32 hardship: sympathy, offer support transfer; yes transferred/support, no no_promise/hardship -> multi situations/closes
+- A33 no discounts -> prompt rules
+- A34-38 read back, "Do you confirm?", record after yes, retry once, service_error, "You will receive a text message confirming this promise." -> multi readback/closes.promise
+- A39-42 paid, dispute, restructuring transfer, human ask first then general -> multi situations (B9: per product, continue)
+- A45 two no-talks -> refused / declined before verify
+- A46-47 one close_call, thanks + goodbye in farewell -> closes
+- B3,5 per-product band/deadline/attempts -> multi ladder per slot; B6 one date clamped per product, said in read-back -> readback.adjusted
+- B7 one read-back, one confirm, create_promise per product; B8 add_note per unpromised product reasons; B10 no notes on any transfer; B11 failed create -> service_error note
+- B closing: promise wins; all paid -> paid; else no_promise with first non-paid note reason -> multi computed final_outcome
+- Order: get_account order (no order_by).
