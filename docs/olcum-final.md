@@ -40,14 +40,27 @@ Kök nedenler (konuşmalar okundu):
 8. **Sayı değişkeni temizlenmiyordu:** platform float değişkene yazılan `''`yi yok sayıyor; kartın 220'si krediye taşındı (B talkative PUB-11). Sayılar 0 ile temizleniyor (`multi.py`).
 9. Simüle müşteri kaynaklı (bizim değil): A talkative PUB-09 cümleler yarıda, anlamsız karakter, telefon hanesi hiç verilmiyor.
 
+### Tur 2 (05:00-06:55 TSİ, kit `0-clearing` sonrası), her biri 3 tekrar; arka plan 2 saat sınırında A talkative'de kesildi
+
+| | normal | pieces | corrects | talkative | asks_back | in_words |
+|---|---|---|---|---|---|---|
+| A | 10/10 | 9/10 | 8/10 | (kesildi) | - | - |
+| B | **3/3** | 2/3 | 2/3 | 0/3 | 2/3 | **3/3** |
+
+Yeni kök nedenler (düzeltildi, `kit: digits joined...`):
+10. Parçalı telefon hanesi ters birleştirildi: "forty-four" + "zero one" bankaya 0144 gitti, doğru cevap yanlış sayıldı (B pieces PUB-12).
+11. "the 15th, sorry, I mean the 16th" ilk tarihi aldı (A corrects PUB-06): düzeltmeden sonraki tarih kazanır.
+12. "the thirtieth" yalnız ürün alanına düştü, ikinci belirsiz cevap sayıldı (B pieces PUB-13): ürün alanındaki tarih de bütün cevap için geçerli.
+13. Okumada sorulan "Are you a robot?" cevapsız (A corrects PUB-04): okuma ve düzeltme adımları da soruyu algılıyor.
+14. Konuşkan müşteride adımın tur sınırı doldu (B talkative PUB-13): merdiven 12→18, ilk adım 10→16.
+Kalan, bizim olmayan: kimlik adımında simüle müşterinin hiç cevap vermediği talkative aramaları (B PUB-11), hakemin kimlik sorusu sayımı (asks_back: "geri soru"dan sonra aynı soruyu tekrar sormak "yeniden sormak" sayılıyor).
+
 ## Geri alınanlar
 
 (yok)
 
 ## Sıradaki adım
 
-Madde 1 için "ajan" = builder'ın güncel kitle kurduğu ajanlar (`e2e-a`, `e2e-b`, `e2e-r`): yarın da builder kuracak, elle yapılmış referanslar değil.
-Tek vaka kontrolü (`m2.sh`): A pieces PUB-07 3/3, A pieces PUB-06 3/3 (düzeltmeler tuttu); B talkative PUB-11 0/3 (madde 8'i buldurdu); B in_words PUB-12 simülasyon 502 ile açılmadı.
-
-1. Koşuyor (`m3.sh`, kit `cc` sonrası, ajanlar e2e-a v4, e2e-b v3, e2e-r v2): önce 3 tek vaka kontrolü, sonra tur 2: B ve A normal + 5 stil, R; her biri 3 tekrar. Sonuçlar `results/m3-*.log`, R için `results/m3-r-rescored.log`.
-4. R2 yapısal: `e2e-r2` 12/12 tarih ve kapanış kodları; `test_brief_r2` yeşil.
+1. Koşuyor (`m4.sh`, ajanlar yeni kitle yeniden üretildi): tek vaka kontrolleri (B pieces PUB-12/13, A corrects PUB-04/06), A talkative/asks_back/in_words, R (+ `rescore_close.py`). `results/m4-*.log`.
+2. Sonra tur 3 tam: B normal + 5 stil, A normal + pieces + corrects (2 saatlik sınır yüzünden ayrı iş).
+3. R2 yapısal: `e2e-r2` 12/12, `test_brief_r2` yeşil.
