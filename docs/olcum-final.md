@@ -21,7 +21,10 @@ Madde 2 (builder'ı sıfırdan 3'er kez) başlamadı: madde 1 her yerde 3/3 olma
 
 Açık işler (akşam için):
 - Builder'ın Claude hesabı: prova trace'inde `out_of_credits` uyarısı.
+  İncelendi (15:20): uyarı 00:10'daki `e2e-r` trace'inde de var ve o günden beri bütün kurulumlar bitti. Anlamı: `status: allowed` (plan içi kullanım açık), yalnız plan üstü ek kullanım (overage) kapalı. Engel değil; plan sınırı dolarsa ek kredi yok, akşam yine preflight ve tek kurulumla doğrulanmalı.
 - Yeni alan adlı API'de builder 20 dk sürdü (ajan 15 dk): 30 dk sınırına pay az. Platform yavaşsa kapanış 5-7 dk.
+  Trace incelendi (15:15): ajanın kendi işi (okuma, dosyalar, gen.py, lint) yalnız 80 sn. Kalan süre platformda: ilk deploy 440 sn (504), ikinci 378 sn, kapanış 293 sn. Builder'da kısaltılacak bir şey yok; platform sağlamken kurulum 2-5 dk.
+  Deploy'da POST 504 alınca platform workflow'u yine açmış olabiliyor: alt-r2'de sahipsiz bir kopya kaldı (424a5667). Durum dosyası doğrusunu (e19f88bb) gösteriyor, çalışma alanında 21/200 workflow var: zararsız.
 - `front: example line` (geri soruda kimlik sorusunu tekrarlamama örneği) ölçülmedi.
 - Talkative ve kesik düzeltmeler simüle müşteriden; gizli setteki müşteriler daha düzgün konuşursa bu hücreler yükselir.
 
