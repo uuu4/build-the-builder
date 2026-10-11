@@ -162,6 +162,11 @@ Gerçek görünen kalanlar: A corrects PUB-06 (simüle müşterinin "Thursday, s
 **Platform:** `freya.api` 5xx/zaman aşımı tekrarı; başlatma 504'ünde açılmış simülasyonu bulup izler, durum sorgusu hatasında çökmez (`961ed1a`).
 **Claude kredisi:** prova trace'inde `overage_status: rejected, out_of_credits` (kullanım hâlâ "allowed"). Akşam builder'ın Claude hesabı kontrol edilmeli.
 
+### Tur 8 (15:12 TSİ-): `front: example line` ölçümü, B asks_back (`e2e-b`), 3 tekrar
+
+- 1. tekrar geçersiz: üç arama da bankaya ulaştı (araç çağrıları defterde) ama Freya hiçbir mesajı kaydetmedi, üç koşu `error` "No call created within 300s". Hakem değerlendiremedi. `run_cases.py` artık bütün koşular `error` dönerse de kesinti sayıp tekrarlıyor (`run_cases: a run where every call...`).
+- 2. tekrar yavaş (medyan tur 13 sn, extraction 10-25 sn), kural gereği atıldı. İçinde bir platform yan etkisi görüldü: platform izleyemediği aramanın yerine aynı müşteriye ikinci bir arama açmış (PUB-13 defteri: verify > verify > get_account > verify > verify > close_call; kayıttaki konuşmada get_account yok). Banka, tamamen doğrulanmış müşteriye gelen sonraki verify cevaplarında `all_verified` alanını döndürmüyor (pratik bankada denendi), ikinci aramadaki ajan kimlikte takıldı ve not_verified ile kapattı. Gerçek değerlendirmede her vaka yeni oturum: kitte değişiklik yok.
+
 ## Geri alınanlar
 
 - `kit: date/amount extraction thresholds...` içindeki çıkarım açıklaması kuralı ("yarıda kalan düzeltmede boş bırak"): ölçüm kötüleşti, `kit: take the cut-off rule out...` ile kısmen geri alındı (madde 23).
