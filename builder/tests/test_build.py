@@ -99,8 +99,33 @@ class Flow(unittest.TestCase):
         self.deployed.append(wf)
         return {"workflow_id": "w", "agent_id": "a", "version": 1}
 
-    def run_main(self, agent):
-        argv = ["build.py", "briefs/brief-a.md", API, "--slot", self.slot, "--minutes", "30"]
+    def test_a_case_folder_and_a_mock_url(self):        # the final's form: build.py {case_folder} {mock_url}
+        import docx, openpyxl
+        case = self.tmp / "Case"; case.mkdir()
+        (case / "README.md").write_text("what each file is")
+        (case / "BRIEF.md").write_text("read me first")
+        d = docx.Document(); d.add_paragraph("contract text"); d.save(case / "contract.docx")
+        wb = openpyxl.Workbook(); wb.active.append(["id", "name"]); wb.active.append(["c1", "Ann"]); wb.save(case / "customers.xlsx")
+        (case / "flow.png").write_bytes(b"\x89PNG")
+
+        async def agent(briefs, tool_api, slot, deadline, trace, again=False):
+            self.calls.append((briefs, tool_api, os.environ.get("CASE_EXTRA")))
+            self.out.mkdir(parents=True, exist_ok=True)
+            (self.out / "workflow.json").write_text(json.dumps({"nodes": {}, "initial_node": "x"}))
+        self.run_main(agent, [str(case), "https://m.example.workers.dev/"])
+        briefs, tool_api, extra = self.calls[0]
+        self.assertEqual([pathlib.Path(b).name for b in briefs[:2]], ["BRIEF.md.txt", "README.md.txt"])
+        text = "".join(pathlib.Path(b).read_text(encoding="utf-8") for b in briefs)
+        self.assertIn("contract text", text); self.assertIn("c1\tAnn", text)
+        self.assertTrue(tool_api.endswith("tools.openapi.json"))          # none in the case: the agent writes it
+        extra = json.loads(extra)
+        self.assertEqual(extra["mock_url"], "https://m.example.workers.dev")
+        self.assertTrue(extra["other_files"][0].endswith("flow.png"))
+        with mock.patch.dict(os.environ, {"CASE_EXTRA": json.dumps(extra)}):
+            self.assertIn("https://m.example.workers.dev", build.case_note())
+
+    def run_main(self, agent, inputs=None):
+        argv = ["build.py"] + (inputs or ["briefs/brief-a.md", API]) + ["--slot", self.slot, "--minutes", "30"]
         # main() sets TRACE_PATH, TOOL_API in os.environ; restored here so later tests do not write into this trace
         with mock.patch.dict(os.environ), mock.patch.object(sys, "argv", argv), mock.patch.object(build, "run_agent", agent), \
                 mock.patch("builder.kit.deploy.deploy", self.fake_deploy), mock.patch.object(build, "smoke", lambda *a: None):

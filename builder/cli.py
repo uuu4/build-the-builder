@@ -4,6 +4,7 @@
     python3 -m builder.cli lint <workflow.json>           local checks, exit 1 on a problem
     python3 -m builder.cli deploy <slot> <workflow.json>  lint + dry run + save + publish, writes out/<slot>/deployed.json
     python3 -m builder.cli test <slot> [--brief A] [--only ID,..] [--style S] [--reps N]   practice customers, refuses near the deadline
+    python3 -m builder.cli chat <slot> <lines.json>       replay a customer's lines over chat (a case with no practice customers)
     python3 -m builder.cli event <kind> <message>         a line in the build trace
 """
 import json, os, pathlib, subprocess, sys, time
@@ -98,6 +99,36 @@ def cmd_test(slot, args):
     return r.returncode if r is not None else 1
 
 
+def cmd_chat(slot, path):
+    """Replay a customer's lines against the deployed workflow, one chat turn each (no simulation, no queue). The file is JSON:
+    {"variables": {...}, "lines": ["...", ...]}; variables default to the workflow's test_variables. Prints both sides."""
+    sys.path.insert(0, str(ROOT))
+    import freya
+    d = json.load(open(ROOT / "out" / slot / "deployed.json"))
+    spec = json.load(open(path))
+    wf = ROOT / "out" / slot / "workflow.json"
+    v = spec.get("variables") or (json.load(open(wf)).get("test_variables") if wf.exists() else {}) or {}
+    call, said = None, []
+    try:
+        for line in spec["lines"]:
+            body = {"workflowId": d["workflow_id"], "message": line, "customerVariables": v}
+            if call:
+                body["callId"] = call
+            r = freya.api("POST", "/api/v2/chat/message", body); r = r.get("result", r); call = call or r.get("callId")
+            said.append(r.get("response") or "")
+            print(f"CUSTOMER: {line}\nAGENT:    {said[-1]}\n")
+    except Exception as e:
+        print("chat failed:", e)
+    finally:
+        if call:
+            try:
+                freya.api("POST", "/api/v2/chat/end", {"callId": call})
+            except Exception:
+                pass
+    event("test", test=f"chat replay {pathlib.Path(path).name}", turns=len(said), agent_said=[s[:120] for s in said][:6], call_id=call)
+    return 0 if said and all(said) else 1
+
+
 def main(argv):
     if not argv or argv[0] in ("-h", "--help"):
         print(__doc__); return 0
@@ -110,6 +141,8 @@ def main(argv):
         return cmd_deploy(rest[0], rest[1])
     if c == "test":
         return cmd_test(rest[0], rest[1:])
+    if c == "chat":
+        return cmd_chat(rest[0], rest[1])
     if c == "event":
         event(rest[0], msg=" ".join(rest[1:])); return 0
     print("unknown command " + c); return 2

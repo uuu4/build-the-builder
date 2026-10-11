@@ -39,16 +39,84 @@ def split_inputs(paths, tools_flag):
     return briefs, tools
 
 
+TEXT_TYPES = {".md", ".txt", ".json", ".yaml", ".yml", ".csv", ".tsv", ".html", ".xml"}
+
+
+def to_text(path):
+    """The text of one document (Markdown, Word, PDF, Excel, plain). None for a type it cannot read (an image: the agent views it)."""
+    p, ext = pathlib.Path(path), pathlib.Path(path).suffix.lower()
+    if ext in TEXT_TYPES:
+        return p.read_text(encoding="utf-8", errors="replace")
+    if ext == ".docx":
+        import docx
+        d = docx.Document(str(p))
+        out = [x.text for x in d.paragraphs]
+        for t in d.tables:
+            out += [" | ".join(c.text.strip() for c in row.cells) for row in t.rows]
+        return "\n".join(out)
+    if ext in (".xlsx", ".xlsm"):
+        import openpyxl
+        wb = openpyxl.load_workbook(str(p), data_only=True, read_only=True)
+        out = []
+        for ws in wb.worksheets:
+            out.append(f"## sheet {ws.title}")
+            out += ["\t".join("" if c is None else str(c) for c in row) for row in ws.iter_rows(values_only=True)]
+        return "\n".join(out)
+    if ext == ".pdf":
+        import pypdf
+        return "\n\n".join((pg.extract_text() or "") for pg in pypdf.PdfReader(str(p)).pages)
+    return None
+
+
+def case_inputs(folder, slot):
+    """A case folder (the final's zip): every document as text under out/<slot>/case/, BRIEF and README first. Returns the text
+    files (the briefs), the files left as they are (images), and an OpenAPI file if the folder has one."""
+    folder, dest = pathlib.Path(folder), ROOT / "out" / slot / "case"
+    dest.mkdir(parents=True, exist_ok=True)
+    texts, others, api = [], [], None
+    files = sorted((f for f in folder.rglob("*") if f.is_file()), key=lambda f: (f.stem.upper() not in ("BRIEF", "README"), f.stem.upper() != "BRIEF", str(f)))
+    for f in files:
+        if is_openapi(f):
+            api = str(f)
+        try:
+            t = to_text(f)
+        except Exception as e:
+            t = f"(could not read {f.name}: {e!r}; open the original: {f})"
+        if t is None:
+            others.append(str(f)); continue
+        out = dest / (str(f.relative_to(folder)).replace(os.sep, "__").replace("/", "__") + ".txt")
+        out.write_text(f"# {f.relative_to(folder)}  (original: {f})\n\n{t}", encoding="utf-8")
+        texts.append(str(out))
+    return texts, others, api
+
+
 def log(trace, entry_type, **data):
     with open(trace, "a") as f:
         f.write(json.dumps({"t": time.strftime("%Y-%m-%dT%H:%M:%S"), "type": entry_type, **data}, default=str) + "\n")
+
+
+def case_note():
+    """What the prompt adds for a case folder (the final's form): the converted documents, files left as they are, the mock."""
+    x = json.loads(os.environ.get("CASE_EXTRA") or "{}")
+    if not x.get("case_folders"):
+        return ""
+    note = (f"This is a case folder ({', '.join(x['case_folders'])}): every document was converted to text and is listed above "
+            "as the brief files (BRIEF and README first). Read all of them; open an original only when its text looks broken. ")
+    if x.get("other_files"):
+        note += f"Files left as they are (view them with Read, a flow drawing is one): {', '.join(x['other_files'])}. "
+    if x.get("mock_url"):
+        note += f"The bank's services for this case run at {x['mock_url']}: every tool the phone agent calls goes to that base URL. "
+    if not x.get("tool_api_exists"):
+        note += ("There is no OpenAPI file: write the tool API file named above from the service contract first (OpenAPI 3, "
+                 "servers url = the mock URL, one path per service, request and response fields and enums exactly as the contract says). ")
+    return note + "Follow the skill's section 'A case that is not the kit's shape'.\n"
 
 
 def prompt_for(briefs, tool_api, slot, deadline, again=False):
     return (("A first build attempt stopped early. Files it left in out/" + slot + "/ may be used if they are complete; "
              "check them before you rely on them.\n") if again else "") + (f"Use the collections-builder skill to build the phone agent.\n"
             f"Brief files, in order (a later file can change an earlier one): {', '.join(briefs)}\n"
-            f"Tool API file: {tool_api}\nSlot: {slot}  (write everything to out/{slot}/)\n"
+            f"Tool API file: {tool_api}\nSlot: {slot}  (write everything to out/{slot}/)\n" + case_note() +
             f"Hard deadline: {time.strftime('%H:%M:%S', time.localtime(deadline))} local time "
             f"({(deadline - time.time()) / 60:.0f} minutes from now). Have a deployed workflow well before it.")
 
@@ -99,7 +167,8 @@ def close(slot, trace):
         print("no workflow from the agent: submitting the fallback base agent")
     else:
         log(trace, "event", kind="close_failed", msg="no workflow.json"); print("no workflow to submit"); return None
-    errs = lint(wf, Api(os.environ.get("TOOL_API", str(ROOT / "tools/openapi.json"))))
+    api_path = os.environ.get("TOOL_API", str(ROOT / "tools/openapi.json"))
+    errs = lint(wf, Api(api_path) if pathlib.Path(api_path).exists() else None)
     if errs:
         log(trace, "event", kind="close_lint", problems=errs[:30]); print("lint problems at close:\n" + "\n".join(errs))
     sub = ROOT / "submission" / f"{slot}.workflow.json"
@@ -201,15 +270,32 @@ def main():
     ap.add_argument("briefs", nargs="+")
     ap.add_argument("--tools")
     ap.add_argument("--slot")
-    ap.add_argument("--minutes", type=float, default=30)
+    ap.add_argument("--minutes", type=float, default=None)
     a = ap.parse_args()
+    # the final's form: python3 builder/build.py {case_folder} {mock_url}
+    urls = [p for p in a.briefs if p.startswith(("http://", "https://"))]
+    folders = [p for p in a.briefs if p not in urls and pathlib.Path(p).is_dir()]
+    a.briefs = [p for p in a.briefs if p not in urls and p not in folders]
+    mock_url = urls[-1].rstrip("/") if urls else ""
+    if mock_url:
+        os.environ["MOCK_URL"] = mock_url
+    case_slot = a.slot or ("ours-" + pathlib.Path(folders[-1]).resolve().name if folders else None)
+    others = []
+    for f in folders:
+        texts, imgs, api = case_inputs(f, case_slot)
+        a.briefs += texts; others += imgs
+        a.tools = a.tools or api
+    if folders and not a.tools:      # no OpenAPI file in the case: the agent writes one from the service contract
+        a.tools = str(ROOT / "out" / case_slot / "tools.openapi.json")
     a.briefs, a.tools = split_inputs(a.briefs, a.tools)
     if not a.briefs:
         ap.error("no brief file (every positional file is an OpenAPI file)")
     t0 = time.time()
-    deadline = t0 + a.minutes * 60
-    slot = a.slot or "ours-" + pathlib.Path(a.briefs[-1]).stem      # never the slot of another builder
+    deadline = t0 + (a.minutes or (60 if folders else 30)) * 60
+    slot = case_slot or a.slot or "ours-" + pathlib.Path(a.briefs[-1]).stem      # never the slot of another builder
     os.environ["TOOL_API"] = str(pathlib.Path(a.tools).resolve())
+    os.environ["CASE_EXTRA"] = json.dumps({"case_folders": [str(pathlib.Path(f).resolve()) for f in folders], "other_files": others, "mock_url": mock_url,
+                                           "tool_api_exists": pathlib.Path(a.tools).exists()})
     (ROOT / "traces").mkdir(exist_ok=True)
     trace = ROOT / "traces" / f"{slot}-{time.strftime('%Y%m%d-%H%M%S')}.jsonl"
     os.environ["TRACE_PATH"] = str(trace)

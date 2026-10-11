@@ -185,14 +185,15 @@ def main(argv):
     tests()
     secrets()
     head = git_state()
-    form = {"team": "<team name>", "repo": sh("git", "remote", "get-url", "origin").stdout.strip().removesuffix(".git"), "commit": head,
-            "run_command": "python3 builder/build.py {brief_path} {tool_api_path}", "workflows": {}, "traces": {}}
+    # the page's submission.json (changed 11 October, evening): one phone agent, its trace and the mock's address
+    form = {"team": "<team name>", "members": [{"name": "<name>", "email": "<email>"}, {"name": "<name>", "email": "<email>"}],
+            "repo": sh("git", "remote", "get-url", "origin").stdout.strip().removesuffix(".git"), "commit": head,
+            "run_command": "python3 builder/build.py {case_folder} {mock_url}", "workflow": None, "trace": None,
+            "mock_url": os.environ.get("MOCK_URL", "<mock url>")}
     for name, slot in pairs:
         r = submission(name, slot)
-        if "workflow" in r:
-            form["workflows"][name] = r["workflow"]
-        if "trace" in r:
-            form["traces"][name] = r["trace"]
+        form["workflow"] = r.get("workflow", form["workflow"])
+        form["trace"] = r.get("trace", form["trace"])
     for n in notes:
         print("  note " + n)
     if pairs:

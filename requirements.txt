@@ -1,1 +1,4 @@
 claude-agent-sdk
+python-docx
+openpyxl
+pypdf
