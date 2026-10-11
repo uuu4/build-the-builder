@@ -1,88 +1,90 @@
 // Freya Bank's statement services for the final case, on Cloudflare Workers.
-// Table-driven: every answer, HTTP status and delay comes from test-customers.json (the bank's test environment).
-// Paths and request field names come from the bank's IVR integration document (section 6): SERVICES and FIELDS below.
+// Paths, request envelope and error bodies: the bank's service contract (2026-10-01), sections 1-6.
+// Every answer, HTTP status and delay for the test customers: test-customers.json, served exactly.
 import DATA from "./test-customers.json";
 
-// ---- from the integration document ------------------------------------------------------------------------
-const SERVICES = {                       // service name -> path (method: POST with a JSON body; GET query also read)
-  "cards.list": "/cards.list",
-  "cards.balance": "/cards.balance",
-  "statement.week.get": "/statement.week.get",
-  "statement.week.decide": "/statement.week.decide",
-  "statement.week.change": "/statement.week.change",
-  "contact.email.get": "/contact.email.get",
-  "statement.pdf.send": "/statement.pdf.send",
-};
-const FIELDS = {                         // request field names
-  customer: ["customerNo", "customerNumber"],
-  card: ["cardNumber"],
-  week: ["newStatementWeek"],
-};
-// What the bank answers when it has no record (unknown customer or card). Shape of the test data's error answers.
-function notFound(what) {
-  return { http: 404, response: { data: null, result: { returnCode: "0", messageText: what + " not found", code: "0", message: what + " not found", type: "E", details: null } } };
-}
-// ----------------------------------------------------------------------------------------------------------
-
+const BASE = "/voice/v1/";
 const CUSTOMERS = DATA.customers;
-const BY_PATH = Object.fromEntries(Object.entries(SERVICES).map(([name, path]) => [path, name]));
 
-function pick(body, names) {
-  for (const n of names) if (body[n] !== undefined && body[n] !== null && body[n] !== "") return String(body[n]);
-  return null;
+// how each service finds its answer (test-customers.md) and what it answers when there is no record (contract section 4 and 6)
+const SERVICES = {
+  "cards.list":            { by: ["customer"],         required: ["customerNo"],              missing: [404, "FB_IVR_CHANNEL_102", "WARNING", "Müşteriye ait geçerli kart bilgisi bulunamadı."] },
+  "cards.balance":         { by: ["card"],             required: ["cardNumber"],              missing: [404, "FB_IVR_CHANNEL_120", "WARNING", "Kart bakiye servisi hatası: kart bulunamadı"] },
+  "statement.week.get":    { by: ["card"],             required: ["cardNumber"],              missing: [404, "FB_IVR_CHANNEL_121", "WARNING", "Ekstre haftası servisi hatası: kart bulunamadı"] },
+  "statement.week.decide": { by: ["card", "week"],     required: ["cardNumber", "newStatementWeek", "statementDay"], missing: [400, "INVALID_ARGUMENTS_ERROR", "ERROR", "no statement preview for this card and week"] },
+  "statement.week.change": { by: ["card", "week"],     required: ["cardNumber", "newStatementWeek", "statementDay"], missing: [400, "INVALID_ARGUMENTS_ERROR", "ERROR", "no statement change for this card and week"] },
+  "contact.email.get":     { by: ["customer"],         required: ["customerNo", "intAddressInfoType"], missing: [400, "INVALID_ARGUMENTS_ERROR", "ERROR", "customer not found"] },
+  "statement.pdf.send":    { by: ["customer"],         required: ["customerNo", "cardNumber", "currencyType", "statementDate", "emailAddress"], missing: [404, "FB_IVR_CHANNEL_107", "WARNING", "Pdf dokümanı bulunamadı"] },
+};
+
+const CORS = { "Access-Control-Allow-Origin": "*" };
+let SEQ = 0;
+
+function guid() {
+  return (Date.now().toString(16) + (++SEQ).toString(16).padStart(6, "0")).padStart(32, "0").slice(-32);
 }
 
-function last4(s) {
-  return String(s || "").replace(/\D/g, "").slice(-4);
+function errorBody(code, type, message) {
+  const g = guid();
+  return { result: { guid: g, returnCode: code, messageText: message, code, message, type, details: { guid: g, rootCause: type === "ERROR" ? "TechnicalError" : "NotFoundException", errorOrigin: "ivr-gateway-test:ivr-channel-v0" } } };
 }
 
-// The entry under a card key: exact masked number first, then the one key with the same last four digits.
-function byCard(table, card) {
-  if (!table || card === null) return null;
-  if (table[card]) return table[card];
-  const same = Object.keys(table).filter((k) => last4(k) && last4(k) === last4(card));
-  return same.length === 1 ? table[same[0]] : null;
+function json(body, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", ...CORS } });
 }
 
-function answer(name, body) {
-  const custNo = pick(body, FIELDS.customer);
-  const c = CUSTOMERS.find((x) => String(x.customerNo) === custNo);
-  if (!c) return notFound("customer");
+const empty = (v) => v === undefined || v === null || String(v).trim() === "";
+// the panel's "Test API Request" sends variables unfilled, e.g. "{{customerNumber}}"
+const isTemplate = (v) => typeof v === "string" && (v.includes("{{") || v.includes("%7B%7B"));
+
+function customerOf(data, cardNumber) {
+  if (!empty(data.customerNo)) return CUSTOMERS.find((c) => String(c.customerNo) === String(data.customerNo).trim()) || null;
+  // services called with a card only: the customer whose card list holds that card
+  return CUSTOMERS.find((c) => ["cards.balance", "statement.week.get", "statement.week.decide", "statement.week.change"]
+    .some((s) => c.services[s] && c.services[s][cardNumber])) || null;
+}
+
+function answer(name, data) {
+  const svc = SERVICES[name];
+  for (const f of svc.required) {
+    if (empty(data[f])) return { http: 400, response: errorBody("INVALID_ARGUMENTS_ERROR", "ERROR", f + " cannot be empty") };
+  }
+  const miss = { http: svc.missing[0], response: errorBody(svc.missing[1], svc.missing[2], svc.missing[3]) };
+  const card = empty(data.cardNumber) ? null : String(data.cardNumber).trim();
+  const c = customerOf(data, card);
+  if (!c) return miss;
   let e = c.services[name];
-  if (!e) return notFound("service record");
-  if (e.http === undefined) {                       // keyed by card
-    e = byCard(e, pick(body, FIELDS.card));
-    if (!e) return notFound("card");
-  }
-  if (e.http === undefined) {                       // keyed by the requested week
-    const w = pick(body, FIELDS.week);
-    e = w !== null ? e[String(Number(w))] || e[w] : null;
-    if (!e) return notFound("week");
-  }
+  if (!e) return miss;
+  if (svc.by.includes("card") && e.http === undefined) e = e[card];
+  if (!e) return miss;
+  if (svc.by.includes("week") && e.http === undefined) e = e[String(Number(data.newStatementWeek))];
+  if (!e || e.http === undefined) return miss;
   return e;
-}
-
-function reply(e) {
-  return new Response(JSON.stringify(e.response ?? e.yanit ?? null), { status: e.http, headers: { "content-type": "application/json; charset=utf-8" } });
 }
 
 export default {
   async fetch(request) {
     const url = new URL(request.url);
-    const path = url.pathname.replace(/\/+$/, "") || "/";
-    if (path === "/" || path === "/health") {
-      return Response.json({ ok: true, service: "Freya Bank statement services (mock)", services: SERVICES, customers: CUSTOMERS.length });
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: { ...CORS, "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "*" } });
     }
-    const name = BY_PATH[path];
-    let body = Object.fromEntries(url.searchParams);
-    if (request.method !== "GET") {
-      try { body = { ...body, ...(await request.json()) }; } catch { /* no JSON body */ }
+    if (url.pathname === "/" || url.pathname === "/health") {
+      return json({ ok: true, service: "Freya Bank statement services (mock)", base: BASE, services: Object.keys(SERVICES), customers: CUSTOMERS.length });
     }
-    console.log(JSON.stringify({ path, name, body }));
-    if (!name) return Response.json({ error: "unknown path " + path }, { status: 404 });
-    const e = answer(name, body);
-    const wait = Number(e.gecikmeSaniye ?? e.delaySeconds ?? 0);
+    const name = url.pathname.startsWith(BASE) ? url.pathname.slice(BASE.length).replace(/\/+$/, "") : null;
+    if (!name || !SERVICES[name]) return json(errorBody("NOT_FOUND", "ERROR", "unknown service " + url.pathname), 404);
+    if (request.method !== "POST") return json(errorBody("INVALID_ARGUMENTS_ERROR", "ERROR", "use POST"), 400);
+    let body = {};
+    try { body = await request.json(); } catch { body = {}; }
+    let data = (body && typeof body.data === "object" && body.data) ? body.data : {};
+    if (Object.values(data).some(isTemplate)) {                 // panel test: answer for the first test customer and card
+      const c = CUSTOMERS[0], cn = c.services["cards.list"].response.data.cards[0].cardNumber;
+      data = { customerNo: c.customerNo, cardNumber: cn, newStatementWeek: 2, intAddressInfoType: "E", ...Object.fromEntries(Object.entries(data).filter(([, v]) => !isTemplate(v))) };
+    }
+    console.log(JSON.stringify({ service: name, data }));
+    const e = answer(name, data);
+    const wait = Number(e.delaySeconds ?? e.gecikmeSaniye ?? 0);
     if (wait > 0) await new Promise((r) => setTimeout(r, wait * 1000));
-    return reply(e);
+    return json(e.response ?? e.yanit ?? null, e.http);
   },
 };
