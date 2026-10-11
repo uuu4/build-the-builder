@@ -277,3 +277,27 @@ class Flow(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
+class CloseReasons(unittest.TestCase):
+    """A brief whose close codes are not the note values (R2: notes say refused, close_call says declined)."""
+
+    def build(self, close_reasons=None):
+        import json
+        from builder.kit.openapi import Api
+        spec = json.load(open(ROOT / "examples/multi-brief-b/multi.json"))
+        if close_reasons:
+            spec["close_reasons"] = close_reasons
+        return multi.build(Api(ROOT / "tools/openapi.json"), spec)
+
+    def final_reason(self, nodes):
+        src = nodes["final"]["pre_actions"][0]["function"]["parameters"]["properties"]["code"]["default"]
+        v = run_locally(src, {"product_count": "2", "st_1": "noted", "reason_1": "refused", "st_2": "noted", "reason_2": "dispute"})
+        return v["final_reason"]
+
+    def test_close_code_from_the_brief_and_note_values_unchanged(self):
+        self.assertEqual(self.final_reason(self.build()), "refused")
+        nodes = self.build({"refused": "declined", "dispute": "contested"})
+        self.assertEqual(self.final_reason(nodes), "declined")
+        self.assertNotIn("declined", str(nodes["note_1"]))      # the note keeps the note tool's value

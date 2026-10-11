@@ -47,6 +47,8 @@ Spec (JSON, every value from the brief; the ladder template is a ladder.py spec 
   "hardship": {"say": "...", "task": "..."},          optional, defaults below
   "human": {"ask_first": "..."},
   "reasons": {"refused": "<note reason>", "hardship": "...", "dispute": "...", "paid": "...", "service_error": "..."},
+  "close_reasons": {"refused": "<close code>", ...},   optional: when the brief's close codes are not the note values, the close
+                         code for each logical reason; the notes keep "reasons" (values of the note tool's enum)
   "queues": {"new_plan": "<queue value>", "hardship": "...", "human": "..."},
   "closes": {"promise": {"outcome": "...", "farewell": "..."}, "paid": {"outcome": "...", "farewell": "..."},
              "other": {"outcome": "...", "farewell": "..."},    the reason comes from the notes (first one that is not "paid")
@@ -507,7 +509,8 @@ try:
     else:
         others = [r for r in reasons if r != R['paid']]
         vars['final_outcome'] = P['outcomes']['other']
-        vars['final_reason'] = others[0] if others else R['refused']
+        r0 = others[0] if others else R['refused']
+        vars['final_reason'] = P['close_reason_of'].get(r0, r0)      # the brief's close code when it differs from the note value
         vars[P['rv']] = 'other'
 except Exception:
     vars[P['rv']] = 'error'
@@ -532,6 +535,9 @@ def build(api, spec, ladder_tpl=None):
     F = {"product": "product_id", "amount": "amount", "date": "date", "reason": "reason", "queue": "queue", **(spec.get("fields") or {})}
     closes = spec["closes"]
     reasons = dict(spec["reasons"])      # logical reason -> the value the bank's note tool takes
+    # a brief whose close codes are not the note values (the note tool's enum says refused, the close table says declined):
+    # logical reason -> close code. The notes keep the note values; only close_call gets these.
+    close_reason_of = {reasons[k]: v for k, v in (spec.get("close_reasons") or {}).items() if k in reasons}
     outcomes = {"promise": closes["promise"]["outcome"], "paid": closes["paid"]["outcome"], "other": closes["other"]["outcome"]}
     queues = spec["queues"]              # logical situation -> queue value
     nodes = {}
@@ -705,7 +711,7 @@ def build(api, spec, ladder_tpl=None):
             f"note_{k}", api.pre_action(nt, {F["product"]: "{{s%d_pid}}" % k, F["reason"]: "{{reason_%d}}" % k}, retries=2), nxt)
     nodes["final"] = _code("final", _FINAL, "close_error",
                            _eqs("final_route", [("promise", "close_promise"), ("paid", "close_paid"), ("other", "close_other")]),
-                           reasons=reasons, outcomes=outcomes)
+                           reasons=reasons, outcomes=outcomes, close_reason_of=close_reason_of)
 
     # --- shared situations
     nodes["hardship_mark"] = _code("hardship_mark", _HARDSHIP_MARK, "close_error", _eqs("hs_route", [("ok", "finish")]), reasons=reasons)
