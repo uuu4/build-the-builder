@@ -1831,7 +1831,7 @@
   "m_today": {
    "name": "m_today",
    "node_type": "conversation",
-   "task_message": "The customer's identity is verified.\n\nFACTS (computed, trust them; never compute a date or an amount yourself):\n{{date_facts}}\n\nRULES FOR EVERY STEP:\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts: if allowed accept it; if a weekend or holiday not after the deadline, offer the next business day; if after the deadline of the product, say the latest date you can record is the deadline and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the deadline.\n- \"Next <weekday>\" means that weekday in the following calendar week; \"this <weekday>\" the one in the current week. Use the weekday words in the facts.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Never say anything was recorded or booked. The system records the promises after the read-back.\n- Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. Asked if you are a robot: you are Freya Bank's digital assistant. A question you cannot answer from the facts: say you do not have that information.\n- A date or amount the customer proposes is never a refusal: check it against the facts and answer it.\n- If the customer corrects a date or an amount, use the corrected value.\n- When the customer accepts an offer, repeat the amount and the date in one sentence. Do not call any tool.\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it.\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses.\n- If the customer starts to correct a date or an amount and does not finish ('Thursday, sorry'), ask which one they meant.\n- After a question or an unrelated remark, answer it in a few words. Do not repeat the offer with its amount or date, and do not ask again a question you already asked: at most add 'Would that work for you?'. If they ask 'You tell me' or 'How much?', say 'It is the amount I just mentioned. Would that work for you?' without the amount or the date.\n\nTHIS STEP:\nYou stated the late product and asked: Can you make this payment today? If yes, the system reads back and asks for confirmation. If they say no or give no answer, the system continues with the offers.",
+   "task_message": "The customer's identity is verified.\n\nFACTS (computed, trust them; never compute a date or an amount yourself):\n{{date_facts}}\n\nRULES FOR EVERY STEP:\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts: if allowed accept it; if a weekend or holiday not after the deadline, offer the next business day; if after the deadline of the product, say the latest date you can record is the deadline and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the deadline.\n- \"Next <weekday>\" means that weekday in the following calendar week; \"this <weekday>\" the one in the current week. Use the weekday words in the facts.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Never say anything was recorded or booked. The system records the promises after the read-back.\n- Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. Asked if you are a robot: you are Freya Bank's digital assistant. A question you cannot answer from the facts: say you do not have that information.\n- A question about who or what you are ('who is this?', 'am I talking to a person?', also when it is cut off, like 'Am I talking to'): answer it as the rule for 'are you a robot' says.\n- A date or amount the customer proposes is never a refusal: check it against the facts and answer it.\n- If the customer corrects a date or an amount, use the corrected value.\n- When the customer accepts an offer, repeat the amount and the date in one sentence. Do not call any tool.\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it.\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses.\n- If the customer starts to correct a date or an amount and does not finish ('Thursday, sorry'), ask which one they meant.\n- After a question or an unrelated remark, answer it in a few words. Do not repeat the offer with its amount or date, and do not ask again a question you already asked: at most add 'Would that work for you?'. If they ask 'You tell me' or 'How much?', say 'It is the amount I just mentioned. Would that work for you?' without the amount or the date.\n\nTHIS STEP:\nYou stated the late product and asked: Can you make this payment today? If yes, the system reads back and asks for confirmation. If they say no or give no answer, the system continues with the offers.",
    "transitions": [
     {
      "target_node": "all_yes",
@@ -2864,7 +2864,7 @@
   "p1_attempt1_full": {
    "name": "p1_attempt1_full",
    "node_type": "conversation",
-   "task_message": "The customer's identity is verified.\n\nFACTS (computed, trust them; never compute a date or an amount yourself):\n{{date_facts}}\n\nRULES FOR EVERY STEP:\n- You are on ONE product now: {{s1_label}} (past due {{s1_due}}, floor {{s1_floor}}, latest date you can record {{s1_deadline_text}}). Talk only about this product.\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts and against THIS product's latest date: if allowed accept it; if a weekend or holiday, offer the next business day; if after the latest date, say the latest date you can record is that date and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the latest date.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- If the customer gives one date for all their products, accept it for this product and carry on; the system applies each product's own latest date.\n- Do not read anything back and do not ask 'Do you confirm?'. The system does that for all products together. Never say anything was recorded.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Asked whether you are a robot or an AI: say \"I am Freya Bank's digital assistant.\" and continue. Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. A question you cannot answer from the facts: say you do not have that information.\n- A date or amount the customer proposes is never a refusal: check it against the facts and answer it.\n- If the customer corrects a date or an amount, use the corrected value.\n- When the customer accepts an offer, repeat the amount and the date in one sentence. Do not call any tool.\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it.\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses.\n- If the customer starts to correct a date or an amount and does not finish ('Thursday, sorry'), ask which one they meant.\n- After a question or an unrelated remark, answer it in a few words. Do not repeat the offer with its amount or date, and do not ask again a question you already asked: at most add 'Would that work for you?'. If they ask 'You tell me' or 'How much?', say 'It is the amount I just mentioned. Would that work for you?' without the amount or the date.\n\nTHIS STEP:\nAttempt 1 for {{s1_label}}: you offered the full amount {{s1_due}} on the date in your last message. Accept a date or amount the customer proposes (check it). If they say it is too much, the system offers the floor.",
+   "task_message": "The customer's identity is verified.\n\nFACTS (computed, trust them; never compute a date or an amount yourself):\n{{date_facts}}\n\nRULES FOR EVERY STEP:\n- You are on ONE product now: {{s1_label}} (past due {{s1_due}}, floor {{s1_floor}}, latest date you can record {{s1_deadline_text}}). Talk only about this product.\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts and against THIS product's latest date: if allowed accept it; if a weekend or holiday, offer the next business day; if after the latest date, say the latest date you can record is that date and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the latest date.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- If the customer gives one date for all their products, accept it for this product and carry on; the system applies each product's own latest date.\n- Do not read anything back and do not ask 'Do you confirm?'. The system does that for all products together. Never say anything was recorded.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Asked whether you are a robot or an AI: say \"I am Freya Bank's digital assistant.\" and continue. Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. A question you cannot answer from the facts: say you do not have that information.\n- A question about who or what you are ('who is this?', 'am I talking to a person?', also when it is cut off, like 'Am I talking to'): answer it as the rule for 'are you a robot' says.\n- A date or amount the customer proposes is never a refusal: check it against the facts and answer it.\n- If the customer corrects a date or an amount, use the corrected value.\n- When the customer accepts an offer, repeat the amount and the date in one sentence. Do not call any tool.\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it.\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses.\n- If the customer starts to correct a date or an amount and does not finish ('Thursday, sorry'), ask which one they meant.\n- After a question or an unrelated remark, answer it in a few words. Do not repeat the offer with its amount or date, and do not ask again a question you already asked: at most add 'Would that work for you?'. If they ask 'You tell me' or 'How much?', say 'It is the amount I just mentioned. Would that work for you?' without the amount or the date.\n\nTHIS STEP:\nAttempt 1 for {{s1_label}}: you offered the full amount {{s1_due}} on the date in your last message. Accept a date or amount the customer proposes (check it). If they say it is too much, the system offers the floor.",
    "transitions": [
     {
      "target_node": "save_1_attempt1_full",
@@ -3135,7 +3135,7 @@
   "p1_attempt1_floor": {
    "name": "p1_attempt1_floor",
    "node_type": "conversation",
-   "task_message": "The customer's identity is verified.\n\nFACTS (computed, trust them; never compute a date or an amount yourself):\n{{date_facts}}\n\nRULES FOR EVERY STEP:\n- You are on ONE product now: {{s1_label}} (past due {{s1_due}}, floor {{s1_floor}}, latest date you can record {{s1_deadline_text}}). Talk only about this product.\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts and against THIS product's latest date: if allowed accept it; if a weekend or holiday, offer the next business day; if after the latest date, say the latest date you can record is that date and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the latest date.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- If the customer gives one date for all their products, accept it for this product and carry on; the system applies each product's own latest date.\n- Do not read anything back and do not ask 'Do you confirm?'. The system does that for all products together. Never say anything was recorded.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Asked whether you are a robot or an AI: say \"I am Freya Bank's digital assistant.\" and continue. Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. A question you cannot answer from the facts: say you do not have that information.\n- A date or amount the customer proposes is never a refusal: check it against the facts and answer it.\n- If the customer corrects a date or an amount, use the corrected value.\n- When the customer accepts an offer, repeat the amount and the date in one sentence. Do not call any tool.\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it.\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses.\n- If the customer starts to correct a date or an amount and does not finish ('Thursday, sorry'), ask which one they meant.\n- After a question or an unrelated remark, answer it in a few words. Do not repeat the offer with its amount or date, and do not ask again a question you already asked: at most add 'Would that work for you?'. If they ask 'You tell me' or 'How much?', say 'It is the amount I just mentioned. Would that work for you?' without the amount or the date.\n\nTHIS STEP:\nAttempt 1 for {{s1_label}}: you offered the floor {{s1_floor}} on the date in your last message; the rest stays overdue.",
+   "task_message": "The customer's identity is verified.\n\nFACTS (computed, trust them; never compute a date or an amount yourself):\n{{date_facts}}\n\nRULES FOR EVERY STEP:\n- You are on ONE product now: {{s1_label}} (past due {{s1_due}}, floor {{s1_floor}}, latest date you can record {{s1_deadline_text}}). Talk only about this product.\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts and against THIS product's latest date: if allowed accept it; if a weekend or holiday, offer the next business day; if after the latest date, say the latest date you can record is that date and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the latest date.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- If the customer gives one date for all their products, accept it for this product and carry on; the system applies each product's own latest date.\n- Do not read anything back and do not ask 'Do you confirm?'. The system does that for all products together. Never say anything was recorded.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Asked whether you are a robot or an AI: say \"I am Freya Bank's digital assistant.\" and continue. Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. A question you cannot answer from the facts: say you do not have that information.\n- A question about who or what you are ('who is this?', 'am I talking to a person?', also when it is cut off, like 'Am I talking to'): answer it as the rule for 'are you a robot' says.\n- A date or amount the customer proposes is never a refusal: check it against the facts and answer it.\n- If the customer corrects a date or an amount, use the corrected value.\n- When the customer accepts an offer, repeat the amount and the date in one sentence. Do not call any tool.\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it.\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses.\n- If the customer starts to correct a date or an amount and does not finish ('Thursday, sorry'), ask which one they meant.\n- After a question or an unrelated remark, answer it in a few words. Do not repeat the offer with its amount or date, and do not ask again a question you already asked: at most add 'Would that work for you?'. If they ask 'You tell me' or 'How much?', say 'It is the amount I just mentioned. Would that work for you?' without the amount or the date.\n\nTHIS STEP:\nAttempt 1 for {{s1_label}}: you offered the floor {{s1_floor}} on the date in your last message; the rest stays overdue.",
    "transitions": [
     {
      "target_node": "save_1_attempt1_floor",
@@ -3435,7 +3435,7 @@
   "p1_floor_b": {
    "name": "p1_floor_b",
    "node_type": "conversation",
-   "task_message": "The customer's identity is verified.\n\nFACTS (computed, trust them; never compute a date or an amount yourself):\n{{date_facts}}\n\nRULES FOR EVERY STEP:\n- You are on ONE product now: {{s1_label}} (past due {{s1_due}}, floor {{s1_floor}}, latest date you can record {{s1_deadline_text}}). Talk only about this product.\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts and against THIS product's latest date: if allowed accept it; if a weekend or holiday, offer the next business day; if after the latest date, say the latest date you can record is that date and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the latest date.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- If the customer gives one date for all their products, accept it for this product and carry on; the system applies each product's own latest date.\n- Do not read anything back and do not ask 'Do you confirm?'. The system does that for all products together. Never say anything was recorded.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Asked whether you are a robot or an AI: say \"I am Freya Bank's digital assistant.\" and continue. Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. A question you cannot answer from the facts: say you do not have that information.\n- A date or amount the customer proposes is never a refusal: check it against the facts and answer it.\n- If the customer corrects a date or an amount, use the corrected value.\n- When the customer accepts an offer, repeat the amount and the date in one sentence. Do not call any tool.\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it.\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses.\n- If the customer starts to correct a date or an amount and does not finish ('Thursday, sorry'), ask which one they meant.\n- After a question or an unrelated remark, answer it in a few words. Do not repeat the offer with its amount or date, and do not ask again a question you already asked: at most add 'Would that work for you?'. If they ask 'You tell me' or 'How much?', say 'It is the amount I just mentioned. Would that work for you?' without the amount or the date.\n\nTHIS STEP:\nYou offered the floor {{s1_floor}} for {{s1_label}} on the date in your last message; the rest stays overdue.",
+   "task_message": "The customer's identity is verified.\n\nFACTS (computed, trust them; never compute a date or an amount yourself):\n{{date_facts}}\n\nRULES FOR EVERY STEP:\n- You are on ONE product now: {{s1_label}} (past due {{s1_due}}, floor {{s1_floor}}, latest date you can record {{s1_deadline_text}}). Talk only about this product.\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts and against THIS product's latest date: if allowed accept it; if a weekend or holiday, offer the next business day; if after the latest date, say the latest date you can record is that date and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the latest date.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- If the customer gives one date for all their products, accept it for this product and carry on; the system applies each product's own latest date.\n- Do not read anything back and do not ask 'Do you confirm?'. The system does that for all products together. Never say anything was recorded.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Asked whether you are a robot or an AI: say \"I am Freya Bank's digital assistant.\" and continue. Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. A question you cannot answer from the facts: say you do not have that information.\n- A question about who or what you are ('who is this?', 'am I talking to a person?', also when it is cut off, like 'Am I talking to'): answer it as the rule for 'are you a robot' says.\n- A date or amount the customer proposes is never a refusal: check it against the facts and answer it.\n- If the customer corrects a date or an amount, use the corrected value.\n- When the customer accepts an offer, repeat the amount and the date in one sentence. Do not call any tool.\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it.\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses.\n- If the customer starts to correct a date or an amount and does not finish ('Thursday, sorry'), ask which one they meant.\n- After a question or an unrelated remark, answer it in a few words. Do not repeat the offer with its amount or date, and do not ask again a question you already asked: at most add 'Would that work for you?'. If they ask 'You tell me' or 'How much?', say 'It is the amount I just mentioned. Would that work for you?' without the amount or the date.\n\nTHIS STEP:\nYou offered the floor {{s1_floor}} for {{s1_label}} on the date in your last message; the rest stays overdue.",
    "transitions": [
     {
      "target_node": "save_1_floor_b",
@@ -3735,7 +3735,7 @@
   "p1_attempt2": {
    "name": "p1_attempt2",
    "node_type": "conversation",
-   "task_message": "The customer's identity is verified.\n\nFACTS (computed, trust them; never compute a date or an amount yourself):\n{{date_facts}}\n\nRULES FOR EVERY STEP:\n- You are on ONE product now: {{s1_label}} (past due {{s1_due}}, floor {{s1_floor}}, latest date you can record {{s1_deadline_text}}). Talk only about this product.\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts and against THIS product's latest date: if allowed accept it; if a weekend or holiday, offer the next business day; if after the latest date, say the latest date you can record is that date and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the latest date.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- If the customer gives one date for all their products, accept it for this product and carry on; the system applies each product's own latest date.\n- Do not read anything back and do not ask 'Do you confirm?'. The system does that for all products together. Never say anything was recorded.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Asked whether you are a robot or an AI: say \"I am Freya Bank's digital assistant.\" and continue. Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. A question you cannot answer from the facts: say you do not have that information.\n- A date or amount the customer proposes is never a refusal: check it against the facts and answer it.\n- If the customer corrects a date or an amount, use the corrected value.\n- When the customer accepts an offer, repeat the amount and the date in one sentence. Do not call any tool.\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it.\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses.\n- If the customer starts to correct a date or an amount and does not finish ('Thursday, sorry'), ask which one they meant.\n- After a question or an unrelated remark, answer it in a few words. Do not repeat the offer with its amount or date, and do not ask again a question you already asked: at most add 'Would that work for you?'. If they ask 'You tell me' or 'How much?', say 'It is the amount I just mentioned. Would that work for you?' without the amount or the date.\n\nTHIS STEP:\nAttempt 2 for {{s1_label}}: the floor {{s1_floor}} on the latest date {{s1_deadline_text}}. The last offer; make no other offer.",
+   "task_message": "The customer's identity is verified.\n\nFACTS (computed, trust them; never compute a date or an amount yourself):\n{{date_facts}}\n\nRULES FOR EVERY STEP:\n- You are on ONE product now: {{s1_label}} (past due {{s1_due}}, floor {{s1_floor}}, latest date you can record {{s1_deadline_text}}). Talk only about this product.\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts and against THIS product's latest date: if allowed accept it; if a weekend or holiday, offer the next business day; if after the latest date, say the latest date you can record is that date and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the latest date.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- If the customer gives one date for all their products, accept it for this product and carry on; the system applies each product's own latest date.\n- Do not read anything back and do not ask 'Do you confirm?'. The system does that for all products together. Never say anything was recorded.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Asked whether you are a robot or an AI: say \"I am Freya Bank's digital assistant.\" and continue. Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. A question you cannot answer from the facts: say you do not have that information.\n- A question about who or what you are ('who is this?', 'am I talking to a person?', also when it is cut off, like 'Am I talking to'): answer it as the rule for 'are you a robot' says.\n- A date or amount the customer proposes is never a refusal: check it against the facts and answer it.\n- If the customer corrects a date or an amount, use the corrected value.\n- When the customer accepts an offer, repeat the amount and the date in one sentence. Do not call any tool.\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it.\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses.\n- If the customer starts to correct a date or an amount and does not finish ('Thursday, sorry'), ask which one they meant.\n- After a question or an unrelated remark, answer it in a few words. Do not repeat the offer with its amount or date, and do not ask again a question you already asked: at most add 'Would that work for you?'. If they ask 'You tell me' or 'How much?', say 'It is the amount I just mentioned. Would that work for you?' without the amount or the date.\n\nTHIS STEP:\nAttempt 2 for {{s1_label}}: the floor {{s1_floor}} on the latest date {{s1_deadline_text}}. The last offer; make no other offer.",
    "transitions": [
     {
      "target_node": "save_1_attempt2",
@@ -3965,7 +3965,7 @@
        "properties": {
         "code": {
          "type": "string",
-         "default": "PARAMS = \"\\x7b\\\"k\\\": 1, \\\"next_weekday\\\": \\\"following_week\\\", \\\"rv\\\": \\\"r_enter_1\\\"\\x7d\"\nimport datetime\nimport json\nimport re\nP = json.loads(PARAMS)\nHOL = set(P.get('holidays') or [])\nWEEKEND = set(P.get('weekend_days') if P.get('weekend_days') is not None else [5, 6])\nDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']\nMONS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']\nONE = datetime.timedelta(days=1)\ndef isbiz(d):\n    return d.weekday() not in WEEKEND and d.isoformat() not in HOL\ndef say(d):\n    return DAYS[d.weekday()] + ' ' + str(d.day) + ' ' + MONS[d.month - 1] + ' ' + str(d.year)\ndef nextbiz(d):\n    x = d + ONE\n    while not isbiz(x):\n        x = x + ONE\n    return x\ndef nth_biz_after(d, n):\n    x = d\n    for i in range(n):\n        x = nextbiz(x)\n    return x\ndef read_list(node, field):\n    # A list from an api_request result. A node-level mapping of a list did not arrive in practice;\n    # the flattened keys <node>_response.data.<field>.<i>.<key> did. Try the mapped variable first, then those keys.\n    v = vars.get(field)\n    if isinstance(v, str):\n        try:\n            v = json.loads(v)\n        except Exception:\n            v = None\n    if isinstance(v, list) and v:\n        return v\n    found = dict()\n    pat = re.compile('^' + re.escape(node) + r'_response\\.data\\.' + re.escape(field) + r'\\.(\\d+)\\.(\\w+)$')\n    for k in list(vars.keys()):\n        m = pat.match(str(k))\n        if m:\n            found.setdefault(int(m.group(1)), dict())[m.group(2)] = vars.get(k)\n    return [found[i] for i in sorted(found)]\ndef num(x, default=0.0):\n    try:\n        return float(str(x).replace(',', ''))\n    except Exception:\n        return default\ndef money(x):\n    x = num(x)\n    return str(int(round(x))) if abs(x - round(x)) < 0.005 else '%.2f' % x\ndef get_now():\n    s = str(vars.get('now') or '').strip().replace(' ', 'T')\n    try:\n        return datetime.datetime.fromisoformat(s[:16])\n    except Exception:\n        return datetime.datetime.fromisoformat(s[:10] + 'T10:00')\n\nWDS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']\nMON_RE = '(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*'\nUNITS = 'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen'.split()\nORDS = 'zeroth first second third fourth fifth sixth seventh eighth ninth tenth eleventh twelfth thirteenth fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth'.split()\nTENS = dict(twenty=20, thirty=30)\nTENTHS = dict(twentieth=20, thirtieth=30)\ndef day_today():\n    try:\n        return datetime.date.fromisoformat(str(vars.get('today') or '')[:10])\n    except Exception:\n        return get_now().date()\ndef bizday(d):\n    hol = [x for x in str(vars.get('holiday_list') or '').split(',') if x]\n    wk = [int(x) for x in str(vars.get('weekend_list') or '5,6').split(',') if x.strip().isdigit()]\n    return d.weekday() not in wk and d.isoformat() not in hol\ndef words_to_digits(t):\n    toks = t.split()\n    out = []\n    i = 0\n    while i < len(toks):\n        w = toks[i]\n        nx = toks[i + 1] if i + 1 < len(toks) else ''\n        if w in TENS and nx in ORDS[1:10]:\n            out.append(str(TENS[w] + ORDS.index(nx)) + 'th')\n            i = i + 2\n            continue\n        if w in TENS and nx in UNITS[1:10]:\n            out.append(str(TENS[w] + UNITS.index(nx)))\n            i = i + 2\n            continue\n        if w in TENS:\n            out.append(str(TENS[w]))\n        elif w in TENTHS:\n            out.append(str(TENTHS[w]) + 'th')\n        elif w in ORDS[1:]:\n            out.append(str(ORDS.index(w)) + 'th')\n        elif w in UNITS[1:]:\n            out.append(str(UNITS.index(w)))\n        else:\n            out.append(w)\n        i = i + 1\n    return ' '.join(out)\ndef make_day(y, m, d):\n    try:\n        return datetime.date(y, m, d)\n    except Exception:\n        return None\ndef ahead(m, d, y, today):\n    x = make_day(y if y else today.year, m, d)\n    if x is not None and not y and x < today:\n        x = make_day(today.year + 1, m, d)\n    return x\ndef resolve_when(raw):\n    t = str(raw or '').strip().lower()\n    if t == '':\n        return None\n    # \"the 15th, sorry, I mean the 16th\": the part after the last correction wins when it holds a date\n    parts = re.split(r'\\b(?:sorry|i mean|i meant|actually|correction|rather|no wait)\\b', t)\n    if len(parts) > 1 and parts[-1].strip() != '':\n        last = resolve_one(parts[-1])\n        if last is not None:\n            return last\n    return resolve_one(t)\ndef resolve_one(t):\n    today = day_today()\n    mo = re.search(r'(\\d{4})-(\\d{2})-(\\d{2})', t)\n    if mo:\n        return make_day(int(mo.group(1)), int(mo.group(2)), int(mo.group(3)))\n    t = ' ' + words_to_digits(re.sub(r'[^a-z0-9/. ]', ' ', t.replace('-', ' '))) + ' '\n    mo = re.search(r' (\\d{1,2})[/.](\\d{1,2})(?:[/.](\\d{2,4}))? ', t)\n    if mo:\n        y = int(mo.group(3)) if mo.group(3) else 0\n        if 0 < y < 100:\n            y = 2000 + y\n        return ahead(int(mo.group(2)), int(mo.group(1)), y, today)\n    mo = re.search(r' (\\d{1,2})(?:st|nd|rd|th)?(?: of)? ' + MON_RE + r'(?: (\\d{4}))? ', t)\n    if mo:\n        return ahead(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].index(mo.group(2)) + 1, int(mo.group(1)), int(mo.group(3) or 0), today)\n    mo = re.search(' ' + MON_RE + r' (?:the )?(\\d{1,2})(?:st|nd|rd|th)?(?: (\\d{4}))? ', t)\n    if mo:\n        return ahead(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].index(mo.group(1)) + 1, int(mo.group(2)), int(mo.group(3) or 0), today)\n    if ' day after tomorrow ' in t:\n        return today + datetime.timedelta(days=2)\n    if ' tomorrow ' in t:\n        return today + datetime.timedelta(days=1)\n    if ' today ' in t or ' tonight ' in t:\n        return today\n    mo = re.search(r' (?:the |on )?(\\d{1,2})(?:st|nd|rd|th) ', t)      # before weekday names: 'Monday the 26th' is the 26th\n    if mo:\n        n = int(mo.group(1))\n        x = make_day(today.year, today.month, n)\n        if x is None or x < today:\n            y, m = (today.year + 1, 1) if today.month == 12 else (today.year, today.month + 1)\n            x = make_day(y, m, n)\n        return x\n    mo = re.search(r' in (\\d{1,2}) days? ', t)\n    if mo:\n        return today + datetime.timedelta(days=int(mo.group(1)))\n    mo = re.search(r' (next |this |coming )?(' + '|'.join(WDS) + ') ', t)\n    if mo:\n        wd = WDS.index(mo.group(2))\n        mon = today - datetime.timedelta(days=today.weekday())\n        q = (mo.group(1) or '').strip()\n        if ' week after next ' in t:             # \"the week after next\", then \"Monday\"\n            return mon + datetime.timedelta(days=14 + wd)\n        if ' next week ' in t and q == '':\n            return mon + datetime.timedelta(days=7 + wd)\n        if q == 'next' and P.get('next_weekday', 'following_week') == 'following_week':\n            return mon + datetime.timedelta(days=7 + wd)\n        if q == 'this':\n            x = mon + datetime.timedelta(days=wd)\n            return x if x >= today else None\n        x = today + datetime.timedelta(days=(wd - today.weekday()) % 7)\n        if q in ('next', 'coming') and x == today:\n            x = x + datetime.timedelta(days=7)\n        return x\n    return None\ndef settle(k, d):\n    # The date for product k: a past date is no date; a weekend day or a bank holiday moves to the next business day\n    # (mov_k = 1); a date after the product's deadline moves to the deadline (adj_k = 1). Returns the ISO date or ''.\n    today = day_today()\n    if d is None or d < today:\n        return ''\n    mov = ''\n    while not bizday(d):\n        d = d + datetime.timedelta(days=1)\n        mov = '1'\n    s = d.isoformat()\n    dl = str(vars.get('s%d_deadline' % k) or '')\n    adj = ''\n    if dl != '' and s > dl:\n        s = dl\n        adj = '1'\n        mov = ''\n    vars['date_%d' % k] = s\n    vars['adj_%d' % k] = adj\n    vars['mov_%d' % k] = mov\n    return s\n\ntry:\n    k = P['k']\n    n = int(num(vars.get('product_count')))\n    vars['cur_slot'] = str(k)\n    cd = str(vars.get('carry_date') or '')\n    pw = str(vars.get('m_today_when_%d' % k) or '')\n    pa = num(vars.get('m_today_amount_%d' % k), 0.0)\n    vars['m_today_when_%d' % k] = ''\n    vars['m_today_amount_%d' % k] = 0\n    due = num(vars.get('s%d_due' % k), 0.0)\n    if pa <= 0 or pa > due:\n        pa = due\n    if k > n:\n        vars[P['rv']] = 'done'\n    elif pw != '' and pa >= num(vars.get('s%d_floor' % k), 0.0) and settle(k, resolve_when(pw)) != '':\n        vars['st_%d' % k] = 'agreed'                 # named for this product in the first answer (\"the card tomorrow\")\n        vars['amt_%d' % k] = money(pa)\n        vars[P['rv']] = 'auto'\n    elif cd != '' and settle(k, resolve_when(cd)) != '':\n        vars['st_%d' % k] = 'agreed'\n        vars['amt_%d' % k] = money(vars.get('s%d_due' % k))\n        vars[P['rv']] = 'auto'\n    elif str(vars.get('floor_first') or '') == '1' and k == 1:\n        vars['floor_first'] = ''\n        vars[P['rv']] = 'ask_floor'\n    else:\n        vars[P['rv']] = 'ask'\nexcept Exception:\n    vars[P['rv']] = 'error'\n"
+         "default": "PARAMS = \"\\x7b\\\"k\\\": 1, \\\"next_weekday\\\": \\\"following_week\\\", \\\"rv\\\": \\\"r_enter_1\\\"\\x7d\"\nimport datetime\nimport json\nimport re\nP = json.loads(PARAMS)\nHOL = set(P.get('holidays') or [])\nWEEKEND = set(P.get('weekend_days') if P.get('weekend_days') is not None else [5, 6])\nDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']\nMONS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']\nONE = datetime.timedelta(days=1)\ndef isbiz(d):\n    return d.weekday() not in WEEKEND and d.isoformat() not in HOL\ndef say(d):\n    return DAYS[d.weekday()] + ' ' + str(d.day) + ' ' + MONS[d.month - 1] + ' ' + str(d.year)\ndef nextbiz(d):\n    x = d + ONE\n    while not isbiz(x):\n        x = x + ONE\n    return x\ndef nth_biz_after(d, n):\n    x = d\n    for i in range(n):\n        x = nextbiz(x)\n    return x\ndef read_list(node, field):\n    # A list from an api_request result. A node-level mapping of a list did not arrive in practice;\n    # the flattened keys <node>_response.data.<field>.<i>.<key> did. Try the mapped variable first, then those keys.\n    v = vars.get(field)\n    if isinstance(v, str):\n        try:\n            v = json.loads(v)\n        except Exception:\n            v = None\n    if isinstance(v, list) and v:\n        return v\n    found = dict()\n    pat = re.compile('^' + re.escape(node) + r'_response\\.data\\.' + re.escape(field) + r'\\.(\\d+)\\.(\\w+)$')\n    for k in list(vars.keys()):\n        m = pat.match(str(k))\n        if m:\n            found.setdefault(int(m.group(1)), dict())[m.group(2)] = vars.get(k)\n    return [found[i] for i in sorted(found)]\ndef num(x, default=0.0):\n    try:\n        return float(str(x).replace(',', ''))\n    except Exception:\n        return default\ndef money(x):\n    x = num(x)\n    return str(int(round(x))) if abs(x - round(x)) < 0.005 else '%.2f' % x\ndef get_now():\n    s = str(vars.get('now') or '').strip().replace(' ', 'T')\n    try:\n        return datetime.datetime.fromisoformat(s[:16])\n    except Exception:\n        return datetime.datetime.fromisoformat(s[:10] + 'T10:00')\n\nWDS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']\nMON_RE = '(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*'\nUNITS = 'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen'.split()\nORDS = 'zeroth first second third fourth fifth sixth seventh eighth ninth tenth eleventh twelfth thirteenth fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth'.split()\nTENS = dict(twenty=20, thirty=30)\nTENTHS = dict(twentieth=20, thirtieth=30)\ndef day_today():\n    try:\n        return datetime.date.fromisoformat(str(vars.get('today') or '')[:10])\n    except Exception:\n        return get_now().date()\ndef bizday(d):\n    hol = [x for x in str(vars.get('holiday_list') or '').split(',') if x]\n    wk = [int(x) for x in str(vars.get('weekend_list') or '5,6').split(',') if x.strip().isdigit()]\n    return d.weekday() not in wk and d.isoformat() not in hol\ndef words_to_digits(t):\n    toks = t.split()\n    out = []\n    i = 0\n    while i < len(toks):\n        w = toks[i]\n        nx = toks[i + 1] if i + 1 < len(toks) else ''\n        if w in TENS and nx in ORDS[1:10]:\n            out.append(str(TENS[w] + ORDS.index(nx)) + 'th')\n            i = i + 2\n            continue\n        if w in TENS and nx in UNITS[1:10]:\n            out.append(str(TENS[w] + UNITS.index(nx)))\n            i = i + 2\n            continue\n        if w in TENS:\n            out.append(str(TENS[w]))\n        elif w in TENTHS:\n            out.append(str(TENTHS[w]) + 'th')\n        elif w in ORDS[1:]:\n            out.append(str(ORDS.index(w)) + 'th')\n        elif w in UNITS[1:]:\n            out.append(str(UNITS.index(w)))\n        else:\n            out.append(w)\n        i = i + 1\n    return ' '.join(out)\ndef make_day(y, m, d):\n    try:\n        return datetime.date(y, m, d)\n    except Exception:\n        return None\ndef ahead(m, d, y, today):\n    x = make_day(y if y else today.year, m, d)\n    if x is not None and not y and x < today:\n        x = make_day(today.year + 1, m, d)\n    return x\ndef resolve_when(raw):\n    t = str(raw or '').strip().lower()\n    if t == '':\n        return None\n    # \"the 15th, sorry, I mean the 16th\": the part after the last correction wins when it holds a date\n    parts = re.split(r'\\b(?:sorry|i mean|i meant|actually|correction|rather|no wait)\\b', t)\n    if len(parts) > 1 and parts[-1].strip() != '':\n        last = resolve_one(parts[-1])\n        if last is not None:\n            return last\n    return resolve_one(t)\ndef resolve_one(t):\n    today = day_today()\n    mo = re.search(r'(\\d{4})-(\\d{2})-(\\d{2})', t)\n    if mo:\n        return make_day(int(mo.group(1)), int(mo.group(2)), int(mo.group(3)))\n    t = ' ' + words_to_digits(re.sub(r'[^a-z0-9/. ]', ' ', t.replace('-', ' '))) + ' '\n    mo = re.search(r' (\\d{1,2})[/.](\\d{1,2})(?:[/.](\\d{2,4}))? ', t)\n    if mo:\n        y = int(mo.group(3)) if mo.group(3) else 0\n        if 0 < y < 100:\n            y = 2000 + y\n        return ahead(int(mo.group(2)), int(mo.group(1)), y, today)\n    mo = re.search(r' (\\d{1,2})(?:st|nd|rd|th)?(?: of)? ' + MON_RE + r'(?: (\\d{4}))? ', t)\n    if mo:\n        return ahead(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].index(mo.group(2)) + 1, int(mo.group(1)), int(mo.group(3) or 0), today)\n    mo = re.search(' ' + MON_RE + r' (?:the )?(\\d{1,2})(?:st|nd|rd|th)?(?: (\\d{4}))? ', t)\n    if mo:\n        return ahead(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].index(mo.group(1)) + 1, int(mo.group(2)), int(mo.group(3) or 0), today)\n    if ' day after tomorrow ' in t:\n        return today + datetime.timedelta(days=2)\n    if ' tomorrow ' in t:\n        return today + datetime.timedelta(days=1)\n    if ' today ' in t or ' tonight ' in t:\n        return today\n    mo = re.search(r' (?:the |on )?(\\d{1,2})(?:st|nd|rd|th) ', t)      # before weekday names: 'Monday the 26th' is the 26th\n    if mo:\n        n = int(mo.group(1))\n        x = make_day(today.year, today.month, n)\n        if x is None or x < today:\n            y, m = (today.year + 1, 1) if today.month == 12 else (today.year, today.month + 1)\n            x = make_day(y, m, n)\n        return x\n    mo = re.search(r' in (\\d{1,2}) days? ', t)\n    if mo:\n        return today + datetime.timedelta(days=int(mo.group(1)))\n    mo = re.search(r' (next |this |coming )?(' + '|'.join(WDS) + ') ', t)\n    if mo:\n        wd = WDS.index(mo.group(2))\n        mon = today - datetime.timedelta(days=today.weekday())\n        q = (mo.group(1) or '').strip()\n        if ' week after next ' in t:             # \"the week after next\", then \"Monday\"\n            return mon + datetime.timedelta(days=14 + wd)\n        if ' next week ' in t and q == '':\n            return mon + datetime.timedelta(days=7 + wd)\n        if q == 'next' and P.get('next_weekday', 'following_week') == 'following_week':\n            return mon + datetime.timedelta(days=7 + wd)\n        if q == 'this':\n            x = mon + datetime.timedelta(days=wd)\n            return x if x >= today else None\n        x = today + datetime.timedelta(days=(wd - today.weekday()) % 7)\n        if q in ('next', 'coming') and x == today:\n            x = x + datetime.timedelta(days=7)\n        return x\n    return None\ndef settle(k, d):\n    # The date for product k: a past date is no date; a weekend day or a bank holiday moves to the next business day\n    # (mov_k = 1); a date after the product's deadline moves to the deadline (adj_k = 1). Returns the ISO date or ''.\n    today = day_today()\n    if d is None or d < today:\n        return ''\n    mov = ''\n    while not bizday(d):\n        d = d + datetime.timedelta(days=1)\n        mov = '1'\n    s = d.isoformat()\n    dl = str(vars.get('s%d_deadline' % k) or '')\n    adj = ''\n    if dl != '' and s > dl:\n        s = dl\n        adj = '1'\n        mov = ''\n    vars['date_%d' % k] = s\n    vars['adj_%d' % k] = adj\n    vars['mov_%d' % k] = mov\n    return s\n\ntry:\n    k = P['k']\n    n = int(num(vars.get('product_count')))\n    vars['cur_slot'] = str(k)\n    cd = str(vars.get('carry_date') or '')\n    pw = str(vars.get('m_today_when_%d' % k) or '')\n    pa = num(vars.get('m_today_amount_%d' % k), 0.0)\n    vars['m_today_when_%d' % k] = ''\n    vars['m_today_amount_%d' % k] = 0\n    due = num(vars.get('s%d_due' % k), 0.0)\n    if pa <= 0 or pa > due:\n        pa = due\n    if k > n:\n        vars[P['rv']] = 'done'\n    elif pw != '' and pa >= num(vars.get('s%d_floor' % k), 0.0) and settle(k, resolve_when(pw)) != '':\n        vars['st_%d' % k] = 'agreed'                 # named for this product in the first answer (\"the card tomorrow\")\n        vars['amt_%d' % k] = money(pa)\n        vars[P['rv']] = 'auto'\n    elif cd != '' and settle(k, resolve_when(cd)) != '':\n        vars['st_%d' % k] = 'agreed'\n        vars['amt_%d' % k] = money(vars.get('s%d_due' % k))\n        vars[P['rv']] = 'auto'\n    elif str(vars.get('floor_first') or '') == '1' and k == 1:\n        vars['floor_first'] = ''\n        vars[P['rv']] = 'ask_floor'\n    else:\n        vars[P['rv']] = 'ask'\n    if vars[P['rv']] in ('ask', 'ask_floor') and str(vars.get('asked_q') or '') == 'yes':\n        vars[P['rv']] = vars[P['rv']] + '_q'         # the last message asked something: the first offer answers it first\n    vars['asked_q'] = ''                             # a question is answered once, never carried to the next product\nexcept Exception:\n    vars[P['rv']] = 'error'\n"
         },
         "timeout_ms": {
          "type": "number",
@@ -4001,6 +4001,34 @@
         "variable": "r_enter_1",
         "operator": "equals",
         "operand": "ask_floor"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "p1_attempt1_full_q",
+     "description": "r_enter_1 is ask_q",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "r_enter_1",
+        "operator": "equals",
+        "operand": "ask_q"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "p1_attempt1_floor_q",
+     "description": "r_enter_1 is ask_floor_q",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "r_enter_1",
+        "operator": "equals",
+        "operand": "ask_floor_q"
        }
       ]
      }
@@ -4054,6 +4082,577 @@
      }
     }
    ]
+  },
+  "p1_attempt1_floor_q": {
+   "name": "p1_attempt1_floor_q",
+   "node_type": "conversation",
+   "task_message": "The customer's identity is verified.\n\nFACTS (computed, trust them; never compute a date or an amount yourself):\n{{date_facts}}\n\nRULES FOR EVERY STEP:\n- You are on ONE product now: {{s1_label}} (past due {{s1_due}}, floor {{s1_floor}}, latest date you can record {{s1_deadline_text}}). Talk only about this product.\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts and against THIS product's latest date: if allowed accept it; if a weekend or holiday, offer the next business day; if after the latest date, say the latest date you can record is that date and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the latest date.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- If the customer gives one date for all their products, accept it for this product and carry on; the system applies each product's own latest date.\n- Do not read anything back and do not ask 'Do you confirm?'. The system does that for all products together. Never say anything was recorded.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Asked whether you are a robot or an AI: say \"I am Freya Bank's digital assistant.\" and continue. Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. A question you cannot answer from the facts: say you do not have that information.\n- A question about who or what you are ('who is this?', 'am I talking to a person?', also when it is cut off, like 'Am I talking to'): answer it as the rule for 'are you a robot' says.\n- A date or amount the customer proposes is never a refusal: check it against the facts and answer it.\n- If the customer corrects a date or an amount, use the corrected value.\n- When the customer accepts an offer, repeat the amount and the date in one sentence. Do not call any tool.\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it.\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses.\n- If the customer starts to correct a date or an amount and does not finish ('Thursday, sorry'), ask which one they meant.\n- After a question or an unrelated remark, answer it in a few words. Do not repeat the offer with its amount or date, and do not ask again a question you already asked: at most add 'Would that work for you?'. If they ask 'You tell me' or 'How much?', say 'It is the amount I just mentioned. Would that work for you?' without the amount or the date.\n\nTHIS STEP:\nAttempt 1 for {{s1_label}}: you offered the floor {{s1_floor}} on the date in your last message; the rest stays overdue.",
+   "transitions": [
+    {
+     "target_node": "save_1_attempt1_floor",
+     "description": "Agreed",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "logic": "and",
+        "conditions": [
+         {
+          "variable": "p1_attempt1_floor_turn",
+          "operator": "equals",
+          "operand": "accepts"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "prop_1_attempt1_floor",
+     "description": "proposes a day (and amount)",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "p1_attempt1_floor_turn",
+        "operator": "equals",
+        "operand": "proposes"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "paid_1",
+     "description": "customer: paid",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "p1_attempt1_floor_turn",
+        "operator": "equals",
+        "operand": "paid"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "dispute_1",
+     "description": "customer: dispute",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "p1_attempt1_floor_turn",
+        "operator": "equals",
+        "operand": "dispute"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "hardship",
+     "description": "customer: hardship",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "p1_attempt1_floor_turn",
+        "operator": "equals",
+        "operand": "hardship"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "transfer_new_plan",
+     "description": "customer: new_plan",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "p1_attempt1_floor_turn",
+        "operator": "equals",
+        "operand": "new_plan"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "human_check",
+     "description": "customer: human",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "p1_attempt1_floor_turn",
+        "operator": "equals",
+        "operand": "human"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "p1_attempt2",
+     "description": "customer: refuses and {'s1_attempts': '2'}",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "logic": "and",
+        "conditions": [
+         {
+          "variable": "p1_attempt1_floor_turn",
+          "operator": "equals",
+          "operand": "refuses"
+         },
+         {
+          "variable": "s1_attempts",
+          "operator": "equals",
+          "operand": "2"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "refused_1",
+     "description": "customer: refuses",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "logic": "and",
+        "conditions": [
+         {
+          "variable": "p1_attempt1_floor_turn",
+          "operator": "equals",
+          "operand": "refuses"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "p1_attempt2",
+     "description": "customer: too_much and {'s1_attempts': '2'}",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "logic": "and",
+        "conditions": [
+         {
+          "variable": "p1_attempt1_floor_turn",
+          "operator": "equals",
+          "operand": "too_much"
+         },
+         {
+          "variable": "s1_attempts",
+          "operator": "equals",
+          "operand": "2"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "refused_1",
+     "description": "customer: too_much",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "logic": "and",
+        "conditions": [
+         {
+          "variable": "p1_attempt1_floor_turn",
+          "operator": "equals",
+          "operand": "too_much"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "p1_attempt2",
+     "description": "customer: no_talk and {'s1_attempts': '2'}",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "logic": "and",
+        "conditions": [
+         {
+          "variable": "p1_attempt1_floor_turn",
+          "operator": "equals",
+          "operand": "no_talk"
+         },
+         {
+          "variable": "s1_attempts",
+          "operator": "equals",
+          "operand": "2"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "refused_1",
+     "description": "customer: no_talk",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "logic": "and",
+        "conditions": [
+         {
+          "variable": "p1_attempt1_floor_turn",
+          "operator": "equals",
+          "operand": "no_talk"
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ],
+   "on_enter": {
+    "type": "llm",
+    "prompt": "Answer the customer's question in one sentence, following the rules of the call. Make no other offer. Then say this exactly as written, every word, amount and date: {{s1_line_a1_floor}}"
+   },
+   "on_enter_first_entry_only": true,
+   "extraction_schema": [
+    {
+     "name": "p1_attempt1_floor_turn",
+     "type": "string",
+     "enum_values": [
+      "accepts",
+      "proposes",
+      "refuses",
+      "too_much",
+      "no_talk",
+      "paid",
+      "dispute",
+      "hardship",
+      "new_plan",
+      "human",
+      "question",
+      "chat"
+     ],
+     "description": "Classify ONLY the customer's last message. accepts: they say yes to the offer just made, or agree to pay on the offered terms. proposes: they propose their own date or amount, or change the date or amount (a proposal is never a refusal). refuses: a flat no to the offer on the table or to paying, with no date and no amount, or no real answer. too_much: they say the amount is too much or more than they can afford, without proposing another amount. no_talk: they say they do not want to talk. paid: they say they have ALREADY paid this past-due amount. Saying they WILL pay is not this. Chat about their day is never this. dispute: they say the debt is not theirs, they never had the product, or it was closed or paid off in the past. hardship: they mention illness, a death in the family or losing their job. new_plan: they ask for a new payment plan or lower instalments. Asking for a discount or saying the amount is too much is NOT this. human: they ask to speak to a human. question: they ask a question. chat: they talk about something unrelated (their day, traffic, family events).",
+     "min_confidence": 0.3
+    },
+    {
+     "name": "agreed_amount",
+     "type": "float",
+     "description": "The amount the customer agreed to pay, if they agreed.",
+     "min_confidence": 0.4
+    },
+    {
+     "name": "agreed_date",
+     "type": "string",
+     "description": "The date the customer agreed to pay on, if they agreed, in words as said by the customer or as you named it when they said yes (for example 'tomorrow', 'this Friday', 'the 30th', 'Thursday 15 October'). If they named the week earlier and now only a weekday, give both ('Monday, the week after next'). Copy the words; do not turn them into a date: code resolves them against the call's date. When they correct themselves, give the corrected day.",
+     "min_confidence": 0.3
+    },
+    {
+     "name": "asked_q",
+     "type": "string",
+     "enum_values": [
+      "yes",
+      "no"
+     ],
+     "description": "yes if the customer's last message asks you a question (are you a robot, is this a scam, why, which account), with or without an answer in the same message. Otherwise no.",
+     "min_confidence": 0.5
+    },
+    {
+     "name": "p1_attempt1_floor_all",
+     "type": "string",
+     "enum_values": [
+      "yes",
+      "no"
+     ],
+     "description": "yes ONLY if the customer says the date they agreed to is for ALL their products together (for example 'Friday for all of them', 'I will pay everything on the 30th'). Otherwise no.",
+     "min_confidence": 0.7
+    }
+   ],
+   "max_node_turns": 18,
+   "max_turn_transition": "refused_1"
+  },
+  "p1_attempt1_full_q": {
+   "name": "p1_attempt1_full_q",
+   "node_type": "conversation",
+   "task_message": "The customer's identity is verified.\n\nFACTS (computed, trust them; never compute a date or an amount yourself):\n{{date_facts}}\n\nRULES FOR EVERY STEP:\n- You are on ONE product now: {{s1_label}} (past due {{s1_due}}, floor {{s1_floor}}, latest date you can record {{s1_deadline_text}}). Talk only about this product.\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts and against THIS product's latest date: if allowed accept it; if a weekend or holiday, offer the next business day; if after the latest date, say the latest date you can record is that date and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the latest date.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- If the customer gives one date for all their products, accept it for this product and carry on; the system applies each product's own latest date.\n- Do not read anything back and do not ask 'Do you confirm?'. The system does that for all products together. Never say anything was recorded.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Asked whether you are a robot or an AI: say \"I am Freya Bank's digital assistant.\" and continue. Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. A question you cannot answer from the facts: say you do not have that information.\n- A question about who or what you are ('who is this?', 'am I talking to a person?', also when it is cut off, like 'Am I talking to'): answer it as the rule for 'are you a robot' says.\n- A date or amount the customer proposes is never a refusal: check it against the facts and answer it.\n- If the customer corrects a date or an amount, use the corrected value.\n- When the customer accepts an offer, repeat the amount and the date in one sentence. Do not call any tool.\n- Never use the word \"recorded\" (or \"saved\", \"registered\") except right after a successful promise result; after a failure say you could not complete it.\n- Never make an offer that this step does not name. The system moves to the next offer by itself when the customer refuses.\n- If the customer starts to correct a date or an amount and does not finish ('Thursday, sorry'), ask which one they meant.\n- After a question or an unrelated remark, answer it in a few words. Do not repeat the offer with its amount or date, and do not ask again a question you already asked: at most add 'Would that work for you?'. If they ask 'You tell me' or 'How much?', say 'It is the amount I just mentioned. Would that work for you?' without the amount or the date.\n\nTHIS STEP:\nAttempt 1 for {{s1_label}}: you offered the full amount {{s1_due}} on the date in your last message. Accept a date or amount the customer proposes (check it). If they say it is too much, the system offers the floor.",
+   "transitions": [
+    {
+     "target_node": "save_1_attempt1_full",
+     "description": "Agreed",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "logic": "and",
+        "conditions": [
+         {
+          "variable": "p1_attempt1_full_turn",
+          "operator": "equals",
+          "operand": "accepts"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "prop_1_attempt1_full",
+     "description": "proposes a day (and amount)",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "p1_attempt1_full_turn",
+        "operator": "equals",
+        "operand": "proposes"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "paid_1",
+     "description": "customer: paid",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "p1_attempt1_full_turn",
+        "operator": "equals",
+        "operand": "paid"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "dispute_1",
+     "description": "customer: dispute",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "p1_attempt1_full_turn",
+        "operator": "equals",
+        "operand": "dispute"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "hardship",
+     "description": "customer: hardship",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "p1_attempt1_full_turn",
+        "operator": "equals",
+        "operand": "hardship"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "transfer_new_plan",
+     "description": "customer: new_plan",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "p1_attempt1_full_turn",
+        "operator": "equals",
+        "operand": "new_plan"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "human_check",
+     "description": "customer: human",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "p1_attempt1_full_turn",
+        "operator": "equals",
+        "operand": "human"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "p1_attempt2",
+     "description": "customer: refuses and {'s1_attempts': '2'}",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "logic": "and",
+        "conditions": [
+         {
+          "variable": "p1_attempt1_full_turn",
+          "operator": "equals",
+          "operand": "refuses"
+         },
+         {
+          "variable": "s1_attempts",
+          "operator": "equals",
+          "operand": "2"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "refused_1",
+     "description": "customer: refuses",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "logic": "and",
+        "conditions": [
+         {
+          "variable": "p1_attempt1_full_turn",
+          "operator": "equals",
+          "operand": "refuses"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "p1_floor_b",
+     "description": "customer: too_much",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "p1_attempt1_full_turn",
+        "operator": "equals",
+        "operand": "too_much"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "p1_attempt2",
+     "description": "customer: no_talk and {'s1_attempts': '2'}",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "logic": "and",
+        "conditions": [
+         {
+          "variable": "p1_attempt1_full_turn",
+          "operator": "equals",
+          "operand": "no_talk"
+         },
+         {
+          "variable": "s1_attempts",
+          "operator": "equals",
+          "operand": "2"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "refused_1",
+     "description": "customer: no_talk",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "logic": "and",
+        "conditions": [
+         {
+          "variable": "p1_attempt1_full_turn",
+          "operator": "equals",
+          "operand": "no_talk"
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ],
+   "on_enter": {
+    "type": "llm",
+    "prompt": "Answer the customer's question in one sentence, following the rules of the call. Make no other offer. Then say this exactly as written, every word, amount and date: {{s1_line_a1_full}}"
+   },
+   "on_enter_first_entry_only": true,
+   "extraction_schema": [
+    {
+     "name": "p1_attempt1_full_turn",
+     "type": "string",
+     "enum_values": [
+      "accepts",
+      "proposes",
+      "refuses",
+      "too_much",
+      "no_talk",
+      "paid",
+      "dispute",
+      "hardship",
+      "new_plan",
+      "human",
+      "question",
+      "chat"
+     ],
+     "description": "Classify ONLY the customer's last message. accepts: they say yes to the offer just made, or agree to pay on the offered terms. proposes: they propose their own date or amount, or change the date or amount (a proposal is never a refusal). refuses: a flat no to the offer on the table or to paying, with no date and no amount, or no real answer. too_much: they say the amount is too much or more than they can afford, without proposing another amount. no_talk: they say they do not want to talk. paid: they say they have ALREADY paid this past-due amount. Saying they WILL pay is not this. Chat about their day is never this. dispute: they say the debt is not theirs, they never had the product, or it was closed or paid off in the past. hardship: they mention illness, a death in the family or losing their job. new_plan: they ask for a new payment plan or lower instalments. Asking for a discount or saying the amount is too much is NOT this. human: they ask to speak to a human. question: they ask a question. chat: they talk about something unrelated (their day, traffic, family events).",
+     "min_confidence": 0.3
+    },
+    {
+     "name": "agreed_amount",
+     "type": "float",
+     "description": "The amount the customer agreed to pay, if they agreed.",
+     "min_confidence": 0.4
+    },
+    {
+     "name": "agreed_date",
+     "type": "string",
+     "description": "The date the customer agreed to pay on, if they agreed, in words as said by the customer or as you named it when they said yes (for example 'tomorrow', 'this Friday', 'the 30th', 'Thursday 15 October'). If they named the week earlier and now only a weekday, give both ('Monday, the week after next'). Copy the words; do not turn them into a date: code resolves them against the call's date. When they correct themselves, give the corrected day.",
+     "min_confidence": 0.3
+    },
+    {
+     "name": "asked_q",
+     "type": "string",
+     "enum_values": [
+      "yes",
+      "no"
+     ],
+     "description": "yes if the customer's last message asks you a question (are you a robot, is this a scam, why, which account), with or without an answer in the same message. Otherwise no.",
+     "min_confidence": 0.5
+    },
+    {
+     "name": "p1_attempt1_full_all",
+     "type": "string",
+     "enum_values": [
+      "yes",
+      "no"
+     ],
+     "description": "yes ONLY if the customer says the date they agreed to is for ALL their products together (for example 'Friday for all of them', 'I will pay everything on the 30th'). Otherwise no.",
+     "min_confidence": 0.7
+    }
+   ],
+   "max_node_turns": 18,
+   "max_turn_transition": "refused_1"
   },
   "refused_1": {
    "name": "refused_1",
@@ -4359,7 +4958,7 @@
   "m_readback": {
    "name": "m_readback",
    "node_type": "conversation",
-   "task_message": "You have read back every agreed promise in one message and asked for one confirmation. The customer's identity is verified.\n- A clear yes is a confirmation. Do not call any tool; the system records the promises.\n- If they want to change a date or an amount, or drop a product, say nothing about recording: the system applies the change.\n- If they ask a question (for example whether you are a robot), answer it in one sentence, then ask again whether they confirm.\n- Never make an offer, never name a new date or amount yourself, never say anything is recorded, booked or noted.\n\nRULES OF THE CALL:\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts: if allowed accept it; if a weekend or holiday not after the deadline, offer the next business day; if after the deadline of the product, say the latest date you can record is the deadline and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the deadline.\n- \"Next <weekday>\" means that weekday in the following calendar week; \"this <weekday>\" the one in the current week. Use the weekday words in the facts.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Never say anything was recorded or booked. The system records the promises after the read-back.\n- Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. Asked if you are a robot: you are Freya Bank's digital assistant. A question you cannot answer from the facts: say you do not have that information.",
+   "task_message": "You have read back every agreed promise in one message and asked for one confirmation. The customer's identity is verified.\n- A clear yes is a confirmation. Do not call any tool; the system records the promises.\n- If they want to change a date or an amount, or drop a product, say nothing about recording: the system applies the change.\n- If they ask a question (for example whether you are a robot), answer it in one sentence, then ask again whether they confirm.\n- Never make an offer, never name a new date or amount yourself, never say anything is recorded, booked or noted.\n\nRULES OF THE CALL:\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts: if allowed accept it; if a weekend or holiday not after the deadline, offer the next business day; if after the deadline of the product, say the latest date you can record is the deadline and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the deadline.\n- \"Next <weekday>\" means that weekday in the following calendar week; \"this <weekday>\" the one in the current week. Use the weekday words in the facts.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Never say anything was recorded or booked. The system records the promises after the read-back.\n- Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. Asked if you are a robot: you are Freya Bank's digital assistant. A question you cannot answer from the facts: say you do not have that information.\n- A question about who or what you are ('who is this?', 'am I talking to a person?', also when it is cut off, like 'Am I talking to'): answer it as the rule for 'are you a robot' says.",
    "transitions": [
     {
      "target_node": "m_answer",
@@ -4525,7 +5124,7 @@
   "m_answer": {
    "name": "m_answer",
    "node_type": "conversation",
-   "task_message": "You have read back every agreed promise in one message and asked for one confirmation. The customer's identity is verified.\n- A clear yes is a confirmation. Do not call any tool; the system records the promises.\n- If they want to change a date or an amount, or drop a product, say nothing about recording: the system applies the change.\n- If they ask a question (for example whether you are a robot), answer it in one sentence, then ask again whether they confirm.\n- Never make an offer, never name a new date or amount yourself, never say anything is recorded, booked or noted.\n\nRULES OF THE CALL:\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts: if allowed accept it; if a weekend or holiday not after the deadline, offer the next business day; if after the deadline of the product, say the latest date you can record is the deadline and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the deadline.\n- \"Next <weekday>\" means that weekday in the following calendar week; \"this <weekday>\" the one in the current week. Use the weekday words in the facts.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Never say anything was recorded or booked. The system records the promises after the read-back.\n- Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. Asked if you are a robot: you are Freya Bank's digital assistant. A question you cannot answer from the facts: say you do not have that information.",
+   "task_message": "You have read back every agreed promise in one message and asked for one confirmation. The customer's identity is verified.\n- A clear yes is a confirmation. Do not call any tool; the system records the promises.\n- If they want to change a date or an amount, or drop a product, say nothing about recording: the system applies the change.\n- If they ask a question (for example whether you are a robot), answer it in one sentence, then ask again whether they confirm.\n- Never make an offer, never name a new date or amount yourself, never say anything is recorded, booked or noted.\n\nRULES OF THE CALL:\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts: if allowed accept it; if a weekend or holiday not after the deadline, offer the next business day; if after the deadline of the product, say the latest date you can record is the deadline and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the deadline.\n- \"Next <weekday>\" means that weekday in the following calendar week; \"this <weekday>\" the one in the current week. Use the weekday words in the facts.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Never say anything was recorded or booked. The system records the promises after the read-back.\n- Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. Asked if you are a robot: you are Freya Bank's digital assistant. A question you cannot answer from the facts: say you do not have that information.\n- A question about who or what you are ('who is this?', 'am I talking to a person?', also when it is cut off, like 'Am I talking to'): answer it as the rule for 'are you a robot' says.",
    "transitions": [
     {
      "target_node": "rg_1",
@@ -4667,7 +5266,7 @@
   "m_readback_q": {
    "name": "m_readback_q",
    "node_type": "conversation",
-   "task_message": "You have read back every agreed promise in one message and asked for one confirmation. The customer's identity is verified.\n- A clear yes is a confirmation. Do not call any tool; the system records the promises.\n- If they want to change a date or an amount, or drop a product, say nothing about recording: the system applies the change.\n- If they ask a question (for example whether you are a robot), answer it in one sentence, then ask again whether they confirm.\n- Never make an offer, never name a new date or amount yourself, never say anything is recorded, booked or noted.\n\nRULES OF THE CALL:\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts: if allowed accept it; if a weekend or holiday not after the deadline, offer the next business day; if after the deadline of the product, say the latest date you can record is the deadline and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the deadline.\n- \"Next <weekday>\" means that weekday in the following calendar week; \"this <weekday>\" the one in the current week. Use the weekday words in the facts.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Never say anything was recorded or booked. The system records the promises after the read-back.\n- Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. Asked if you are a robot: you are Freya Bank's digital assistant. A question you cannot answer from the facts: say you do not have that information.",
+   "task_message": "You have read back every agreed promise in one message and asked for one confirmation. The customer's identity is verified.\n- A clear yes is a confirmation. Do not call any tool; the system records the promises.\n- If they want to change a date or an amount, or drop a product, say nothing about recording: the system applies the change.\n- If they ask a question (for example whether you are a robot), answer it in one sentence, then ask again whether they confirm.\n- Never make an offer, never name a new date or amount yourself, never say anything is recorded, booked or noted.\n\nRULES OF THE CALL:\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts: if allowed accept it; if a weekend or holiday not after the deadline, offer the next business day; if after the deadline of the product, say the latest date you can record is the deadline and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the deadline.\n- \"Next <weekday>\" means that weekday in the following calendar week; \"this <weekday>\" the one in the current week. Use the weekday words in the facts.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Never say anything was recorded or booked. The system records the promises after the read-back.\n- Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. Asked if you are a robot: you are Freya Bank's digital assistant. A question you cannot answer from the facts: say you do not have that information.\n- A question about who or what you are ('who is this?', 'am I talking to a person?', also when it is cut off, like 'Am I talking to'): answer it as the rule for 'are you a robot' says.",
    "transitions": [
     {
      "target_node": "m_answer",
@@ -4833,7 +5432,7 @@
   "m_fix": {
    "name": "m_fix",
    "node_type": "conversation",
-   "task_message": "The customer wants to change something in what you read back. The customer's identity is verified.\nAsk only which product and what: a new date, a new amount, or dropping it. Do not repeat the change back and do not ask them to confirm it: the system applies it and reads everything back. Do not compute dates yourself. Never say anything is recorded, booked or noted. Product numbers follow the order of the read-back (1 is the first product read).\n\nRULES OF THE CALL:\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts: if allowed accept it; if a weekend or holiday not after the deadline, offer the next business day; if after the deadline of the product, say the latest date you can record is the deadline and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the deadline.\n- \"Next <weekday>\" means that weekday in the following calendar week; \"this <weekday>\" the one in the current week. Use the weekday words in the facts.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Never say anything was recorded or booked. The system records the promises after the read-back.\n- Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. Asked if you are a robot: you are Freya Bank's digital assistant. A question you cannot answer from the facts: say you do not have that information.",
+   "task_message": "The customer wants to change something in what you read back. The customer's identity is verified.\nAsk only which product and what: a new date, a new amount, or dropping it. Do not repeat the change back and do not ask them to confirm it: the system applies it and reads everything back. Do not compute dates yourself. Never say anything is recorded, booked or noted. Product numbers follow the order of the read-back (1 is the first product read).\n\nRULES OF THE CALL:\n- Never ask how much the customer can pay. You propose every amount.\n- A proposed date is checked against the DATE TABLE in the facts: if allowed accept it; if a weekend or holiday not after the deadline, offer the next business day; if after the deadline of the product, say the latest date you can record is the deadline and offer it.\n- A vague period (next week, end of the month, when my salary comes): ask once for the exact day; if still none, propose the deadline.\n- \"Next <weekday>\" means that weekday in the following calendar week; \"this <weekday>\" the one in the current week. Use the weekday words in the facts.\n- A proposed amount from the floor up to the full past-due amount, both included, is accepted. Below the floor: say it cannot be recorded and offer the floor once.\n- When the floor is agreed instead of the full amount, say that the rest stays overdue.\n- Never offer a discount, a waiver, an instalment plan or any term not in the facts.\n- Never say anything was recorded or booked. The system records the promises after the read-back.\n- Asked whether this is a scam: they can verify the call by phoning Freya Bank's customer service number. Asked if you are a robot: you are Freya Bank's digital assistant. A question you cannot answer from the facts: say you do not have that information.\n- A question about who or what you are ('who is this?', 'am I talking to a person?', also when it is cut off, like 'Am I talking to'): answer it as the rule for 'are you a robot' says.",
    "transitions": [
     {
      "target_node": "apply_fix",
@@ -5612,7 +6211,7 @@
        "properties": {
         "code": {
          "type": "string",
-         "default": "PARAMS = \"\\x7b\\\"reasons\\\": \\x7b\\\"refused\\\": \\\"refused\\\", \\\"hardship\\\": \\\"hardship\\\", \\\"dispute\\\": \\\"dispute\\\", \\\"paid\\\": \\\"paid\\\", \\\"service_error\\\": \\\"service_error\\\"\\x7d, \\\"outcomes\\\": \\x7b\\\"promise\\\": \\\"promise\\\", \\\"paid\\\": \\\"paid\\\", \\\"other\\\": \\\"no_promise\\\"\\x7d, \\\"rv\\\": \\\"r_final\\\"\\x7d\"\nimport datetime\nimport json\nimport re\nP = json.loads(PARAMS)\nHOL = set(P.get('holidays') or [])\nWEEKEND = set(P.get('weekend_days') if P.get('weekend_days') is not None else [5, 6])\nDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']\nMONS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']\nONE = datetime.timedelta(days=1)\ndef isbiz(d):\n    return d.weekday() not in WEEKEND and d.isoformat() not in HOL\ndef say(d):\n    return DAYS[d.weekday()] + ' ' + str(d.day) + ' ' + MONS[d.month - 1] + ' ' + str(d.year)\ndef nextbiz(d):\n    x = d + ONE\n    while not isbiz(x):\n        x = x + ONE\n    return x\ndef nth_biz_after(d, n):\n    x = d\n    for i in range(n):\n        x = nextbiz(x)\n    return x\ndef read_list(node, field):\n    # A list from an api_request result. A node-level mapping of a list did not arrive in practice;\n    # the flattened keys <node>_response.data.<field>.<i>.<key> did. Try the mapped variable first, then those keys.\n    v = vars.get(field)\n    if isinstance(v, str):\n        try:\n            v = json.loads(v)\n        except Exception:\n            v = None\n    if isinstance(v, list) and v:\n        return v\n    found = dict()\n    pat = re.compile('^' + re.escape(node) + r'_response\\.data\\.' + re.escape(field) + r'\\.(\\d+)\\.(\\w+)$')\n    for k in list(vars.keys()):\n        m = pat.match(str(k))\n        if m:\n            found.setdefault(int(m.group(1)), dict())[m.group(2)] = vars.get(k)\n    return [found[i] for i in sorted(found)]\ndef num(x, default=0.0):\n    try:\n        return float(str(x).replace(',', ''))\n    except Exception:\n        return default\ndef money(x):\n    x = num(x)\n    return str(int(round(x))) if abs(x - round(x)) < 0.005 else '%.2f' % x\ndef get_now():\n    s = str(vars.get('now') or '').strip().replace(' ', 'T')\n    try:\n        return datetime.datetime.fromisoformat(s[:16])\n    except Exception:\n        return datetime.datetime.fromisoformat(s[:10] + 'T10:00')\n\ntry:\n    n = int(num(vars.get('product_count')))\n    recorded = False\n    reasons = []\n    for k in range(1, n + 1):\n        if str(vars.get('rec_ok_%d' % k) or '') == '1':\n            recorded = True\n        elif str(vars.get('st_%d' % k) or '') == 'noted':\n            reasons.append(str(vars.get('reason_%d' % k) or P['reasons']['refused']))\n    R = P['reasons']\n    if recorded:\n        vars['final_outcome'] = P['outcomes']['promise']\n        vars['final_reason'] = ''\n        vars[P['rv']] = 'promise'\n    elif reasons and all([r == R['paid'] for r in reasons]) and len(reasons) == n:\n        vars['final_outcome'] = P['outcomes']['paid']\n        vars['final_reason'] = ''\n        vars[P['rv']] = 'paid'\n    else:\n        others = [r for r in reasons if r != R['paid']]\n        vars['final_outcome'] = P['outcomes']['other']\n        vars['final_reason'] = others[0] if others else R['refused']\n        vars[P['rv']] = 'other'\nexcept Exception:\n    vars[P['rv']] = 'error'\n"
+         "default": "PARAMS = \"\\x7b\\\"reasons\\\": \\x7b\\\"refused\\\": \\\"refused\\\", \\\"hardship\\\": \\\"hardship\\\", \\\"dispute\\\": \\\"dispute\\\", \\\"paid\\\": \\\"paid\\\", \\\"service_error\\\": \\\"service_error\\\"\\x7d, \\\"outcomes\\\": \\x7b\\\"promise\\\": \\\"promise\\\", \\\"paid\\\": \\\"paid\\\", \\\"other\\\": \\\"no_promise\\\"\\x7d, \\\"close_reason_of\\\": \\x7b\\x7d, \\\"rv\\\": \\\"r_final\\\"\\x7d\"\nimport datetime\nimport json\nimport re\nP = json.loads(PARAMS)\nHOL = set(P.get('holidays') or [])\nWEEKEND = set(P.get('weekend_days') if P.get('weekend_days') is not None else [5, 6])\nDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']\nMONS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']\nONE = datetime.timedelta(days=1)\ndef isbiz(d):\n    return d.weekday() not in WEEKEND and d.isoformat() not in HOL\ndef say(d):\n    return DAYS[d.weekday()] + ' ' + str(d.day) + ' ' + MONS[d.month - 1] + ' ' + str(d.year)\ndef nextbiz(d):\n    x = d + ONE\n    while not isbiz(x):\n        x = x + ONE\n    return x\ndef nth_biz_after(d, n):\n    x = d\n    for i in range(n):\n        x = nextbiz(x)\n    return x\ndef read_list(node, field):\n    # A list from an api_request result. A node-level mapping of a list did not arrive in practice;\n    # the flattened keys <node>_response.data.<field>.<i>.<key> did. Try the mapped variable first, then those keys.\n    v = vars.get(field)\n    if isinstance(v, str):\n        try:\n            v = json.loads(v)\n        except Exception:\n            v = None\n    if isinstance(v, list) and v:\n        return v\n    found = dict()\n    pat = re.compile('^' + re.escape(node) + r'_response\\.data\\.' + re.escape(field) + r'\\.(\\d+)\\.(\\w+)$')\n    for k in list(vars.keys()):\n        m = pat.match(str(k))\n        if m:\n            found.setdefault(int(m.group(1)), dict())[m.group(2)] = vars.get(k)\n    return [found[i] for i in sorted(found)]\ndef num(x, default=0.0):\n    try:\n        return float(str(x).replace(',', ''))\n    except Exception:\n        return default\ndef money(x):\n    x = num(x)\n    return str(int(round(x))) if abs(x - round(x)) < 0.005 else '%.2f' % x\ndef get_now():\n    s = str(vars.get('now') or '').strip().replace(' ', 'T')\n    try:\n        return datetime.datetime.fromisoformat(s[:16])\n    except Exception:\n        return datetime.datetime.fromisoformat(s[:10] + 'T10:00')\n\ntry:\n    n = int(num(vars.get('product_count')))\n    recorded = False\n    reasons = []\n    for k in range(1, n + 1):\n        if str(vars.get('rec_ok_%d' % k) or '') == '1':\n            recorded = True\n        elif str(vars.get('st_%d' % k) or '') == 'noted':\n            reasons.append(str(vars.get('reason_%d' % k) or P['reasons']['refused']))\n    R = P['reasons']\n    if recorded:\n        vars['final_outcome'] = P['outcomes']['promise']\n        vars['final_reason'] = ''\n        vars[P['rv']] = 'promise'\n    elif reasons and all([r == R['paid'] for r in reasons]) and len(reasons) == n:\n        vars['final_outcome'] = P['outcomes']['paid']\n        vars['final_reason'] = ''\n        vars[P['rv']] = 'paid'\n    else:\n        others = [r for r in reasons if r != R['paid']]\n        vars['final_outcome'] = P['outcomes']['other']\n        r0 = others[0] if others else R['refused']\n        vars['final_reason'] = P['close_reason_of'].get(r0, r0)      # the brief's close code when it differs from the note value\n        vars[P['rv']] = 'other'\nexcept Exception:\n    vars[P['rv']] = 'error'\n"
         },
         "timeout_ms": {
          "type": "number",
@@ -7297,7 +7896,7 @@
        "properties": {
         "code": {
          "type": "string",
-         "default": "PARAMS = \"\\x7b\\\"k\\\": 1, \\\"next_weekday\\\": \\\"following_week\\\", \\\"rv\\\": \\\"r_enter_1\\\"\\x7d\"\nimport datetime\nimport json\nimport re\nP = json.loads(PARAMS)\nHOL = set(P.get('holidays') or [])\nWEEKEND = set(P.get('weekend_days') if P.get('weekend_days') is not None else [5, 6])\nDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']\nMONS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']\nONE = datetime.timedelta(days=1)\ndef isbiz(d):\n    return d.weekday() not in WEEKEND and d.isoformat() not in HOL\ndef say(d):\n    return DAYS[d.weekday()] + ' ' + str(d.day) + ' ' + MONS[d.month - 1] + ' ' + str(d.year)\ndef nextbiz(d):\n    x = d + ONE\n    while not isbiz(x):\n        x = x + ONE\n    return x\ndef nth_biz_after(d, n):\n    x = d\n    for i in range(n):\n        x = nextbiz(x)\n    return x\ndef read_list(node, field):\n    # A list from an api_request result. A node-level mapping of a list did not arrive in practice;\n    # the flattened keys <node>_response.data.<field>.<i>.<key> did. Try the mapped variable first, then those keys.\n    v = vars.get(field)\n    if isinstance(v, str):\n        try:\n            v = json.loads(v)\n        except Exception:\n            v = None\n    if isinstance(v, list) and v:\n        return v\n    found = dict()\n    pat = re.compile('^' + re.escape(node) + r'_response\\.data\\.' + re.escape(field) + r'\\.(\\d+)\\.(\\w+)$')\n    for k in list(vars.keys()):\n        m = pat.match(str(k))\n        if m:\n            found.setdefault(int(m.group(1)), dict())[m.group(2)] = vars.get(k)\n    return [found[i] for i in sorted(found)]\ndef num(x, default=0.0):\n    try:\n        return float(str(x).replace(',', ''))\n    except Exception:\n        return default\ndef money(x):\n    x = num(x)\n    return str(int(round(x))) if abs(x - round(x)) < 0.005 else '%.2f' % x\ndef get_now():\n    s = str(vars.get('now') or '').strip().replace(' ', 'T')\n    try:\n        return datetime.datetime.fromisoformat(s[:16])\n    except Exception:\n        return datetime.datetime.fromisoformat(s[:10] + 'T10:00')\n\nWDS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']\nMON_RE = '(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*'\nUNITS = 'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen'.split()\nORDS = 'zeroth first second third fourth fifth sixth seventh eighth ninth tenth eleventh twelfth thirteenth fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth'.split()\nTENS = dict(twenty=20, thirty=30)\nTENTHS = dict(twentieth=20, thirtieth=30)\ndef day_today():\n    try:\n        return datetime.date.fromisoformat(str(vars.get('today') or '')[:10])\n    except Exception:\n        return get_now().date()\ndef bizday(d):\n    hol = [x for x in str(vars.get('holiday_list') or '').split(',') if x]\n    wk = [int(x) for x in str(vars.get('weekend_list') or '5,6').split(',') if x.strip().isdigit()]\n    return d.weekday() not in wk and d.isoformat() not in hol\ndef words_to_digits(t):\n    toks = t.split()\n    out = []\n    i = 0\n    while i < len(toks):\n        w = toks[i]\n        nx = toks[i + 1] if i + 1 < len(toks) else ''\n        if w in TENS and nx in ORDS[1:10]:\n            out.append(str(TENS[w] + ORDS.index(nx)) + 'th')\n            i = i + 2\n            continue\n        if w in TENS and nx in UNITS[1:10]:\n            out.append(str(TENS[w] + UNITS.index(nx)))\n            i = i + 2\n            continue\n        if w in TENS:\n            out.append(str(TENS[w]))\n        elif w in TENTHS:\n            out.append(str(TENTHS[w]) + 'th')\n        elif w in ORDS[1:]:\n            out.append(str(ORDS.index(w)) + 'th')\n        elif w in UNITS[1:]:\n            out.append(str(UNITS.index(w)))\n        else:\n            out.append(w)\n        i = i + 1\n    return ' '.join(out)\ndef make_day(y, m, d):\n    try:\n        return datetime.date(y, m, d)\n    except Exception:\n        return None\ndef ahead(m, d, y, today):\n    x = make_day(y if y else today.year, m, d)\n    if x is not None and not y and x < today:\n        x = make_day(today.year + 1, m, d)\n    return x\ndef resolve_when(raw):\n    t = str(raw or '').strip().lower()\n    if t == '':\n        return None\n    # \"the 15th, sorry, I mean the 16th\": the part after the last correction wins when it holds a date\n    parts = re.split(r'\\b(?:sorry|i mean|i meant|actually|correction|rather|no wait)\\b', t)\n    if len(parts) > 1 and parts[-1].strip() != '':\n        last = resolve_one(parts[-1])\n        if last is not None:\n            return last\n    return resolve_one(t)\ndef resolve_one(t):\n    today = day_today()\n    mo = re.search(r'(\\d{4})-(\\d{2})-(\\d{2})', t)\n    if mo:\n        return make_day(int(mo.group(1)), int(mo.group(2)), int(mo.group(3)))\n    t = ' ' + words_to_digits(re.sub(r'[^a-z0-9/. ]', ' ', t.replace('-', ' '))) + ' '\n    mo = re.search(r' (\\d{1,2})[/.](\\d{1,2})(?:[/.](\\d{2,4}))? ', t)\n    if mo:\n        y = int(mo.group(3)) if mo.group(3) else 0\n        if 0 < y < 100:\n            y = 2000 + y\n        return ahead(int(mo.group(2)), int(mo.group(1)), y, today)\n    mo = re.search(r' (\\d{1,2})(?:st|nd|rd|th)?(?: of)? ' + MON_RE + r'(?: (\\d{4}))? ', t)\n    if mo:\n        return ahead(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].index(mo.group(2)) + 1, int(mo.group(1)), int(mo.group(3) or 0), today)\n    mo = re.search(' ' + MON_RE + r' (?:the )?(\\d{1,2})(?:st|nd|rd|th)?(?: (\\d{4}))? ', t)\n    if mo:\n        return ahead(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].index(mo.group(1)) + 1, int(mo.group(2)), int(mo.group(3) or 0), today)\n    if ' day after tomorrow ' in t:\n        return today + datetime.timedelta(days=2)\n    if ' tomorrow ' in t:\n        return today + datetime.timedelta(days=1)\n    if ' today ' in t or ' tonight ' in t:\n        return today\n    mo = re.search(r' (?:the |on )?(\\d{1,2})(?:st|nd|rd|th) ', t)      # before weekday names: 'Monday the 26th' is the 26th\n    if mo:\n        n = int(mo.group(1))\n        x = make_day(today.year, today.month, n)\n        if x is None or x < today:\n            y, m = (today.year + 1, 1) if today.month == 12 else (today.year, today.month + 1)\n            x = make_day(y, m, n)\n        return x\n    mo = re.search(r' in (\\d{1,2}) days? ', t)\n    if mo:\n        return today + datetime.timedelta(days=int(mo.group(1)))\n    mo = re.search(r' (next |this |coming )?(' + '|'.join(WDS) + ') ', t)\n    if mo:\n        wd = WDS.index(mo.group(2))\n        mon = today - datetime.timedelta(days=today.weekday())\n        q = (mo.group(1) or '').strip()\n        if ' week after next ' in t:             # \"the week after next\", then \"Monday\"\n            return mon + datetime.timedelta(days=14 + wd)\n        if ' next week ' in t and q == '':\n            return mon + datetime.timedelta(days=7 + wd)\n        if q == 'next' and P.get('next_weekday', 'following_week') == 'following_week':\n            return mon + datetime.timedelta(days=7 + wd)\n        if q == 'this':\n            x = mon + datetime.timedelta(days=wd)\n            return x if x >= today else None\n        x = today + datetime.timedelta(days=(wd - today.weekday()) % 7)\n        if q in ('next', 'coming') and x == today:\n            x = x + datetime.timedelta(days=7)\n        return x\n    return None\ndef settle(k, d):\n    # The date for product k: a past date is no date; a weekend day or a bank holiday moves to the next business day\n    # (mov_k = 1); a date after the product's deadline moves to the deadline (adj_k = 1). Returns the ISO date or ''.\n    today = day_today()\n    if d is None or d < today:\n        return ''\n    mov = ''\n    while not bizday(d):\n        d = d + datetime.timedelta(days=1)\n        mov = '1'\n    s = d.isoformat()\n    dl = str(vars.get('s%d_deadline' % k) or '')\n    adj = ''\n    if dl != '' and s > dl:\n        s = dl\n        adj = '1'\n        mov = ''\n    vars['date_%d' % k] = s\n    vars['adj_%d' % k] = adj\n    vars['mov_%d' % k] = mov\n    return s\n\ntry:\n    k = P['k']\n    n = int(num(vars.get('product_count')))\n    vars['cur_slot'] = str(k)\n    cd = str(vars.get('carry_date') or '')\n    pw = str(vars.get('m_today_when_%d' % k) or '')\n    pa = num(vars.get('m_today_amount_%d' % k), 0.0)\n    vars['m_today_when_%d' % k] = ''\n    vars['m_today_amount_%d' % k] = 0\n    due = num(vars.get('s%d_due' % k), 0.0)\n    if pa <= 0 or pa > due:\n        pa = due\n    if k > n:\n        vars[P['rv']] = 'done'\n    elif pw != '' and pa >= num(vars.get('s%d_floor' % k), 0.0) and settle(k, resolve_when(pw)) != '':\n        vars['st_%d' % k] = 'agreed'                 # named for this product in the first answer (\"the card tomorrow\")\n        vars['amt_%d' % k] = money(pa)\n        vars[P['rv']] = 'auto'\n    elif cd != '' and settle(k, resolve_when(cd)) != '':\n        vars['st_%d' % k] = 'agreed'\n        vars['amt_%d' % k] = money(vars.get('s%d_due' % k))\n        vars[P['rv']] = 'auto'\n    elif str(vars.get('floor_first') or '') == '1' and k == 1:\n        vars['floor_first'] = ''\n        vars[P['rv']] = 'ask_floor'\n    else:\n        vars[P['rv']] = 'ask'\nexcept Exception:\n    vars[P['rv']] = 'error'\n"
+         "default": "PARAMS = \"\\x7b\\\"k\\\": 1, \\\"next_weekday\\\": \\\"following_week\\\", \\\"rv\\\": \\\"r_enter_1\\\"\\x7d\"\nimport datetime\nimport json\nimport re\nP = json.loads(PARAMS)\nHOL = set(P.get('holidays') or [])\nWEEKEND = set(P.get('weekend_days') if P.get('weekend_days') is not None else [5, 6])\nDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']\nMONS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']\nONE = datetime.timedelta(days=1)\ndef isbiz(d):\n    return d.weekday() not in WEEKEND and d.isoformat() not in HOL\ndef say(d):\n    return DAYS[d.weekday()] + ' ' + str(d.day) + ' ' + MONS[d.month - 1] + ' ' + str(d.year)\ndef nextbiz(d):\n    x = d + ONE\n    while not isbiz(x):\n        x = x + ONE\n    return x\ndef nth_biz_after(d, n):\n    x = d\n    for i in range(n):\n        x = nextbiz(x)\n    return x\ndef read_list(node, field):\n    # A list from an api_request result. A node-level mapping of a list did not arrive in practice;\n    # the flattened keys <node>_response.data.<field>.<i>.<key> did. Try the mapped variable first, then those keys.\n    v = vars.get(field)\n    if isinstance(v, str):\n        try:\n            v = json.loads(v)\n        except Exception:\n            v = None\n    if isinstance(v, list) and v:\n        return v\n    found = dict()\n    pat = re.compile('^' + re.escape(node) + r'_response\\.data\\.' + re.escape(field) + r'\\.(\\d+)\\.(\\w+)$')\n    for k in list(vars.keys()):\n        m = pat.match(str(k))\n        if m:\n            found.setdefault(int(m.group(1)), dict())[m.group(2)] = vars.get(k)\n    return [found[i] for i in sorted(found)]\ndef num(x, default=0.0):\n    try:\n        return float(str(x).replace(',', ''))\n    except Exception:\n        return default\ndef money(x):\n    x = num(x)\n    return str(int(round(x))) if abs(x - round(x)) < 0.005 else '%.2f' % x\ndef get_now():\n    s = str(vars.get('now') or '').strip().replace(' ', 'T')\n    try:\n        return datetime.datetime.fromisoformat(s[:16])\n    except Exception:\n        return datetime.datetime.fromisoformat(s[:10] + 'T10:00')\n\nWDS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']\nMON_RE = '(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*'\nUNITS = 'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen'.split()\nORDS = 'zeroth first second third fourth fifth sixth seventh eighth ninth tenth eleventh twelfth thirteenth fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth'.split()\nTENS = dict(twenty=20, thirty=30)\nTENTHS = dict(twentieth=20, thirtieth=30)\ndef day_today():\n    try:\n        return datetime.date.fromisoformat(str(vars.get('today') or '')[:10])\n    except Exception:\n        return get_now().date()\ndef bizday(d):\n    hol = [x for x in str(vars.get('holiday_list') or '').split(',') if x]\n    wk = [int(x) for x in str(vars.get('weekend_list') or '5,6').split(',') if x.strip().isdigit()]\n    return d.weekday() not in wk and d.isoformat() not in hol\ndef words_to_digits(t):\n    toks = t.split()\n    out = []\n    i = 0\n    while i < len(toks):\n        w = toks[i]\n        nx = toks[i + 1] if i + 1 < len(toks) else ''\n        if w in TENS and nx in ORDS[1:10]:\n            out.append(str(TENS[w] + ORDS.index(nx)) + 'th')\n            i = i + 2\n            continue\n        if w in TENS and nx in UNITS[1:10]:\n            out.append(str(TENS[w] + UNITS.index(nx)))\n            i = i + 2\n            continue\n        if w in TENS:\n            out.append(str(TENS[w]))\n        elif w in TENTHS:\n            out.append(str(TENTHS[w]) + 'th')\n        elif w in ORDS[1:]:\n            out.append(str(ORDS.index(w)) + 'th')\n        elif w in UNITS[1:]:\n            out.append(str(UNITS.index(w)))\n        else:\n            out.append(w)\n        i = i + 1\n    return ' '.join(out)\ndef make_day(y, m, d):\n    try:\n        return datetime.date(y, m, d)\n    except Exception:\n        return None\ndef ahead(m, d, y, today):\n    x = make_day(y if y else today.year, m, d)\n    if x is not None and not y and x < today:\n        x = make_day(today.year + 1, m, d)\n    return x\ndef resolve_when(raw):\n    t = str(raw or '').strip().lower()\n    if t == '':\n        return None\n    # \"the 15th, sorry, I mean the 16th\": the part after the last correction wins when it holds a date\n    parts = re.split(r'\\b(?:sorry|i mean|i meant|actually|correction|rather|no wait)\\b', t)\n    if len(parts) > 1 and parts[-1].strip() != '':\n        last = resolve_one(parts[-1])\n        if last is not None:\n            return last\n    return resolve_one(t)\ndef resolve_one(t):\n    today = day_today()\n    mo = re.search(r'(\\d{4})-(\\d{2})-(\\d{2})', t)\n    if mo:\n        return make_day(int(mo.group(1)), int(mo.group(2)), int(mo.group(3)))\n    t = ' ' + words_to_digits(re.sub(r'[^a-z0-9/. ]', ' ', t.replace('-', ' '))) + ' '\n    mo = re.search(r' (\\d{1,2})[/.](\\d{1,2})(?:[/.](\\d{2,4}))? ', t)\n    if mo:\n        y = int(mo.group(3)) if mo.group(3) else 0\n        if 0 < y < 100:\n            y = 2000 + y\n        return ahead(int(mo.group(2)), int(mo.group(1)), y, today)\n    mo = re.search(r' (\\d{1,2})(?:st|nd|rd|th)?(?: of)? ' + MON_RE + r'(?: (\\d{4}))? ', t)\n    if mo:\n        return ahead(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].index(mo.group(2)) + 1, int(mo.group(1)), int(mo.group(3) or 0), today)\n    mo = re.search(' ' + MON_RE + r' (?:the )?(\\d{1,2})(?:st|nd|rd|th)?(?: (\\d{4}))? ', t)\n    if mo:\n        return ahead(['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].index(mo.group(1)) + 1, int(mo.group(2)), int(mo.group(3) or 0), today)\n    if ' day after tomorrow ' in t:\n        return today + datetime.timedelta(days=2)\n    if ' tomorrow ' in t:\n        return today + datetime.timedelta(days=1)\n    if ' today ' in t or ' tonight ' in t:\n        return today\n    mo = re.search(r' (?:the |on )?(\\d{1,2})(?:st|nd|rd|th) ', t)      # before weekday names: 'Monday the 26th' is the 26th\n    if mo:\n        n = int(mo.group(1))\n        x = make_day(today.year, today.month, n)\n        if x is None or x < today:\n            y, m = (today.year + 1, 1) if today.month == 12 else (today.year, today.month + 1)\n            x = make_day(y, m, n)\n        return x\n    mo = re.search(r' in (\\d{1,2}) days? ', t)\n    if mo:\n        return today + datetime.timedelta(days=int(mo.group(1)))\n    mo = re.search(r' (next |this |coming )?(' + '|'.join(WDS) + ') ', t)\n    if mo:\n        wd = WDS.index(mo.group(2))\n        mon = today - datetime.timedelta(days=today.weekday())\n        q = (mo.group(1) or '').strip()\n        if ' week after next ' in t:             # \"the week after next\", then \"Monday\"\n            return mon + datetime.timedelta(days=14 + wd)\n        if ' next week ' in t and q == '':\n            return mon + datetime.timedelta(days=7 + wd)\n        if q == 'next' and P.get('next_weekday', 'following_week') == 'following_week':\n            return mon + datetime.timedelta(days=7 + wd)\n        if q == 'this':\n            x = mon + datetime.timedelta(days=wd)\n            return x if x >= today else None\n        x = today + datetime.timedelta(days=(wd - today.weekday()) % 7)\n        if q in ('next', 'coming') and x == today:\n            x = x + datetime.timedelta(days=7)\n        return x\n    return None\ndef settle(k, d):\n    # The date for product k: a past date is no date; a weekend day or a bank holiday moves to the next business day\n    # (mov_k = 1); a date after the product's deadline moves to the deadline (adj_k = 1). Returns the ISO date or ''.\n    today = day_today()\n    if d is None or d < today:\n        return ''\n    mov = ''\n    while not bizday(d):\n        d = d + datetime.timedelta(days=1)\n        mov = '1'\n    s = d.isoformat()\n    dl = str(vars.get('s%d_deadline' % k) or '')\n    adj = ''\n    if dl != '' and s > dl:\n        s = dl\n        adj = '1'\n        mov = ''\n    vars['date_%d' % k] = s\n    vars['adj_%d' % k] = adj\n    vars['mov_%d' % k] = mov\n    return s\n\ntry:\n    k = P['k']\n    n = int(num(vars.get('product_count')))\n    vars['cur_slot'] = str(k)\n    cd = str(vars.get('carry_date') or '')\n    pw = str(vars.get('m_today_when_%d' % k) or '')\n    pa = num(vars.get('m_today_amount_%d' % k), 0.0)\n    vars['m_today_when_%d' % k] = ''\n    vars['m_today_amount_%d' % k] = 0\n    due = num(vars.get('s%d_due' % k), 0.0)\n    if pa <= 0 or pa > due:\n        pa = due\n    if k > n:\n        vars[P['rv']] = 'done'\n    elif pw != '' and pa >= num(vars.get('s%d_floor' % k), 0.0) and settle(k, resolve_when(pw)) != '':\n        vars['st_%d' % k] = 'agreed'                 # named for this product in the first answer (\"the card tomorrow\")\n        vars['amt_%d' % k] = money(pa)\n        vars[P['rv']] = 'auto'\n    elif cd != '' and settle(k, resolve_when(cd)) != '':\n        vars['st_%d' % k] = 'agreed'\n        vars['amt_%d' % k] = money(vars.get('s%d_due' % k))\n        vars[P['rv']] = 'auto'\n    elif str(vars.get('floor_first') or '') == '1' and k == 1:\n        vars['floor_first'] = ''\n        vars[P['rv']] = 'ask_floor'\n    else:\n        vars[P['rv']] = 'ask'\n    if vars[P['rv']] in ('ask', 'ask_floor') and str(vars.get('asked_q') or '') == 'yes':\n        vars[P['rv']] = vars[P['rv']] + '_q'         # the last message asked something: the first offer answers it first\n    vars['asked_q'] = ''                             # a question is answered once, never carried to the next product\nexcept Exception:\n    vars[P['rv']] = 'error'\n"
         },
         "timeout_ms": {
          "type": "number",
@@ -7333,6 +7932,34 @@
         "variable": "r_enter_1",
         "operator": "equals",
         "operand": "ask_floor"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "p1_attempt1_full_q",
+     "description": "r_enter_1 is ask_q",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "r_enter_1",
+        "operator": "equals",
+        "operand": "ask_q"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "p1_attempt1_floor_q",
+     "description": "r_enter_1 is ask_floor_q",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "r_enter_1",
+        "operator": "equals",
+        "operand": "ask_floor_q"
        }
       ]
      }
@@ -7960,7 +8587,7 @@
        "properties": {
         "code": {
          "type": "string",
-         "default": "PARAMS = \"\\x7b\\\"reasons\\\": \\x7b\\\"refused\\\": \\\"refused\\\", \\\"hardship\\\": \\\"hardship\\\", \\\"dispute\\\": \\\"dispute\\\", \\\"paid\\\": \\\"paid\\\", \\\"service_error\\\": \\\"service_error\\\"\\x7d, \\\"outcomes\\\": \\x7b\\\"promise\\\": \\\"promise\\\", \\\"paid\\\": \\\"paid\\\", \\\"other\\\": \\\"no_promise\\\"\\x7d, \\\"rv\\\": \\\"r_final\\\"\\x7d\"\nimport datetime\nimport json\nimport re\nP = json.loads(PARAMS)\nHOL = set(P.get('holidays') or [])\nWEEKEND = set(P.get('weekend_days') if P.get('weekend_days') is not None else [5, 6])\nDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']\nMONS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']\nONE = datetime.timedelta(days=1)\ndef isbiz(d):\n    return d.weekday() not in WEEKEND and d.isoformat() not in HOL\ndef say(d):\n    return DAYS[d.weekday()] + ' ' + str(d.day) + ' ' + MONS[d.month - 1] + ' ' + str(d.year)\ndef nextbiz(d):\n    x = d + ONE\n    while not isbiz(x):\n        x = x + ONE\n    return x\ndef nth_biz_after(d, n):\n    x = d\n    for i in range(n):\n        x = nextbiz(x)\n    return x\ndef read_list(node, field):\n    # A list from an api_request result. A node-level mapping of a list did not arrive in practice;\n    # the flattened keys <node>_response.data.<field>.<i>.<key> did. Try the mapped variable first, then those keys.\n    v = vars.get(field)\n    if isinstance(v, str):\n        try:\n            v = json.loads(v)\n        except Exception:\n            v = None\n    if isinstance(v, list) and v:\n        return v\n    found = dict()\n    pat = re.compile('^' + re.escape(node) + r'_response\\.data\\.' + re.escape(field) + r'\\.(\\d+)\\.(\\w+)$')\n    for k in list(vars.keys()):\n        m = pat.match(str(k))\n        if m:\n            found.setdefault(int(m.group(1)), dict())[m.group(2)] = vars.get(k)\n    return [found[i] for i in sorted(found)]\ndef num(x, default=0.0):\n    try:\n        return float(str(x).replace(',', ''))\n    except Exception:\n        return default\ndef money(x):\n    x = num(x)\n    return str(int(round(x))) if abs(x - round(x)) < 0.005 else '%.2f' % x\ndef get_now():\n    s = str(vars.get('now') or '').strip().replace(' ', 'T')\n    try:\n        return datetime.datetime.fromisoformat(s[:16])\n    except Exception:\n        return datetime.datetime.fromisoformat(s[:10] + 'T10:00')\n\ntry:\n    n = int(num(vars.get('product_count')))\n    recorded = False\n    reasons = []\n    for k in range(1, n + 1):\n        if str(vars.get('rec_ok_%d' % k) or '') == '1':\n            recorded = True\n        elif str(vars.get('st_%d' % k) or '') == 'noted':\n            reasons.append(str(vars.get('reason_%d' % k) or P['reasons']['refused']))\n    R = P['reasons']\n    if recorded:\n        vars['final_outcome'] = P['outcomes']['promise']\n        vars['final_reason'] = ''\n        vars[P['rv']] = 'promise'\n    elif reasons and all([r == R['paid'] for r in reasons]) and len(reasons) == n:\n        vars['final_outcome'] = P['outcomes']['paid']\n        vars['final_reason'] = ''\n        vars[P['rv']] = 'paid'\n    else:\n        others = [r for r in reasons if r != R['paid']]\n        vars['final_outcome'] = P['outcomes']['other']\n        vars['final_reason'] = others[0] if others else R['refused']\n        vars[P['rv']] = 'other'\nexcept Exception:\n    vars[P['rv']] = 'error'\n"
+         "default": "PARAMS = \"\\x7b\\\"reasons\\\": \\x7b\\\"refused\\\": \\\"refused\\\", \\\"hardship\\\": \\\"hardship\\\", \\\"dispute\\\": \\\"dispute\\\", \\\"paid\\\": \\\"paid\\\", \\\"service_error\\\": \\\"service_error\\\"\\x7d, \\\"outcomes\\\": \\x7b\\\"promise\\\": \\\"promise\\\", \\\"paid\\\": \\\"paid\\\", \\\"other\\\": \\\"no_promise\\\"\\x7d, \\\"close_reason_of\\\": \\x7b\\x7d, \\\"rv\\\": \\\"r_final\\\"\\x7d\"\nimport datetime\nimport json\nimport re\nP = json.loads(PARAMS)\nHOL = set(P.get('holidays') or [])\nWEEKEND = set(P.get('weekend_days') if P.get('weekend_days') is not None else [5, 6])\nDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']\nMONS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']\nONE = datetime.timedelta(days=1)\ndef isbiz(d):\n    return d.weekday() not in WEEKEND and d.isoformat() not in HOL\ndef say(d):\n    return DAYS[d.weekday()] + ' ' + str(d.day) + ' ' + MONS[d.month - 1] + ' ' + str(d.year)\ndef nextbiz(d):\n    x = d + ONE\n    while not isbiz(x):\n        x = x + ONE\n    return x\ndef nth_biz_after(d, n):\n    x = d\n    for i in range(n):\n        x = nextbiz(x)\n    return x\ndef read_list(node, field):\n    # A list from an api_request result. A node-level mapping of a list did not arrive in practice;\n    # the flattened keys <node>_response.data.<field>.<i>.<key> did. Try the mapped variable first, then those keys.\n    v = vars.get(field)\n    if isinstance(v, str):\n        try:\n            v = json.loads(v)\n        except Exception:\n            v = None\n    if isinstance(v, list) and v:\n        return v\n    found = dict()\n    pat = re.compile('^' + re.escape(node) + r'_response\\.data\\.' + re.escape(field) + r'\\.(\\d+)\\.(\\w+)$')\n    for k in list(vars.keys()):\n        m = pat.match(str(k))\n        if m:\n            found.setdefault(int(m.group(1)), dict())[m.group(2)] = vars.get(k)\n    return [found[i] for i in sorted(found)]\ndef num(x, default=0.0):\n    try:\n        return float(str(x).replace(',', ''))\n    except Exception:\n        return default\ndef money(x):\n    x = num(x)\n    return str(int(round(x))) if abs(x - round(x)) < 0.005 else '%.2f' % x\ndef get_now():\n    s = str(vars.get('now') or '').strip().replace(' ', 'T')\n    try:\n        return datetime.datetime.fromisoformat(s[:16])\n    except Exception:\n        return datetime.datetime.fromisoformat(s[:10] + 'T10:00')\n\ntry:\n    n = int(num(vars.get('product_count')))\n    recorded = False\n    reasons = []\n    for k in range(1, n + 1):\n        if str(vars.get('rec_ok_%d' % k) or '') == '1':\n            recorded = True\n        elif str(vars.get('st_%d' % k) or '') == 'noted':\n            reasons.append(str(vars.get('reason_%d' % k) or P['reasons']['refused']))\n    R = P['reasons']\n    if recorded:\n        vars['final_outcome'] = P['outcomes']['promise']\n        vars['final_reason'] = ''\n        vars[P['rv']] = 'promise'\n    elif reasons and all([r == R['paid'] for r in reasons]) and len(reasons) == n:\n        vars['final_outcome'] = P['outcomes']['paid']\n        vars['final_reason'] = ''\n        vars[P['rv']] = 'paid'\n    else:\n        others = [r for r in reasons if r != R['paid']]\n        vars['final_outcome'] = P['outcomes']['other']\n        r0 = others[0] if others else R['refused']\n        vars['final_reason'] = P['close_reason_of'].get(r0, r0)      # the brief's close code when it differs from the note value\n        vars[P['rv']] = 'other'\nexcept Exception:\n    vars[P['rv']] = 'error'\n"
         },
         "timeout_ms": {
          "type": "number",
