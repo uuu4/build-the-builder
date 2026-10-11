@@ -278,6 +278,9 @@ try:
         vars[P['rv']] = 'ask_floor'
     else:
         vars[P['rv']] = 'ask'
+    if vars[P['rv']] in ('ask', 'ask_floor') and str(vars.get('asked_q') or '') == 'yes':
+        vars[P['rv']] = vars[P['rv']] + '_q'         # the last message asked something: the first offer answers it first
+    vars['asked_q'] = ''                             # a question is answered once, never carried to the next product
 except Exception:
     vars[P['rv']] = 'error'
 '''
@@ -627,8 +630,19 @@ def build(api, spec, ladder_tpl=None):
         nxt = f"enter_{k + 1}" if k < K else "finish"
         nodes[f"enter_{k}"] = _code(
             f"enter_{k}", _WHEN + _ENTER, "close_error",
-            _eqs("enter_route", [("ask", f"p{k}_{start}"), ("ask_floor", f"p{k}_{start_floor}"), ("auto", nxt), ("done", "finish")]), k=k,
+            _eqs("enter_route", [("ask", f"p{k}_{start}"), ("ask_floor", f"p{k}_{start_floor}"), ("ask_q", f"p{k}_{start}_q"),
+                                 ("ask_floor_q", f"p{k}_{start_floor}_q"), ("auto", nxt), ("done", "finish")]), k=k,
             next_weekday=nw)
+        # A asks_back PUB-04, 11 October: "I cannot pay today. Am I talking to a robot?" went to the first offer, a fixed
+        # line that never answered. The same step with an entry that answers first, then says the line exactly.
+        for st in {start, start_floor}:
+            q = copy.deepcopy(nodes[f"p{k}_{st}"])
+            q["name"] = f"p{k}_{st}_q"
+            line = (q.get("on_enter") or {}).get("text") or ""
+            if line:
+                q["on_enter"] = {"type": "llm", "prompt": "Answer the customer's question in one sentence, following the rules of the call. "
+                                 "Make no other offer. Then say this exactly as written, every word, amount and date: " + line}
+            nodes[f"p{k}_{st}_q"] = q
         for why, nm in (("refused", f"refused_{k}"), ("paid", f"paid_{k}"), ("dispute", f"dispute_{k}")):
             nodes[nm] = _code(nm, _MARK, "close_error", _eqs("mark_route", [("ok", nxt)]), k=k, why=why, reasons=reasons)
             line = (spec.get("situations") or {}).get(why)

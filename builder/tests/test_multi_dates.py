@@ -89,6 +89,20 @@ class Flow(unittest.TestCase):
         run(self.nodes, "all_yes", v)
         self.assertEqual(v["date_1"], "2026-10-14")
 
+    def test_a_question_with_the_refusal_is_answered_before_the_first_offer(self):  # A asks_back PUB-04
+        v = self.start([CARD])
+        v.update(m_today_turn="refuses", asked_q="yes")
+        self.assertEqual(route(self.nodes["m_today"], v), "enter_1")
+        self.assertEqual(run(self.nodes, "enter_1", v), "p1_attempt1_full_q")
+        self.assertEqual(v["asked_q"], "")                                         # not carried to the next product
+        q, plain = self.nodes["p1_attempt1_full_q"], self.nodes["p1_attempt1_full"]
+        self.assertEqual(q["on_enter"]["type"], "llm")
+        self.assertIn(plain["on_enter"]["text"], q["on_enter"]["prompt"])
+        self.assertEqual(q["transitions"], plain["transitions"])
+        v = self.start([CARD])
+        v.update(m_today_turn="refuses", asked_q="no")
+        self.assertEqual(run(self.nodes, "enter_1", v), "p1_attempt1_full")
+
     def test_one_product_named_goes_to_the_ladders(self):                         # PUB-12
         prods = [dict(CARD, days_late=16, past_due=510.0, minimum_payment=153.0), dict(LOAN, days_late=16, past_due=1320.0), dict(CAR, days_late=7, past_due=140.0)]
         v = self.start(prods)
